@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum Category {
     Armor,
     Aura,
@@ -9,6 +10,7 @@ pub enum Category {
 
 /// Number is max enchant
 #[repr(u8)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Rarity {
     Common = 8,
     Uncommon = 12,
@@ -26,14 +28,46 @@ impl Rarity {
     }
 }
 
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct Item {
     pub name: &'static str,
     pub category: Category,
     pub rarity: Rarity,
 }
 
+// Custom Deserialize impl because serde's derive macro
+// hates static lifetimes.
+impl<'de> Deserialize<'de> for Item {
+    fn deserialize<D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        struct ItemHelper {
+            name: String,
+            category: Category,
+            rarity: Rarity,
+        }
+
+        let helper = ItemHelper::deserialize(deserializer)?;
+
+        let name = ITEMS
+            .iter()
+            .find(|i| i.name == helper.name)
+            .map(|i| i.name)
+            .ok_or_else(|| {
+                serde::de::Error::custom(format!(
+                    "unknown item: {}",
+                    helper.name
+                ))
+            })?;
+
+        Ok(Item { name, category: helper.category, rarity: helper.rarity })
+    }
+}
+
 use Category::{ActiveSkill, Armor, Aura, Material, PassiveSkill, Weapon};
 use Rarity::{Common, Epic, Rare, Uncommon};
+use serde::{Deserialize, Serialize};
 
 #[rustfmt::skip]
 pub const ITEMS: [Item; 71] = [

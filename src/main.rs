@@ -7,15 +7,12 @@ use poise::{
     serenity_prelude::{ClientBuilder, GatewayIntents},
 };
 
-use crate::database::TradingDatabase;
+use crate::{commands::commands, database::Data};
 
+mod commands;
 mod database;
 mod items;
 mod macros;
-
-struct Data {
-    trades: TradingDatabase,
-}
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -27,11 +24,9 @@ async fn main() -> Res<()> {
     dotenv()?;
     let intents = GatewayIntents::non_privileged();
 
-    let trades = TradingDatabase::load_from_path_or_default("trading_db.yml")?;
-
     let mut client =
         ClientBuilder::new(std::env::var("DISCORD_TOKEN")?, intents)
-            .framework(framework(trades))
+            .framework(framework())
             .await?;
 
     client.start().await?;
@@ -58,8 +53,9 @@ async fn on_error(error: FrameworkError<'_, Data, Error>) {
     }
 }
 
-fn framework(trades: TradingDatabase) -> Framework<Data, Error> {
+fn framework() -> Framework<Data, Error> {
     let options = FrameworkOptions {
+        commands: commands(),
         on_error: |e| Box::pin(on_error(e)),
         ..Default::default()
     };
@@ -70,7 +66,7 @@ fn framework(trades: TradingDatabase) -> Framework<Data, Error> {
             Box::pin(async move {
                 println!("{} is on!", ready.user.name);
                 register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data { trades })
+                Ok(Data::new()?)
             })
         })
         .build()
