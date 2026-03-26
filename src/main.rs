@@ -1,3 +1,5 @@
+#![warn(clippy::pedantic)]
+
 use dotenv::dotenv;
 use poise::{
     Framework, FrameworkError, FrameworkOptions,
@@ -27,9 +29,10 @@ async fn main() -> Res<()> {
 
     let trades = TradingDatabase::load_from_path_or_default("trading_db.yml")?;
 
-    let mut client = ClientBuilder::new(std::env::var("DISCORD_TOKEN")?, intents)
-        .framework(framework(trades))
-        .await?;
+    let mut client =
+        ClientBuilder::new(std::env::var("DISCORD_TOKEN")?, intents)
+            .framework(framework(trades))
+            .await?;
 
     client.start().await?;
 

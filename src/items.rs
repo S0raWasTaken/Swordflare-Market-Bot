@@ -32,8 +32,8 @@ pub struct Item {
     pub rarity: Rarity,
 }
 
-use Category::*;
-use Rarity::*;
+use Category::{ActiveSkill, Armor, Aura, Material, PassiveSkill, Weapon};
+use Rarity::{Common, Epic, Rare, Uncommon};
 
 #[rustfmt::skip]
 pub const ITEMS: [Item; 71] = [
