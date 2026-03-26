@@ -1,5 +1,5 @@
 use crate::{Error, Res};
-use poise::serenity_prelude::{self as serenity, CacheHttp};
+use poise::serenity_prelude::{self as serenity, CacheHttp, CreateMessage};
 use std::time::Duration;
 
 const CONFIRMATION_TIMEOUT: Duration = Duration::from_hours(24);
@@ -224,7 +224,7 @@ async fn confirm_purchase(
             format!(
                 "**{}** x{}",
                 trade_ctx.item.name,
-                trade_ctx.item_quantity * lots
+                u32::from(trade_ctx.item_quantity) * u32::from(lots)
             ),
             true,
         )
@@ -233,7 +233,7 @@ async fn confirm_purchase(
             format!(
                 "**{}** x{}",
                 trade_ctx.wants.name,
-                trade_ctx.wanted_amount * lots
+                u32::from(trade_ctx.wanted_amount) * u32::from(lots)
             ),
             true,
         )
@@ -297,7 +297,6 @@ async fn confirm_purchase(
                 ctx,
                 serenity::CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true)
                         .content("❌ Purchase cancelled.")
                         .embeds(vec![])
                         .components(vec![]),
@@ -331,7 +330,7 @@ async fn send_trade_dms<'a>(
     let buyer_msg = buyer_dm
         .send_message(
             ctx,
-            serenity::CreateMessage::default()
+            CreateMessage::default()
                 .content(format!(
                     "You're about to buy **x{} {}** in exchange for **x{} {}** \
                 ({lots} lot(s)) from **{seller_name}**.\n\
@@ -356,26 +355,43 @@ async fn send_trade_dms<'a>(
         )
         .await?;
 
-    let seller_dm = seller_id.create_dm_channel(ctx).await?;
-    let seller_msg = seller_dm
-        .send_message(ctx, serenity::CreateMessage::default()
-            .content(format!(
-                "**{}** wants to buy **x{} {}** from you in exchange for **x{} {}** \
-                ({lots} lot(s)).\nGo find them in-game and confirm once done.",
-                buyer.name,
-                item_quantity * lots, item.name,
-                wanted_amount * lots, wants.name,
-            ))
-            .components(vec![serenity::CreateActionRow::Buttons(vec![
-                serenity::CreateButton::new(format!("confirm_sell_{trade_id}"))
-                    .label("Confirm Trade Done")
-                    .style(serenity::ButtonStyle::Success),
-                serenity::CreateButton::new(format!("cancel_sell_{trade_id}"))
-                    .label("Cancel")
-                    .style(serenity::ButtonStyle::Danger),
-            ])]),
-        )
-        .await?;
+    let seller_dm = match seller_id.create_dm_channel(ctx).await {
+        Ok(dm) => dm,
+        Err(e) => {
+            buyer_msg.delete(&ctx.http).await.ok();
+            return Err(e.into());
+        }
+    };
+
+    let content = format!(
+        "**{}** wants to buy **x{} {}** from you in exchange for **x{} {}** \
+        ({lots} lot(s)).\nGo find them in-game and confirm once done.",
+        buyer.name,
+        item_quantity * lots,
+        item.name,
+        wanted_amount * lots,
+        wants.name,
+    );
+
+    let components = vec![serenity::CreateActionRow::Buttons(vec![
+        serenity::CreateButton::new(format!("confirm_sell_{trade_id}"))
+            .label("Confirm Trade Done")
+            .style(serenity::ButtonStyle::Success),
+        serenity::CreateButton::new(format!("cancel_sell_{trade_id}"))
+            .label("Cancel")
+            .style(serenity::ButtonStyle::Danger),
+    ])];
+
+    let message =
+        CreateMessage::default().content(content).components(components);
+
+    let seller_msg = match seller_dm.send_message(ctx, message).await {
+        Ok(msg) => msg,
+        Err(e) => {
+            buyer_msg.delete(&ctx.http).await.ok();
+            return Err(e.into());
+        }
+    };
 
     Ok(PendingTrade { buyer_dm, seller_dm, buyer_msg, seller_msg, buyer, lots })
 }
@@ -539,7 +555,7 @@ async fn finish_trade(
     let quantity = *lots;
 
     let is_sold_out = data.trades.write(|db| {
-        if let Some(trade) = db.inner.get_mut(trade_id) {
+        if let Some(trade) = db.get_mut(*trade_id) {
             trade.stock = trade.stock.saturating_sub(quantity);
             trade.buyers.insert(buyer.id);
             trade.is_sold_out()
@@ -628,20 +644,15 @@ async fn update_or_delete_post(
     data: &crate::Data,
     trade_ctx: &TradeContext,
 ) -> Res<()> {
-    let message_id = {
+    let (message_id, trade) = {
         let db = data.trades.borrow_data()?;
-        db.get(trade_ctx.trade_id).and_then(|t| t.message_id)
-    };
-    let Some(message_id) = message_id else {
-        return Ok(());
-    };
-
-    let updated_trade = {
-        let db = data.trades.borrow_data()?;
-        db.get(trade_ctx.trade_id).cloned()
-    };
-    let Some(trade) = updated_trade else {
-        return Ok(());
+        match db.get(trade_ctx.trade_id) {
+            Some(t) => match t.message_id {
+                Some(mid) => (mid, t.clone()),
+                None => return Ok(()),
+            },
+            None => return Ok(()),
+        }
     };
 
     if trade.is_sold_out() {

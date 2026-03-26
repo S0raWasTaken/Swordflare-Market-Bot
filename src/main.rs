@@ -27,12 +27,14 @@ async fn main() -> Res<()> {
     dotenv()?;
     let intents = GatewayIntents::non_privileged();
 
-    let token = env::var("DISCORD_TOKEN")?;
+    let token = env::var("DISCORD_TOKEN").expect("DISCORD_TOKEN must be set");
 
-    let data = Data::new(
-        &env::var("TRADING_CHANNEL_ID")?,
-        &env::var("INTERACTION_MENU_CHANNEL_ID")?,
-    )?;
+    let trading_channel_id =
+        env::var("TRADING_CHANNEL_ID").expect("TRADING_CHANNEL_ID must be set");
+    let interaction_menu_channel_id = env::var("INTERACTION_MENU_CHANNEL_ID")
+        .expect("INTERACTION_CHANNEL_MENU_ID must be set");
+
+    let data = Data::new(&trading_channel_id, &interaction_menu_channel_id)?;
 
     let mut client =
         ClientBuilder::new(token, intents).framework(framework(data)).await?;

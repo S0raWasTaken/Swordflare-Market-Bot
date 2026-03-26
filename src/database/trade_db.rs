@@ -10,7 +10,7 @@ use crate::items::Item;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TradeData {
-    pub inner: HashMap<u64, Trade>,
+    inner: HashMap<u64, Trade>,
     next_id: u64,
 }
 
@@ -78,7 +78,7 @@ pub struct Trade {
     pub message_id: Option<MessageId>,
 }
 
-/// Hours till trade is expired
+/// Duration until a trade expires (2 days)
 pub const EXPIRATION_TIME: Duration = Duration::from_hours(2 * 24); // TODO: Discuss about this number
 
 impl Trade {
@@ -109,8 +109,10 @@ impl Trade {
     /// Panics if the system clock has gone backwards since the trade was created.
     #[inline]
     #[expect(dead_code, reason = "Future implementation")]
-    pub fn is_expired(&self) -> bool {
-        self.created_at.elapsed().unwrap() > EXPIRATION_TIME
+    pub fn is_inactive(&self) -> bool {
+        self.created_at
+            .elapsed()
+            .is_ok_and(|elapsed| elapsed > EXPIRATION_TIME) // Treat clock regression as not expired
             || self.is_sold_out()
     }
 

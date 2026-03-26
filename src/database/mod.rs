@@ -10,11 +10,15 @@ pub type TradingDatabase = FileDatabase<TradeData, Yaml>;
 pub struct Data {
     pub trades: TradingDatabase,
     pub trade_posting_channel: ChannelId,
+    #[expect(unused, reason = "Future implementation")]
     pub bot_menu_channel: ChannelId,
 }
 
 impl Data {
-    pub fn new(trade_posting_channel: &str, menu_channel: &str) -> Res<Self> {
+    pub fn new(
+        trade_posting_channel: &str,
+        bot_menu_channel: &str,
+    ) -> Res<Self> {
         Ok(Self {
             trades: TradingDatabase::load_from_path_or_default(
                 "trading_db.yml",
@@ -22,7 +26,7 @@ impl Data {
             trade_posting_channel: ChannelId::new(
                 trade_posting_channel.parse()?,
             ),
-            bot_menu_channel: ChannelId::new(menu_channel.parse()?),
+            bot_menu_channel: ChannelId::new(bot_menu_channel.parse()?),
         })
     }
 }

@@ -1,6 +1,6 @@
 use crate::database::trade_db::{EXPIRATION_TIME, Trade};
 use crate::{Context, Res, items::ITEMS};
-use poise::serenity_prelude as serenity;
+use poise::{CreateReply, serenity_prelude as serenity};
 use std::time::Duration;
 
 const CONFIRM_TIMEOUT: Duration = Duration::from_mins(1);
@@ -35,11 +35,21 @@ pub async fn new_trade(
     let wants =
         ITEMS.iter().find(|i| i.name == for_item).ok_or("Invalid item name")?;
 
+    if trade_quantity == 0 {
+        ctx.send(
+            CreateReply::default()
+                .content("❌ Trade quantity must be greater than zero.")
+                .ephemeral(true),
+        )
+        .await?;
+        return Ok(());
+    }
+
     // stock means total items; lots = how many times the trade can be done
     let lots = stock / trade_quantity;
     if lots == 0 {
         ctx.send(
-            poise::CreateReply::default()
+            CreateReply::default()
                 .content(format!(
                     "❌ Stock ({stock}) must be at least equal to trade quantity ({trade_quantity})."
                 ))
@@ -77,7 +87,7 @@ pub async fn new_trade(
 
     let reply = ctx
         .send(
-            poise::CreateReply::default()
+            CreateReply::default()
                 .embed(confirm_embed)
                 .components(vec![serenity::CreateActionRow::Buttons(vec![
                     serenity::CreateButton::new("confirm_new_trade")
@@ -98,6 +108,15 @@ pub async fn new_trade(
         .timeout(CONFIRM_TIMEOUT)
         .await
     else {
+        reply
+            .edit(
+                ctx,
+                CreateReply::default()
+                    .content("⏰ Trade confirmation timed out.")
+                    .components(vec![]),
+            )
+            .await
+            .ok();
         return Ok(());
     };
 
@@ -167,7 +186,7 @@ pub async fn new_trade(
         .await?;
 
     data.trades.write(|db| {
-        if let Some(trade) = db.inner.get_mut(&trade_id) {
+        if let Some(trade) = db.get_mut(trade_id) {
             trade.message_id = Some(message.id);
         }
     })?;

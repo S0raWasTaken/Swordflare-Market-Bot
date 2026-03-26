@@ -18,7 +18,7 @@ pub async fn event_handler(
     {
         let custom_id = component.data.custom_id.as_str();
         if custom_id.starts_with("buy_") {
-            Box::pin(handle_buy_interaction(ctx, component, data)).await?;
+            handle_buy_interaction(ctx, component, data).await?;
         }
     }
     Ok(())
