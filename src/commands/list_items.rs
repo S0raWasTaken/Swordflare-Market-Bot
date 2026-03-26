@@ -2,14 +2,17 @@ use poise::serenity_prelude as serenity;
 use std::fmt::Write;
 
 use crate::items::{
-    Category::{ActiveSkill, Armor, Aura, Material, PassiveSkill, Weapon},
+    Category::{
+        ActiveSkill, Armor, Aura, Material, PassiveSkill, Shard, Weapon,
+    },
     ITEMS,
 };
 use crate::{Context, Res};
 
 #[poise::command(slash_command)]
 pub async fn list_items(ctx: Context<'_>) -> Res<()> {
-    let categories = [Weapon, Armor, PassiveSkill, ActiveSkill, Material, Aura];
+    let categories =
+        [Weapon, Armor, PassiveSkill, ActiveSkill, Material, Aura, Shard];
 
     let embeds: Vec<serenity::CreateEmbed> = categories
         .iter()

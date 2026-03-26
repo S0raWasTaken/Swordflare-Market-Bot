@@ -1,5 +1,7 @@
 #![warn(clippy::pedantic)]
 
+use std::env;
+
 use dotenv::dotenv;
 use poise::{
     Framework, FrameworkError, FrameworkOptions,
@@ -7,10 +9,11 @@ use poise::{
     serenity_prelude::{ClientBuilder, GatewayIntents},
 };
 
-use crate::{commands::commands, database::Data};
+use crate::{commands::commands, database::Data, event_handler::event_handler};
 
 mod commands;
 mod database;
+mod event_handler;
 mod items;
 mod macros;
 
@@ -24,10 +27,15 @@ async fn main() -> Res<()> {
     dotenv()?;
     let intents = GatewayIntents::non_privileged();
 
+    let token = env::var("DISCORD_TOKEN")?;
+
+    let data = Data::new(
+        &env::var("TRADING_CHANNEL_ID")?,
+        &env::var("INTERACTION_MENU_CHANNEL_ID")?,
+    )?;
+
     let mut client =
-        ClientBuilder::new(std::env::var("DISCORD_TOKEN")?, intents)
-            .framework(framework())
-            .await?;
+        ClientBuilder::new(token, intents).framework(framework(data)).await?;
 
     client.start().await?;
 
@@ -53,9 +61,12 @@ async fn on_error(error: FrameworkError<'_, Data, Error>) {
     }
 }
 
-fn framework() -> Framework<Data, Error> {
+fn framework(data: Data) -> Framework<Data, Error> {
     let options = FrameworkOptions {
         commands: commands(),
+        event_handler: |ctx, event, framework, data| {
+            Box::pin(event_handler(ctx, event, framework, data))
+        },
         on_error: |e| Box::pin(on_error(e)),
         ..Default::default()
     };
@@ -66,7 +77,7 @@ fn framework() -> Framework<Data, Error> {
             Box::pin(async move {
                 println!("{} is on!", ready.user.name);
                 register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data::new()?)
+                Ok(data)
             })
         })
         .build()

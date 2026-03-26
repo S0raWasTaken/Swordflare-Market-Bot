@@ -1,20 +1,20 @@
 use std::{
     collections::{HashMap, HashSet},
-    time::{Duration, SystemTime, SystemTimeError},
+    time::{Duration, SystemTime},
 };
 
-use poise::serenity_prelude::UserId;
+use poise::serenity_prelude::{MessageId, UserId};
 use serde::{Deserialize, Serialize};
 
 use crate::items::Item;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TradeData {
-    inner: HashMap<u64, Trade>,
+    pub inner: HashMap<u64, Trade>,
     next_id: u64,
 }
 
-#[allow(dead_code)]
+#[expect(dead_code)]
 impl TradeData {
     #[inline]
     pub fn insert(&mut self, trade: Trade) -> u64 {
@@ -63,46 +63,55 @@ impl TradeData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trade {
     // Basic stuff
-    seller: UserId,
-    trades: Item, // Seller will give this item
-    wants: Item,
-    amount: u16, // Seller wants this amount
-    stock: u16,  // Trades in stock
+    pub seller: UserId,
+    pub item: Item,    // Seller will give this item
+    pub quantity: u16, // Seller will give this amount
+    pub wants: Item,
+    pub wanted_amount: u16, // Seller wants this amount
+    pub stock: u16,         // How many times this trade can be done
 
     // Technical stuff
     created_at: SystemTime,
-    expires_in: Duration,
 
-    buyers: HashSet<UserId>,
+    pub buyers: HashSet<UserId>,
+
+    pub message_id: Option<MessageId>,
 }
 
 /// Hours till trade is expired
-const EXPIRATION_TIME: u64 = 2 * 24; // TODO: Discuss about this number
+pub const EXPIRATION_TIME: Duration = Duration::from_hours(2 * 24); // TODO: Discuss about this number
 
 impl Trade {
     #[must_use]
     pub fn new(
         user: UserId,
-        trades: Item,
+        trade_item: Item,
+        trade_quantity: u16,
         wants: Item,
         amount: u16,
         stock: u16,
     ) -> Self {
         Self {
             seller: user,
-            trades,
+            item: trade_item,
+            quantity: trade_quantity,
             wants,
-            amount,
+            wanted_amount: amount,
             stock,
             created_at: SystemTime::now(),
-            expires_in: Duration::from_hours(EXPIRATION_TIME),
             buyers: HashSet::new(),
+            message_id: None,
         }
     }
 
+    /// # Panics
+    ///
+    /// Panics if the system clock has gone backwards since the trade was created.
     #[inline]
-    pub fn is_expired(&self) -> Result<bool, SystemTimeError> {
-        self.created_at.elapsed().map(|created| created > self.expires_in)
+    #[expect(dead_code, reason = "Future implementation")]
+    pub fn is_expired(&self) -> bool {
+        self.created_at.elapsed().unwrap() > EXPIRATION_TIME
+            || self.is_sold_out()
     }
 
     #[inline]

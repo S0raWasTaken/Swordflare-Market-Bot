@@ -6,6 +6,7 @@ pub enum Category {
     PassiveSkill,
     Weapon,
     Material,
+    Shard,
 }
 
 /// Number is max enchant
@@ -23,6 +24,7 @@ pub enum Rarity {
 impl Rarity {
     #[must_use]
     #[inline]
+    #[expect(dead_code)]
     pub fn max_enchant(self) -> u8 {
         self as u8
     }
@@ -65,12 +67,14 @@ impl<'de> Deserialize<'de> for Item {
     }
 }
 
-use Category::{ActiveSkill, Armor, Aura, Material, PassiveSkill, Weapon};
-use Rarity::{Common, Epic, Rare, Uncommon};
+use Category::{
+    ActiveSkill, Armor, Aura, Material, PassiveSkill, Shard, Weapon,
+};
+use Rarity::{Common, Epic, Legendary, Rare, Uncommon};
 use serde::{Deserialize, Serialize};
 
 #[rustfmt::skip]
-pub const ITEMS: [Item; 71] = [
+pub const ITEMS: [Item; 76] = [
 
     // Weapon
 
@@ -188,4 +192,12 @@ pub const ITEMS: [Item; 71] = [
         Item { name: "Sakura Aura",         category: Aura,         rarity: Epic },
 
         // Item { name: "Beta Aura",           category: Aura,         rarity: Legendary },
+    
+    // Shards
+
+        Item { name: "Common Shard",        category: Shard,        rarity: Common },
+        Item { name: "Uncommon Shard",      category: Shard,        rarity: Uncommon },
+        Item { name: "Rare Shard",          category: Shard,        rarity: Rare },
+        Item { name: "Epic Shard",          category: Shard,        rarity: Epic },
+        Item { name: "Legendary Shard",     category: Shard,        rarity: Legendary },
 ];
