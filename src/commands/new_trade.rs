@@ -1,5 +1,9 @@
-use crate::database::trade_db::{EXPIRATION_TIME, Trade};
-use crate::{Context, Res, items::ITEMS};
+use crate::database::trade_db::{Trade, TradeKind};
+use crate::post::build_trade_embed;
+use crate::{
+    Context, Res,
+    items::{ITEMS, Item},
+};
 use poise::{CreateReply, serenity_prelude as serenity};
 use std::time::Duration;
 
@@ -18,77 +22,82 @@ async fn autocomplete_item<'a>(
         .map(|i| i.name.to_string())
 }
 
-#[expect(clippy::too_many_lines)]
-#[poise::command(slash_command)]
-pub async fn new_trade(
-    ctx: Context<'_>,
-    #[autocomplete = "autocomplete_item"] trading_item: String,
+fn validate_input<'a>(
+    trading_item: &str,
+    for_item: &str,
     trade_quantity: u16,
-    #[autocomplete = "autocomplete_item"] for_item: String,
-    wants_amount: u16,
     stock: u16,
-) -> Res<()> {
+) -> Res<(&'a Item, &'a Item, u16)> {
     let item = ITEMS
         .iter()
-        .find(|i| i.name == trading_item)
+        .find(|i| i.name.to_lowercase() == trading_item.to_lowercase())
         .ok_or("Invalid item name")?;
-    let wants =
-        ITEMS.iter().find(|i| i.name == for_item).ok_or("Invalid item name")?;
+    let wants = ITEMS
+        .iter()
+        .find(|i| i.name.to_lowercase() == for_item.to_lowercase())
+        .ok_or("Invalid item name")?;
 
     if trade_quantity == 0 {
-        ctx.send(
-            CreateReply::default()
-                .content("❌ Trade quantity must be greater than zero.")
-                .ephemeral(true),
-        )
-        .await?;
-        return Ok(());
+        return Err("Trade quantity must be greater than zero.".into());
     }
 
-    // stock means total items; lots = how many times the trade can be done
     let lots = stock / trade_quantity;
     if lots == 0 {
-        ctx.send(
-            CreateReply::default()
-                .content(format!(
-                    "❌ Stock ({stock}) must be at least equal to trade quantity ({trade_quantity})."
-                ))
-                .ephemeral(true),
+        return Err(format!(
+            "Stock ({stock}) must be at least equal to trade quantity ({trade_quantity})."
         )
-        .await?;
-        return Ok(());
+        .into());
     }
 
-    let seller = ctx.author();
-    let avatar_url =
-        seller.avatar_url().unwrap_or_else(|| seller.default_avatar_url());
+    Ok((item, wants, lots))
+}
 
-    // Step 1: Show confirmation
-    let confirm_embed = serenity::CreateEmbed::default()
+fn build_confirm_embed(
+    item: &Item,
+    wants: &Item,
+    trade_quantity: u16,
+    wants_amount: u16,
+    lots: u16,
+    avatar_url: String,
+) -> serenity::CreateEmbed {
+    serenity::CreateEmbed::default()
         .title("Confirm Trade Post")
         .description(format!(
             "You're about to sell a total of **x{} {}** across **{lots}** lot(s) of x{trade_quantity} each.",
             lots * trade_quantity,
             item.name,
         ))
-        .thumbnail(avatar_url.clone())
-        .field(
-            "Offering (per lot)",
-            format!("**{}** x{} ({:?})", item.name, trade_quantity, item.rarity),
-            true,
-        )
-        .field(
-            "Wants (per lot)",
-            format!("**{}** x{} ({:?})", wants.name, wants_amount, wants.rarity),
-            true,
-        )
+        .thumbnail(avatar_url)
+        .field("Offering (per lot)", format!("**{}** x{} ({:?})", item.name, trade_quantity, item.rarity), true)
+        .field("Wants (per lot)", format!("**{}** x{} ({:?})", wants.name, wants_amount, wants.rarity), true)
         .field("Lots available", lots.to_string(), true)
-        .color(serenity::Color::GOLD);
+        .color(serenity::Color::GOLD)
+}
+
+async fn show_confirmation(
+    ctx: &Context<'_>,
+    item: &Item,
+    wants: &Item,
+    trade_quantity: u16,
+    wants_amount: u16,
+    lots: u16,
+) -> Res<Option<serenity::ComponentInteraction>> {
+    let seller = ctx.author();
+    let avatar_url =
+        seller.avatar_url().unwrap_or_else(|| seller.default_avatar_url());
+    let embed = build_confirm_embed(
+        item,
+        wants,
+        trade_quantity,
+        wants_amount,
+        lots,
+        avatar_url,
+    );
 
     let reply = ctx
         .send(
             CreateReply::default()
-                .embed(confirm_embed)
+                .embed(embed)
                 .components(vec![serenity::CreateActionRow::Buttons(vec![
                     serenity::CreateButton::new("confirm_new_trade")
                         .label("Post Trade")
@@ -110,14 +119,14 @@ pub async fn new_trade(
     else {
         reply
             .edit(
-                ctx,
+                *ctx,
                 CreateReply::default()
                     .content("⏰ Trade confirmation timed out.")
                     .components(vec![]),
             )
             .await
             .ok();
-        return Ok(());
+        return Ok(None);
     };
 
     if component.data.custom_id == "cancel_new_trade" {
@@ -131,10 +140,22 @@ pub async fn new_trade(
                 ),
             )
             .await?;
-        return Ok(());
+        return Ok(None);
     }
 
-    // Step 2: Post the trade using `lots` as the DB stock
+    Ok(Some(component))
+}
+
+async fn post_trade(
+    ctx: &Context<'_>,
+    component: serenity::ComponentInteraction,
+    item: &Item,
+    wants: &Item,
+    trade_quantity: u16,
+    wants_amount: u16,
+    lots: u16,
+) -> Res<()> {
+    let seller = ctx.author();
     let trade = Trade::new(
         seller.id,
         *item,
@@ -142,62 +163,33 @@ pub async fn new_trade(
         *wants,
         wants_amount,
         lots,
+        TradeKind::Normal,
     );
-    let trade_id = ctx.data().trades.write(|db| db.insert(trade))?;
-    ctx.data().trades.save()?;
-
-    let embed = serenity::CreateEmbed::default()
-        .title(format!("Trade by {}", seller.name))
-        .thumbnail(avatar_url)
-        .field(
-            "Offering",
-            format!(
-                "**{}** x{} ({:?})",
-                item.name, trade_quantity, item.rarity
-            ),
-            true,
-        )
-        .field(
-            "Wants",
-            format!(
-                "**{}** x{} ({:?})",
-                wants.name, wants_amount, wants.rarity
-            ),
-            true,
-        )
-        .field("Stock", format!("{lots} lot(s) remaining"), true)
-        .color(serenity::Color::GOLD);
-
-    let buttons = serenity::CreateActionRow::Buttons(vec![
-        serenity::CreateButton::new(format!("buy_{trade_id}"))
-            .label("Buy")
-            .style(serenity::ButtonStyle::Success),
-    ]);
 
     let data = ctx.data();
+    let trade_id = data.trades.write(|db| db.insert(trade.clone()))?;
+    data.trades.save()?;
+
     let message = data
         .trade_posting_channel
         .send_message(
             ctx.http(),
             serenity::CreateMessage::default()
-                .embed(embed)
-                .components(vec![buttons]),
+                .embed(build_trade_embed(&trade, seller))
+                .components(vec![serenity::CreateActionRow::Buttons(vec![
+                    serenity::CreateButton::new(format!("buy_{trade_id}"))
+                        .label("Buy")
+                        .style(serenity::ButtonStyle::Success),
+                ])]),
         )
         .await?;
 
     data.trades.write(|db| {
-        if let Some(trade) = db.get_mut(trade_id) {
-            trade.message_id = Some(message.id);
+        if let Some(t) = db.get_mut(trade_id) {
+            t.message_id = Some(message.id);
         }
     })?;
     data.trades.save()?;
-
-    let http = ctx.serenity_context().http.clone();
-    let channel_id = data.trade_posting_channel;
-    tokio::spawn(async move {
-        tokio::time::sleep(EXPIRATION_TIME).await;
-        let _ = channel_id.delete_message(&http, message.id).await;
-    });
 
     component
         .create_response(
@@ -211,4 +203,37 @@ pub async fn new_trade(
         .await?;
 
     Ok(())
+}
+
+#[poise::command(slash_command)]
+pub async fn new_trade(
+    ctx: Context<'_>,
+    #[autocomplete = "autocomplete_item"]
+    #[description = "The item you are offering"]
+    trading_item: String,
+    #[description = "How many of the item you are offering per lot"]
+    trade_quantity: u16,
+    #[autocomplete = "autocomplete_item"]
+    #[description = "The item you want in return"]
+    for_item: String,
+    #[description = "How many of the wanted item you expect per lot"]
+    wants_amount: u16,
+    #[description = "Total amount of the offered item you have in stock"] stock: u16,
+) -> Res<()> {
+    let (item, wants, lots) =
+        validate_input(&trading_item, &for_item, trade_quantity, stock)?;
+    let Some(component) = show_confirmation(
+        &ctx,
+        item,
+        wants,
+        trade_quantity,
+        wants_amount,
+        lots,
+    )
+    .await?
+    else {
+        return Ok(());
+    };
+    post_trade(&ctx, component, item, wants, trade_quantity, wants_amount, lots)
+        .await
 }

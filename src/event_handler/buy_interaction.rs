@@ -1,6 +1,6 @@
-use crate::{Error, Res};
-use poise::serenity_prelude::{self as serenity, CacheHttp, CreateMessage};
-use std::time::Duration;
+use crate::{Error, Res, post::update_post};
+use poise::serenity_prelude::{self as serenity, CreateMessage};
+use std::{env, time::Duration};
 
 const CONFIRMATION_TIMEOUT: Duration = Duration::from_hours(24);
 
@@ -190,14 +190,17 @@ async fn prompt_lots(
 
     if lots == 0 || lots > trade_ctx.stock {
         modal
-            .create_response(ctx, serenity::CreateInteractionResponse::Message(
-                serenity::CreateInteractionResponseMessage::default()
-                    .ephemeral(true)
-                    .content(format!(
-                        "❌ Invalid amount. There are only {} lot(s) remaining.",
-                        trade_ctx.stock
-                    )),
-            ))
+            .create_response(
+                ctx,
+                serenity::CreateInteractionResponse::Message(
+                    serenity::CreateInteractionResponseMessage::default().ephemeral(true).content(
+                        format!(
+                            "❌ Invalid amount. There are only {} lot(s) remaining.",
+                            trade_ctx.stock
+                        ),
+                    ),
+                ),
+            )
             .await?;
         return Ok(None);
     }
@@ -326,6 +329,9 @@ async fn send_trade_dms<'a>(
         ..
     } = trade_ctx;
 
+    // Confirmed to be set in `fn main()`
+    let private_server_link = env::var("TRADING_PRIVATE_SERVER_LINK").unwrap();
+
     let buyer_dm = buyer.id.create_dm_channel(ctx).await?;
     let buyer_msg = buyer_dm
         .send_message(
@@ -333,8 +339,9 @@ async fn send_trade_dms<'a>(
             CreateMessage::default()
                 .content(format!(
                     "You're about to buy **x{} {}** in exchange for **x{} {}** \
-                ({lots} lot(s)) from **{seller_name}**.\n\
-                Go find them in-game and confirm once the trade is done.",
+                    ({lots} lot(s)) from **{seller_name}**.\n\
+                    Go find them in-game and confirm once the trade is done.\n\
+                    {private_server_link}",
                     item_quantity * lots,
                     item.name,
                     wanted_amount * lots,
@@ -365,7 +372,8 @@ async fn send_trade_dms<'a>(
 
     let content = format!(
         "**{}** wants to buy **x{} {}** from you in exchange for **x{} {}** \
-        ({lots} lot(s)).\nGo find them in-game and confirm once done.",
+        ({lots} lot(s)).\nGo find them in-game and confirm once done.\n\
+        {private_server_link}",
         buyer.name,
         item_quantity * lots,
         item.name,
@@ -457,7 +465,7 @@ async fn await_confirmations(
                 seller_dm.send_message(ctx, serenity::CreateMessage::default()
                     .content(format!("⚠️ **{}** cancelled the trade.", buyer.name))
                 ).await?;
-                cleanup(ctx, buyer_msg, seller_msg).await;
+                dm_cleanup(ctx, buyer_msg, seller_msg).await;
                 return Ok(());
             }
 
@@ -475,7 +483,7 @@ async fn await_confirmations(
                 buyer_int.create_followup(ctx, serenity::CreateInteractionResponseFollowup::default()
                     .ephemeral(true).content(format!("⚠️ **{seller_name}** cancelled the trade."))
                 ).await?;
-                cleanup(ctx, buyer_msg, seller_msg).await;
+                dm_cleanup(ctx, buyer_msg, seller_msg).await;
                 return Ok(());
             }
 
@@ -492,7 +500,7 @@ async fn await_confirmations(
                 buyer_dm.send_message(ctx, serenity::CreateMessage::default()
                     .content(format!("⚠️ **{seller_name}** cancelled the trade."))
                 ).await?;
-                cleanup(ctx, buyer_msg, seller_msg).await;
+                dm_cleanup(ctx, buyer_msg, seller_msg).await;
                 return Ok(());
             }
 
@@ -510,7 +518,7 @@ async fn await_confirmations(
                 seller_int.create_followup(ctx, serenity::CreateInteractionResponseFollowup::default()
                     .ephemeral(true).content(format!("⚠️ **{}** cancelled the trade.", buyer.name))
                 ).await?;
-                cleanup(ctx, buyer_msg, seller_msg).await;
+                dm_cleanup(ctx, buyer_msg, seller_msg).await;
                 return Ok(());
             }
 
@@ -522,7 +530,7 @@ async fn await_confirmations(
 }
 
 /// Deletes both DM messages.
-async fn cleanup(
+async fn dm_cleanup(
     ctx: &serenity::Context,
     buyer_msg: &serenity::Message,
     seller_msg: &serenity::Message,
@@ -565,8 +573,8 @@ async fn finish_trade(
     })?;
     data.trades.save()?;
 
-    update_or_delete_post(ctx, data, trade_ctx).await?;
-    cleanup(ctx, buyer_msg, seller_msg).await;
+    update_post(ctx, data, *trade_id).await?;
+    dm_cleanup(ctx, buyer_msg, seller_msg).await;
 
     let buyer_content = format!(
         "✅ Trade confirmed! You gave **x{} {}** to **{seller_name}** and received **x{} {}**. Thanks for trading!",
@@ -634,76 +642,6 @@ async fn finish_trade(
             )
             .await?;
     }
-
-    Ok(())
-}
-
-/// Edits the trade post to reflect new stock, or deletes it if sold out.
-async fn update_or_delete_post(
-    ctx: &serenity::Context,
-    data: &crate::Data,
-    trade_ctx: &TradeContext,
-) -> Res<()> {
-    let (message_id, trade) = {
-        let db = data.trades.borrow_data()?;
-        match db.get(trade_ctx.trade_id) {
-            Some(t) => match t.message_id {
-                Some(mid) => (mid, t.clone()),
-                None => return Ok(()),
-            },
-            None => return Ok(()),
-        }
-    };
-
-    if trade.is_sold_out() {
-        data.trade_posting_channel
-            .delete_message(ctx.http(), message_id)
-            .await?;
-        return Ok(());
-    }
-
-    let seller = trade.seller.to_user(ctx).await?;
-    let avatar_url =
-        seller.avatar_url().unwrap_or_else(|| seller.default_avatar_url());
-
-    let embed = serenity::CreateEmbed::default()
-        .title(format!("Trade by {}", seller.name))
-        .thumbnail(avatar_url)
-        .field(
-            "Offering",
-            format!(
-                "**{}** x{} ({:?})",
-                trade.item.name, trade.quantity, trade.item.rarity
-            ),
-            true,
-        )
-        .field(
-            "Wants",
-            format!(
-                "**{}** x{} ({:?})",
-                trade.wants.name, trade.wanted_amount, trade.wants.rarity
-            ),
-            true,
-        )
-        .field("Stock", format!("{} lot(s) remaining", trade.stock), true)
-        .color(serenity::Color::GOLD);
-
-    data.trade_posting_channel
-        .edit_message(
-            ctx.http(),
-            message_id,
-            serenity::EditMessage::default().embed(embed).components(vec![
-                serenity::CreateActionRow::Buttons(vec![
-                    serenity::CreateButton::new(format!(
-                        "buy_{}",
-                        trade_ctx.trade_id
-                    ))
-                    .label("Buy")
-                    .style(serenity::ButtonStyle::Success),
-                ]),
-            ]),
-        )
-        .await?;
 
     Ok(())
 }

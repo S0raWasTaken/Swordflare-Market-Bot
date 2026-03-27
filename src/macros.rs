@@ -21,3 +21,32 @@ macro_rules! embed {
 
     }};
 }
+
+#[macro_export]
+macro_rules! get_vars {
+    ($($var:expr),*) => {
+        ($({
+            let Ok(var) = std::env::var($var) else {
+                return Err(format!("{} must be set!", $var).into());
+            };
+            var
+        }),*)
+    };
+}
+
+/// Logs a timestamped message to stdout or stderr.
+///
+/// # Usage
+/// ```
+/// log!("Connected from {address}");       // stdout
+/// log!(e "Auth failed for {address}");    // stderr
+/// ```
+#[macro_export]
+macro_rules! log {
+    (e $($arg:tt)*) => {
+        eprintln!("[{}] {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), format_args!($($arg)*))
+    };
+    ($($arg:tt)*) => {
+        println!("[{}] {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), format_args!($($arg)*))
+    };
+}
