@@ -1,6 +1,6 @@
 #![warn(clippy::pedantic)]
 
-use std::env;
+use std::{fmt::Display, sync::LazyLock, time::Duration};
 
 use dotenv::dotenv;
 use poise::{
@@ -8,36 +8,47 @@ use poise::{
     samples::register_globally,
     serenity_prelude::{ClientBuilder, GatewayIntents},
 };
+use tokio::time::interval;
 
-use crate::{commands::commands, database::Data, event_handler::event_handler};
+use crate::{
+    cleanup::cleanup, commands::commands, database::Data,
+    event_handler::event_handler,
+};
 
+mod cleanup;
 mod commands;
 mod database;
 mod event_handler;
 mod items;
 mod macros;
+mod post;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
 type Res<T> = Result<T, Error>;
 
+pub static TRADING_SERVER_LINK: LazyLock<String> = LazyLock::new(|| {
+    std::env::var("TRADING_PRIVATE_SERVER_LINK")
+        .expect("TRADING_PRIVATE_SERVER_LINK must be set")
+});
+
 #[tokio::main]
 async fn main() -> Res<()> {
     dotenv()?;
-    let intents = GatewayIntents::non_privileged();
 
-    let token = env::var("DISCORD_TOKEN").expect("DISCORD_TOKEN must be set");
-
-    let trading_channel_id =
-        env::var("TRADING_CHANNEL_ID").expect("TRADING_CHANNEL_ID must be set");
-    let interaction_menu_channel_id = env::var("INTERACTION_MENU_CHANNEL_ID")
-        .expect("INTERACTION_CHANNEL_MENU_ID must be set");
+    let (token, trading_channel_id, interaction_menu_channel_id) = get_vars!(
+        "DISCORD_TOKEN",
+        "TRADING_CHANNEL_ID",
+        "INTERACTION_MENU_CHANNEL_ID"
+    );
 
     let data = Data::new(&trading_channel_id, &interaction_menu_channel_id)?;
 
     let mut client =
-        ClientBuilder::new(token, intents).framework(framework(data)).await?;
+        ClientBuilder::new(token, GatewayIntents::non_privileged())
+            .framework(framework(data))
+            .await?;
 
     client.start().await?;
 
@@ -79,8 +90,24 @@ fn framework(data: Data) -> Framework<Data, Error> {
             Box::pin(async move {
                 println!("{} is on!", ready.user.name);
                 register_globally(ctx, &framework.options().commands).await?;
+
+                let data_clone = data.clone(); // Custom clone, Arc inside
+                let ctx_clone = ctx.clone();
+                tokio::spawn(async move {
+                    // MAGIC NUMBER!!
+                    let mut interval = interval(Duration::from_mins(10));
+                    loop {
+                        interval.tick().await;
+                        cleanup(&ctx_clone, &data_clone).await;
+                    }
+                });
+
                 Ok(data)
             })
         })
         .build()
+}
+
+pub fn print_err<E: Display>(e: &E) {
+    log!(e "{e}");
 }
