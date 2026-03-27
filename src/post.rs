@@ -60,16 +60,16 @@ fn build_normal_embed(
         .field(
             "Offering",
             format!(
-                "**{}** x{} ({:?})",
-                trade.item.name, trade.quantity, trade.item.rarity
+                "**{}** x{} ({})",
+                trade.item, trade.quantity, trade.item.rarity
             ),
             true,
         )
         .field(
             "Wants",
             format!(
-                "**{}** x{} ({:?})",
-                trade.wants.name, trade.wanted_amount, trade.wants.rarity
+                "**{}** x{} ({})",
+                trade.wants, trade.wanted_amount, trade.wants.rarity
             ),
             true,
         )

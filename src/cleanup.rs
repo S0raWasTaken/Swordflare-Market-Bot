@@ -11,7 +11,9 @@ use crate::{
 
 pub async fn cleanup(ctx: &SerenityContext, data: &Data) {
     let trades: Vec<(u64, Trade)> = {
-        let Ok(db) = data.trades.borrow_data() else { return };
+        let Ok(db) = data.trades.borrow_data().inspect_err(print_err) else {
+            return;
+        };
         db.iter().map(|(id, trade)| (id, trade.clone())).collect()
     };
 
@@ -39,8 +41,8 @@ async fn delete_post_message(
     trade.delete_message(ctx, data).await;
 
     if matches!(status, TradeStatus::Invalid) {
-        let data = &data.trades;
-        data.write(|db| db.remove(trade_id)).inspect_err(print_err).ok();
-        data.save().inspect_err(print_err).ok();
+        let trades_db = &data.trades;
+        trades_db.write(|db| db.remove(trade_id)).inspect_err(print_err).ok();
+        trades_db.save().inspect_err(print_err).ok();
     }
 }

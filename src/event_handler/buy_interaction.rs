@@ -1,6 +1,6 @@
-use crate::{Error, Res, post::update_post};
+use crate::{Error, Res, TRADING_SERVER_LINK, post::update_post};
 use poise::serenity_prelude::{self as serenity, CreateMessage};
-use std::{env, time::Duration};
+use std::time::Duration;
 
 const CONFIRMATION_TIMEOUT: Duration = Duration::from_hours(24);
 
@@ -226,7 +226,7 @@ async fn confirm_purchase(
             "You will receive",
             format!(
                 "**{}** x{}",
-                trade_ctx.item.name,
+                trade_ctx.item,
                 u32::from(trade_ctx.item_quantity) * u32::from(lots)
             ),
             true,
@@ -235,7 +235,7 @@ async fn confirm_purchase(
             "You will give",
             format!(
                 "**{}** x{}",
-                trade_ctx.wants.name,
+                trade_ctx.wants,
                 u32::from(trade_ctx.wanted_amount) * u32::from(lots)
             ),
             true,
@@ -330,7 +330,7 @@ async fn send_trade_dms<'a>(
     } = trade_ctx;
 
     // Confirmed to be set in `fn main()`
-    let private_server_link = env::var("TRADING_PRIVATE_SERVER_LINK").unwrap();
+    let private_server_link = &*TRADING_SERVER_LINK;
 
     let buyer_dm = buyer.id.create_dm_channel(ctx).await?;
     let buyer_msg = buyer_dm
@@ -343,9 +343,9 @@ async fn send_trade_dms<'a>(
                     Go find them in-game and confirm once the trade is done.\n\
                     {private_server_link}",
                     item_quantity * lots,
-                    item.name,
+                    item,
                     wanted_amount * lots,
-                    wants.name,
+                    wants,
                 ))
                 .components(vec![serenity::CreateActionRow::Buttons(vec![
                     serenity::CreateButton::new(format!(
@@ -376,9 +376,9 @@ async fn send_trade_dms<'a>(
         {private_server_link}",
         buyer.name,
         item_quantity * lots,
-        item.name,
+        item,
         wanted_amount * lots,
-        wants.name,
+        wants,
     );
 
     let components = vec![serenity::CreateActionRow::Buttons(vec![
@@ -579,26 +579,26 @@ async fn finish_trade(
     let buyer_content = format!(
         "✅ Trade confirmed! You gave **x{} {}** to **{seller_name}** and received **x{} {}**. Thanks for trading!",
         wanted_amount * quantity,
-        wants.name,
+        wants,
         item_quantity * quantity,
-        item.name,
+        item,
     );
     let seller_content = if is_sold_out {
         format!(
             "✅ Trade confirmed! You gave **x{} {}** and received **x{} {}** from **{}** — all stock sold, post removed.",
             item_quantity * quantity,
-            item.name,
+            item,
             wanted_amount * quantity,
-            wants.name,
+            wants,
             buyer.name,
         )
     } else {
         format!(
             "✅ Trade confirmed! You gave **x{} {}** and received **x{} {}** from **{}**. Stock decremented.",
             item_quantity * quantity,
-            item.name,
+            item,
             wanted_amount * quantity,
-            wants.name,
+            wants,
             buyer.name,
         )
     };

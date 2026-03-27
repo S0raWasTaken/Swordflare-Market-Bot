@@ -22,6 +22,14 @@ macro_rules! embed {
     }};
 }
 
+/// Reads environment variables and returns them as a tuple.
+///
+/// # Early Return
+/// If any variable is not set, this macro **returns early** from the enclosing
+/// function with `Err(format!("{var} must be set!").into())`.
+///
+/// # Requirements
+/// Must be used inside a function returning `Result<T, E>` where `E: From<String>`.
 #[macro_export]
 macro_rules! get_vars {
     ($($var:expr),*) => {

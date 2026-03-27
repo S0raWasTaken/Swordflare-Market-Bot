@@ -1,6 +1,6 @@
 #![warn(clippy::pedantic)]
 
-use std::{fmt::Display, time::Duration};
+use std::{fmt::Display, sync::LazyLock, time::Duration};
 
 use dotenv::dotenv;
 use poise::{
@@ -28,15 +28,19 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 
 type Res<T> = Result<T, Error>;
 
+pub static TRADING_SERVER_LINK: LazyLock<String> = LazyLock::new(|| {
+    std::env::var("TRADING_PRIVATE_SERVER_LINK")
+        .expect("TRADING_PRIVATE_SERVER_LINK must be set")
+});
+
 #[tokio::main]
 async fn main() -> Res<()> {
     dotenv()?;
 
-    let (token, trading_channel_id, interaction_menu_channel_id, _) = get_vars!(
+    let (token, trading_channel_id, interaction_menu_channel_id) = get_vars!(
         "DISCORD_TOKEN",
         "TRADING_CHANNEL_ID",
-        "INTERACTION_MENU_CHANNEL_ID",
-        "TRADING_PRIVATE_SERVER_LINK"
+        "INTERACTION_MENU_CHANNEL_ID"
     );
 
     let data = Data::new(&trading_channel_id, &interaction_menu_channel_id)?;

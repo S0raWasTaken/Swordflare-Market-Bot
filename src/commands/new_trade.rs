@@ -1,5 +1,6 @@
 use crate::database::trade_db::{Trade, TradeKind};
 use crate::post::build_trade_embed;
+use crate::print_err;
 use crate::{
     Context, Res,
     items::{ITEMS, Item},
@@ -31,11 +32,11 @@ fn validate_input<'a>(
     let item = ITEMS
         .iter()
         .find(|i| i.name.to_lowercase() == trading_item.to_lowercase())
-        .ok_or("Invalid item name")?;
+        .ok_or_else(|| format!("Invalid trading item: '{trading_item}'"))?;
     let wants = ITEMS
         .iter()
         .find(|i| i.name.to_lowercase() == for_item.to_lowercase())
-        .ok_or("Invalid item name")?;
+        .ok_or_else(|| format!("Invalid wanted item: '{for_item}'"))?;
 
     if trade_quantity == 0 {
         return Err("Trade quantity must be greater than zero.".into());
@@ -65,11 +66,11 @@ fn build_confirm_embed(
         .description(format!(
             "You're about to sell a total of **x{} {}** across **{lots}** lot(s) of x{trade_quantity} each.",
             lots * trade_quantity,
-            item.name,
+            item,
         ))
         .thumbnail(avatar_url)
-        .field("Offering (per lot)", format!("**{}** x{} ({:?})", item.name, trade_quantity, item.rarity), true)
-        .field("Wants (per lot)", format!("**{}** x{} ({:?})", wants.name, wants_amount, wants.rarity), true)
+        .field("Offering (per lot)", format!("**{}** x{} ({})", item, trade_quantity, item.rarity), true)
+        .field("Wants (per lot)", format!("**{}** x{} ({})", wants, wants_amount, wants.rarity), true)
         .field("Lots available", lots.to_string(), true)
         .color(serenity::Color::GOLD)
 }
@@ -168,7 +169,6 @@ async fn post_trade(
 
     let data = ctx.data();
     let trade_id = data.trades.write(|db| db.insert(trade.clone()))?;
-    data.trades.save()?;
 
     let message = data
         .trade_posting_channel
@@ -182,7 +182,16 @@ async fn post_trade(
                         .style(serenity::ButtonStyle::Success),
                 ])]),
         )
-        .await?;
+        .await
+        .inspect_err(|e| {
+            // Rollback the in-memory insert on failure
+            print_err(e);
+            if let Err(rollback_err) =
+                data.trades.write(|db| db.remove(trade_id))
+            {
+                print_err(&rollback_err);
+            }
+        })?;
 
     data.trades.write(|db| {
         if let Some(t) = db.get_mut(trade_id) {

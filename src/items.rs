@@ -1,3 +1,11 @@
+use std::fmt::Display;
+
+use Category::{
+    ActiveSkill, Armor, Aura, Material, PassiveSkill, Shard, Weapon,
+};
+use Rarity::{Common, Epic, Legendary, Rare, Uncommon};
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum Category {
     Armor,
@@ -20,6 +28,22 @@ pub enum Rarity {
     Legendary = 30,
 }
 
+impl Display for Rarity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Common => "Common",
+                Uncommon => "Uncommon",
+                Rare => "Rare",
+                Epic => "Epic",
+                Legendary => "Legendary",
+            }
+        )
+    }
+}
+
 // Just for readability
 impl Rarity {
     #[must_use]
@@ -35,6 +59,13 @@ pub struct Item {
     pub name: &'static str,
     pub category: Category,
     pub rarity: Rarity,
+    //pub emoji: &'static str, TODO: emoji display
+}
+
+impl Display for Item {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
 // Custom Deserialize impl because serde's derive macro
@@ -66,12 +97,6 @@ impl<'de> Deserialize<'de> for Item {
         Ok(Item { name, category: helper.category, rarity: helper.rarity })
     }
 }
-
-use Category::{
-    ActiveSkill, Armor, Aura, Material, PassiveSkill, Shard, Weapon,
-};
-use Rarity::{Common, Epic, Legendary, Rare, Uncommon};
-use serde::{Deserialize, Serialize};
 
 #[rustfmt::skip]
 pub const ITEMS: [Item; 76] = [
