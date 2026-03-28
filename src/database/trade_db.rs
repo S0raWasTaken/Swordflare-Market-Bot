@@ -1,12 +1,17 @@
 use std::{
     collections::{HashMap, HashSet},
-    time::{Duration, SystemTime},
+    time::SystemTime,
 };
 
 use poise::serenity_prelude::{Context, MessageId, UserId};
 use serde::{Deserialize, Serialize};
 
-use crate::{database::Data, items::Item, print_err};
+use crate::{
+    database::Data,
+    items::Item,
+    magic_numbers::{MODERATION_HOLD_PERIOD, TRADE_EXPIRATION_TIME},
+    print_err,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TradeData {
@@ -101,13 +106,10 @@ impl From<&Trade> for TradeStatus {
         // so it's either waiting for moderation or it's allowed to rest in peace,
         // buried in the database.
 
-        // MAGIC NUMBER!!
-        let moderation_hold_period = Duration::from_hours(3 * 24);
-
         if value
             .last_updated
             .elapsed()
-            .is_ok_and(|e| e > moderation_hold_period)
+            .is_ok_and(|e| e > MODERATION_HOLD_PERIOD)
         {
             Self::Historical
         } else {
@@ -139,9 +141,6 @@ pub struct Trade {
 
     pub moderated: bool,
 }
-
-/// Duration until a trade expires (2 days)
-pub const EXPIRATION_TIME: Duration = Duration::from_hours(2 * 24); // TODO: Discuss about this number
 
 impl Trade {
     #[must_use]
@@ -179,7 +178,7 @@ impl Trade {
     pub fn is_inactive(&self) -> bool {
         self.last_updated
             .elapsed()
-            .is_ok_and(|elapsed| elapsed > EXPIRATION_TIME) // Treat clock regression as not expired
+            .is_ok_and(|elapsed| elapsed > TRADE_EXPIRATION_TIME) // Treat clock regression as not expired
             || self.is_sold_out()
             || self.moderated
     }

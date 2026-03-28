@@ -1,6 +1,6 @@
 #![warn(clippy::pedantic)]
 
-use std::{fmt::Display, sync::LazyLock, time::Duration};
+use std::{fmt::Display, sync::LazyLock};
 
 use dotenv::dotenv;
 use poise::{
@@ -8,11 +8,12 @@ use poise::{
     samples::register_globally,
     serenity_prelude::{ClientBuilder, GatewayIntents},
 };
+use rust_i18n::i18n;
 use tokio::time::interval;
 
 use crate::{
     cleanup::cleanup, commands::commands, database::Data,
-    event_handler::event_handler,
+    event_handler::event_handler, magic_numbers::DATABASE_CLEANUP_INTERVAL,
 };
 
 mod cleanup;
@@ -21,6 +22,7 @@ mod database;
 mod event_handler;
 mod items;
 mod macros;
+mod magic_numbers;
 mod post;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -36,6 +38,7 @@ pub static TRADING_SERVER_LINK: LazyLock<String> = LazyLock::new(|| {
 #[tokio::main]
 async fn main() -> Res<()> {
     dotenv()?;
+    i18n!("locales", fallback = "en");
 
     let (token, trading_channel_id, interaction_menu_channel_id) = get_vars!(
         "DISCORD_TOKEN",
@@ -94,8 +97,7 @@ fn framework(data: Data) -> Framework<Data, Error> {
                 let data_clone = data.clone(); // Custom clone, Arc inside
                 let ctx_clone = ctx.clone();
                 tokio::spawn(async move {
-                    // MAGIC NUMBER!!
-                    let mut interval = interval(Duration::from_mins(10));
+                    let mut interval = interval(DATABASE_CLEANUP_INTERVAL);
                     loop {
                         interval.tick().await;
                         cleanup(&ctx_clone, &data_clone).await;

@@ -4,8 +4,9 @@ use crate::{
     Res,
     database::{
         Data,
-        trade_db::{EXPIRATION_TIME, Trade, TradeKind},
+        trade_db::{Trade, TradeKind},
     },
+    magic_numbers::TRADE_EXPIRATION_TIME,
 };
 
 /// Builds a trade embed for the given trade and seller.
@@ -51,7 +52,7 @@ fn build_normal_embed(
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs()
-        + EXPIRATION_TIME.as_secs();
+        + TRADE_EXPIRATION_TIME.as_secs();
 
     serenity::CreateEmbed::default()
         .title(title)

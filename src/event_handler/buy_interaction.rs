@@ -1,8 +1,8 @@
-use crate::{Error, Res, TRADING_SERVER_LINK, post::update_post};
+use crate::{
+    Error, Res, TRADING_SERVER_LINK, magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
+    post::update_post,
+};
 use poise::serenity_prelude::{self as serenity, CreateMessage};
-use std::time::Duration;
-
-const CONFIRMATION_TIMEOUT: Duration = Duration::from_hours(24);
 
 // ── Data types ────────────────────────────────────────────────────────────────
 
@@ -149,7 +149,7 @@ async fn prompt_lots(
     let Some(modal) = serenity::collector::ModalInteractionCollector::new(ctx)
         .author_id(interaction.user.id)
         .custom_ids(vec![format!("quantity_{}", trade_ctx.trade_id)])
-        .timeout(CONFIRMATION_TIMEOUT)
+        .timeout(TRADE_CONFIRMATION_TIMEOUT)
         .next()
         .await
     else {
@@ -273,7 +273,7 @@ async fn confirm_purchase(
     let Some(component) = modal_msg
         .await_component_interaction(ctx)
         .author_id(modal.user.id)
-        .timeout(CONFIRMATION_TIMEOUT)
+        .timeout(TRADE_CONFIRMATION_TIMEOUT)
         .await
     else {
         return Ok(false);
@@ -435,7 +435,7 @@ async fn await_confirmations(
                 format!("confirm_buy_{trade_id}"),
                 format!("cancel_buy_{trade_id}"),
             ])
-            .timeout(CONFIRMATION_TIMEOUT)
+            .timeout(TRADE_CONFIRMATION_TIMEOUT)
             .next()
             .await
             .ok_or::<Error>("Timed out".into())
@@ -448,7 +448,7 @@ async fn await_confirmations(
                 format!("confirm_sell_{trade_id}"),
                 format!("cancel_sell_{trade_id}"),
             ])
-            .timeout(CONFIRMATION_TIMEOUT)
+            .timeout(TRADE_CONFIRMATION_TIMEOUT)
             .next()
             .await
             .ok_or::<Error>("Timed out".into())
