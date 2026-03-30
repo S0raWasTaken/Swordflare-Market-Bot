@@ -419,12 +419,10 @@ pub async fn new_trade(
             "https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
         );
 
-        return Err(t!(
-            "error.duplicate_post",
-            locale = locale,
-            message_link = message_link
-        )
-        .into());
+        ctx.defer_ephemeral().await?;
+
+        ctx.say(message_link).await?;
+        return Err(t!("error.duplicate_post", locale = locale,).into());
     }
 
     let Some(component) = show_confirmation(
