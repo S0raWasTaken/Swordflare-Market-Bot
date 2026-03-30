@@ -12,11 +12,10 @@ use poise::{
     samples::register_globally,
     serenity_prelude::{ClientBuilder, GatewayIntents},
 };
-use tokio::time::interval;
 
 use crate::{
     cleanup::cleanup, commands::commands, database::Data,
-    event_handler::event_handler, magic_numbers::DATABASE_CLEANUP_INTERVAL,
+    event_handler::event_handler,
 };
 
 mod cleanup;
@@ -112,15 +111,10 @@ fn framework(data: Data) -> Framework<Data, Error> {
                 println!("{} is on!", ready.user.name);
                 register_globally(ctx, &framework.options().commands).await?;
 
-                let data_clone = data.clone(); // Custom clone, Arc inside
+                let data_clone = data.clone();
                 let ctx_clone = ctx.clone();
-                tokio::spawn(async move {
-                    let mut interval = interval(DATABASE_CLEANUP_INTERVAL);
-                    loop {
-                        interval.tick().await;
-                        cleanup(&ctx_clone, &data_clone).await;
-                    }
-                });
+
+                tokio::spawn(cleanup(ctx_clone, data_clone));
 
                 Ok(data)
             })

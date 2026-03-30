@@ -1,15 +1,25 @@
 use poise::serenity_prelude::Context as SerenityContext;
+use tokio::time::interval;
 
 use crate::{
     database::{
         Data,
         trade_db::{Trade, TradeStatus},
     },
+    magic_numbers::DATABASE_CLEANUP_INTERVAL,
     post::update_post,
     print_err,
 };
 
-pub async fn cleanup(ctx: &SerenityContext, data: &Data) {
+pub async fn cleanup(ctx: SerenityContext, data: Data) {
+    let mut interval = interval(DATABASE_CLEANUP_INTERVAL);
+    loop {
+        interval.tick().await;
+        clean_database(&ctx, &data).await;
+    }
+}
+
+pub async fn clean_database(ctx: &SerenityContext, data: &Data) {
     let trades: Vec<(u64, Trade)> = {
         let Ok(db) = data.trades.borrow_data().inspect_err(print_err) else {
             return;
