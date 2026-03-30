@@ -64,7 +64,7 @@ buy.done.buyer: "✅ Trade confirmed! You gave **x%{wants_total} %{wants}** to *
 buy.done.seller: "✅ Trade confirmed! You gave **x%{item_total} %{item}** and received **x%{wants_total} %{wants}** from **%{buyer}**. Stock decremented."
 buy.done.seller_sold_out: "✅ Trade confirmed! You gave **x%{item_total} %{item}** and received **x%{wants_total} %{wants}** from **%{buyer}** — all stock sold, post removed."
 
-# ── post embed ─────────────────────────────────────────────────────────────────
+# ── post embed ─ only used in Korean and English ─ Do not translate for other languages
 post.title: "Trade by %{seller}"
 post.title_sold_out: "[SOLD OUT] Trade by %{seller}"
 post.expires: "Expires <t:%{unix}:R>"
