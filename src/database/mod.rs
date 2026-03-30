@@ -49,8 +49,6 @@ pub struct Data {
     pub languages: Arc<LanguageDatabase>,
     pub blacklist: Arc<Blacklist>,
     pub trade_posting_channel: DoubleChannelId,
-    #[expect(unused, reason = "Will be the last thing to be implemented")]
-    pub bot_menu_channel: DoubleChannelId,
     pub admin_role: RoleId,
 }
 
@@ -58,9 +56,6 @@ impl Data {
     pub fn new(
         english_posting_channel: &str,
         korean_posting_channel: &str,
-
-        english_menu_channel: &str,
-        korean_menu_channel: &str,
 
         admin_role_id: &str,
     ) -> Res<Self> {
@@ -77,10 +72,6 @@ impl Data {
             trade_posting_channel: DoubleChannelId::new(
                 english_posting_channel,
                 korean_posting_channel,
-            )?,
-            bot_menu_channel: DoubleChannelId::new(
-                english_menu_channel,
-                korean_menu_channel,
             )?,
             admin_role: RoleId::new(admin_role_id.parse()?),
         })
