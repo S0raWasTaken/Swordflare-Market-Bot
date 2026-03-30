@@ -33,7 +33,7 @@ impl Category {
 
 /// Number is max enchant
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum Rarity {
     Common = 8,
     Uncommon = 12,
@@ -63,7 +63,7 @@ impl Rarity {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub struct Item {
     pub name: ItemName,
     pub category: Category,

@@ -191,6 +191,16 @@ pub struct Trade {
     pub moderated: bool,
 }
 
+impl PartialEq for Trade {
+    fn eq(&self, other: &Self) -> bool {
+        self.seller == other.seller
+            && self.item == other.item
+            && self.quantity == other.quantity
+            && self.wants == other.wants
+            && self.wanted_amount == other.wanted_amount
+    }
+}
+
 impl Trade {
     #[must_use]
     #[expect(clippy::too_many_arguments)]

@@ -7,6 +7,7 @@ error.invalid_custom_id: "Invalid custom_id"
 error.trade_not_found: "Trade not found"
 error.missing_lots_input: "Missing lots input"
 error.invalid_number: "Invalid number"
+error.duplicate_post: "Duplicate post! Edit your original post here: %{message_link}"
 
 # ── new_trade: confirmation embed ──────────────────────────────────────────────
 new_trade.confirm.title: "Confirm Trade Post"

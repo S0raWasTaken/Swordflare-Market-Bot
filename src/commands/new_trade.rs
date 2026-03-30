@@ -1,10 +1,10 @@
 use crate::database::Data;
 use crate::database::supported_locale::{SupportedLocale, get_user_locale};
-use crate::database::trade_db::{Trade, TradeKind};
+use crate::database::trade_db::{Trade, TradeKind, TradeStatus};
 use crate::post::build_trade_embed;
 use crate::print_err;
 use crate::{Context, Res, item_name::ItemName, items::ITEMS, t};
-use poise::serenity_prelude::Message;
+use poise::serenity_prelude::{Message, UserId};
 use poise::{CreateReply, serenity_prelude as serenity};
 use std::time::Duration;
 
@@ -318,9 +318,42 @@ async fn post_trade(
     Ok(())
 }
 
+fn check_dupe(
+    data: &Data,
+    seller: UserId,
+    wants: ItemName,
+    wants_amount: u16,
+    item: ItemName,
+    item_quantity: u16,
+    lots: u16,
+) -> Res<Option<Trade>> {
+    let test_trade = Trade::new(
+        seller,
+        *item.item(),
+        item_quantity,
+        *wants.item(),
+        wants_amount,
+        lots,
+        TradeKind::Normal,
+        SupportedLocale::default(),
+    );
+
+    Ok(data.trades.read(|db| {
+        db.iter().find_map(|t| {
+            if matches!(t.1.status(), TradeStatus::Running)
+                && *t.1 == test_trade
+            {
+                Some(t.1.clone())
+            } else {
+                None
+            }
+        })
+    })?)
+}
+
 /// Make a new trade request
 /// 새로운 거래 요청을 만듭니다
-#[poise::command(slash_command)]
+#[poise::command(slash_command, interaction_context = "Guild")]
 pub async fn new_trade(
     ctx: Context<'_>,
 
@@ -354,6 +387,43 @@ pub async fn new_trade(
         stock,
         &locale,
     )?;
+
+    if let Some(trade) = check_dupe(
+        ctx.data(),
+        ctx.author().id,
+        wants,
+        wants_amount,
+        item,
+        trade_quantity,
+        lots,
+    )? {
+        let channel_locale =
+            SupportedLocale::from_locale_fallback(&locale).korean_or_english();
+        // https://discord.com/channels/1486558411008114788/1486735432816263189/1486736920066396222
+        let guild_id = ctx
+            .guild_id()
+            .ok_or("Unable to get Guild ID, this shouldn't ever happen")?;
+        let channel_id =
+            ctx.data().trade_posting_channel.get_channel(channel_locale);
+
+        let message_id = match channel_locale {
+            SupportedLocale::ko_KR => trade.korean_message_id,
+            _ => trade.english_message_id,
+        }
+        .id()?;
+
+        let message_link = format!(
+            "https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
+        );
+
+        return Err(t!(
+            "error.duplicate_post",
+            locale = locale,
+            message_link = message_link
+        )
+        .into());
+    }
+
     let Some(component) = show_confirmation(
         &ctx,
         item,
