@@ -1,3 +1,6 @@
 /target
 .env
 /testing
+
+# AI translated locale file for local testing
+/locales/ko-KR.yml

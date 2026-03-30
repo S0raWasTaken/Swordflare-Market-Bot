@@ -3,11 +3,12 @@ use std::{
     time::SystemTime,
 };
 
-use poise::serenity_prelude::{Context, MessageId, UserId};
+use poise::serenity_prelude::{ChannelId, Context, MessageId, UserId};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    database::Data,
+    Res,
+    database::{Data, supported_locale::SupportedLocale},
     items::Item,
     magic_numbers::{MODERATION_HOLD_PERIOD, TRADE_EXPIRATION_TIME},
     print_err,
@@ -118,6 +119,47 @@ impl From<&Trade> for TradeStatus {
     }
 }
 
+#[derive(Default, Serialize, Deserialize, Debug, Clone, Copy)]
+pub struct MessageInfo {
+    id: Option<MessageId>,
+    inserted: bool,
+    pub deleted: bool,
+}
+
+impl MessageInfo {
+    pub fn insert(&mut self, id: MessageId) {
+        self.id = Some(id);
+        self.inserted = true;
+    }
+
+    const ERROR_MSG: &str = "MessageID was not inserted";
+
+    /// NOP if the message was already deleted
+    pub async fn delete(
+        &mut self,
+        ctx: &Context,
+        channel: ChannelId,
+    ) -> Res<()> {
+        if self.deleted {
+            return Ok(());
+        }
+
+        if self.inserted {
+            channel
+                .delete_message(&ctx.http, self.id.unwrap())
+                .await
+                .inspect_err(print_err)?;
+            self.deleted = true;
+            return Ok(());
+        }
+        Err(Self::ERROR_MSG.into())
+    }
+
+    pub fn id(&self) -> Res<MessageId> {
+        self.id.ok_or(Self::ERROR_MSG.into())
+    }
+}
+
 /// Defines a single trade
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trade {
@@ -131,19 +173,22 @@ pub struct Trade {
 
     // Technical stuff
     pub kind: TradeKind,
+    pub locale: SupportedLocale,
+
     last_updated: SystemTime,
     created_at: SystemTime,
 
     pub buyers: HashSet<UserId>,
 
-    pub message_id: Option<MessageId>,
-    pub message_deleted: bool,
+    pub english_message_id: MessageInfo,
+    pub korean_message_id: MessageInfo,
 
     pub moderated: bool,
 }
 
 impl Trade {
     #[must_use]
+    #[expect(clippy::too_many_arguments)]
     pub fn new(
         user: UserId,
         trade_item: Item,
@@ -152,6 +197,7 @@ impl Trade {
         amount: u16,
         stock: u16,
         trade_kind: TradeKind,
+        locale: SupportedLocale,
     ) -> Self {
         let time_of_creation = SystemTime::now();
         Self {
@@ -164,10 +210,11 @@ impl Trade {
             last_updated: time_of_creation,
             created_at: time_of_creation,
             buyers: HashSet::new(),
-            message_id: None,
-            message_deleted: false,
+            english_message_id: MessageInfo::default(),
+            korean_message_id: MessageInfo::default(),
             moderated: false,
             kind: trade_kind,
+            locale,
         }
     }
 
@@ -202,20 +249,22 @@ impl Trade {
         TradeStatus::from(self)
     }
 
-    pub async fn delete_message(&mut self, ctx: &Context, data: &Data) -> bool {
-        if !self.message_deleted
-            && let Some(message_id) = self.message_id
-        {
-            let deleted = data
-                .trade_posting_channel
-                .delete_message(&ctx.http, message_id)
-                .await
-                .inspect_err(print_err)
-                .is_ok();
-            self.message_deleted = deleted;
-            deleted
-        } else {
-            false
-        }
+    pub async fn delete_messages(
+        &mut self,
+        ctx: &Context,
+        data: &Data,
+    ) -> Res<()> {
+        let res_1 = self
+            .korean_message_id
+            .delete(ctx, data.trade_posting_channel.korean)
+            .await
+            .inspect_err(print_err);
+        self.english_message_id
+            .delete(ctx, data.trade_posting_channel.english)
+            .await
+            .inspect_err(print_err)?;
+
+        res_1?;
+        Ok(())
     }
 }

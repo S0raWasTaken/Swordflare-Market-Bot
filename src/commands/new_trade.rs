@@ -1,10 +1,10 @@
+use crate::database::Data;
+use crate::database::supported_locale::{SupportedLocale, get_user_locale};
 use crate::database::trade_db::{Trade, TradeKind};
 use crate::post::build_trade_embed;
 use crate::print_err;
-use crate::{
-    Context, Res,
-    items::{ITEMS, Item},
-};
+use crate::{Context, Res, item_name::ItemName, items::ITEMS, t};
+use poise::serenity_prelude::Message;
 use poise::{CreateReply, serenity_prelude as serenity};
 use std::time::Duration;
 
@@ -12,40 +12,48 @@ const CONFIRM_TIMEOUT: Duration = Duration::from_mins(1);
 
 #[expect(clippy::unused_async)]
 async fn autocomplete_item<'a>(
-    _ctx: Context<'_>,
+    ctx: Context<'_>,
     partial: &'a str,
-) -> impl Iterator<Item = String> + 'a {
-    ITEMS
-        .iter()
-        .filter(move |i| {
-            i.name.to_lowercase().contains(&partial.to_lowercase())
-        })
-        .map(|i| i.name.to_string())
+) -> impl Iterator<Item = serenity::AutocompleteChoice> + 'a {
+    let locale = get_user_locale(ctx.data(), ctx.author().id);
+
+    ITEMS.iter().filter_map(move |i| {
+        let display = i.name.display(&locale);
+        if display.to_lowercase().contains(&partial.to_lowercase())
+            || i.name.to_str().to_lowercase().contains(&partial.to_lowercase())
+        {
+            Some(serenity::AutocompleteChoice::new(display, i.name.to_str()))
+        } else {
+            None
+        }
+    })
 }
 
-fn validate_input<'a>(
+fn validate_input(
     trading_item: &str,
     for_item: &str,
     trade_quantity: u16,
     stock: u16,
-) -> Res<(&'a Item, &'a Item, u16)> {
-    let item = ITEMS
-        .iter()
-        .find(|i| i.name.to_lowercase() == trading_item.to_lowercase())
-        .ok_or_else(|| format!("Invalid trading item: '{trading_item}'"))?;
-    let wants = ITEMS
-        .iter()
-        .find(|i| i.name.to_lowercase() == for_item.to_lowercase())
-        .ok_or_else(|| format!("Invalid wanted item: '{for_item}'"))?;
+    locale: &str,
+) -> Res<(ItemName, ItemName, u16)> {
+    let item = ItemName::from_str(trading_item).map_err(|_| {
+        t!("error.invalid_trading_item", name = trading_item, locale = locale)
+    })?;
+    let wants = ItemName::from_str(for_item).map_err(|_| {
+        t!("error.invalid_wanted_item", name = for_item, locale = locale)
+    })?;
 
     if trade_quantity == 0 {
-        return Err("Trade quantity must be greater than zero.".into());
+        return Err(t!("error.trade_quantity_zero", locale = locale).into());
     }
 
     let lots = stock / trade_quantity;
     if lots == 0 {
-        return Err(format!(
-            "Stock ({stock}) must be at least equal to trade quantity ({trade_quantity})."
+        return Err(t!(
+            "error.stock_too_low",
+            stock = stock,
+            quantity = trade_quantity,
+            locale = locale
         )
         .into());
     }
@@ -53,46 +61,83 @@ fn validate_input<'a>(
     Ok((item, wants, lots))
 }
 
+#[expect(clippy::too_many_arguments)]
 fn build_confirm_embed(
-    item: &Item,
-    wants: &Item,
+    item: ItemName,
+    wants: ItemName,
+    item_rarity: &str,
+    wants_rarity: &str,
     trade_quantity: u16,
     wants_amount: u16,
     lots: u16,
     avatar_url: String,
+    locale: &str,
 ) -> serenity::CreateEmbed {
     serenity::CreateEmbed::default()
-        .title("Confirm Trade Post")
-        .description(format!(
-            "You're about to sell a total of **x{} {}** across **{lots}** lot(s) of x{trade_quantity} each.",
-            lots * trade_quantity,
-            item,
+        .title(t!("new_trade.confirm.title", locale = locale))
+        .description(t!(
+            "new_trade.confirm.description",
+            total = lots * trade_quantity,
+            item = item.display(locale),
+            lots = lots,
+            quantity = trade_quantity,
+            locale = locale
         ))
         .thumbnail(avatar_url)
-        .field("Offering (per lot)", format!("**{}** x{} ({})", item, trade_quantity, item.rarity), true)
-        .field("Wants (per lot)", format!("**{}** x{} ({})", wants, wants_amount, wants.rarity), true)
-        .field("Lots available", lots.to_string(), true)
+        .field(
+            t!("new_trade.confirm.field_offering", locale = locale),
+            format!(
+                "**{}** x{} ({})",
+                item.display(locale),
+                trade_quantity,
+                item_rarity
+            ),
+            true,
+        )
+        .field(
+            t!("new_trade.confirm.field_wants", locale = locale),
+            format!(
+                "**{}** x{} ({})",
+                wants.display(locale),
+                wants_amount,
+                wants_rarity
+            ),
+            true,
+        )
+        .field(
+            t!("new_trade.confirm.field_lots", locale = locale),
+            lots.to_string(),
+            true,
+        )
         .color(serenity::Color::GOLD)
 }
 
 async fn show_confirmation(
     ctx: &Context<'_>,
-    item: &Item,
-    wants: &Item,
+    item: ItemName,
+    wants: ItemName,
     trade_quantity: u16,
     wants_amount: u16,
     lots: u16,
+    locale: &str,
 ) -> Res<Option<serenity::ComponentInteraction>> {
     let seller = ctx.author();
     let avatar_url =
         seller.avatar_url().unwrap_or_else(|| seller.default_avatar_url());
+
+    let item_rarity = item.item().rarity.display(locale).into_owned();
+    let wants_rarity = wants.item().rarity.display(locale).into_owned();
+
     let embed = build_confirm_embed(
         item,
         wants,
+        &item_rarity,
+        &wants_rarity,
         trade_quantity,
         wants_amount,
         lots,
         avatar_url,
+        locale,
     );
 
     let reply = ctx
@@ -101,10 +146,16 @@ async fn show_confirmation(
                 .embed(embed)
                 .components(vec![serenity::CreateActionRow::Buttons(vec![
                     serenity::CreateButton::new("confirm_new_trade")
-                        .label("Post Trade")
+                        .label(t!(
+                            "new_trade.confirm.button_post",
+                            locale = locale
+                        ))
                         .style(serenity::ButtonStyle::Success),
                     serenity::CreateButton::new("cancel_new_trade")
-                        .label("Cancel")
+                        .label(t!(
+                            "new_trade.confirm.button_cancel",
+                            locale = locale
+                        ))
                         .style(serenity::ButtonStyle::Danger),
                 ])])
                 .ephemeral(true),
@@ -122,7 +173,7 @@ async fn show_confirmation(
             .edit(
                 *ctx,
                 CreateReply::default()
-                    .content("⏰ Trade confirmation timed out.")
+                    .content(t!("new_trade.confirm.timed_out", locale = locale))
                     .components(vec![]),
             )
             .await
@@ -137,7 +188,10 @@ async fn show_confirmation(
                 serenity::CreateInteractionResponse::Message(
                     serenity::CreateInteractionResponseMessage::default()
                         .ephemeral(true)
-                        .content("❌ Trade cancelled."),
+                        .content(t!(
+                            "new_trade.confirm.cancelled",
+                            locale = locale
+                        )),
                 ),
             )
             .await?;
@@ -147,55 +201,105 @@ async fn show_confirmation(
     Ok(Some(component))
 }
 
-async fn post_trade(
+async fn send_post_embed(
     ctx: &Context<'_>,
-    component: serenity::ComponentInteraction,
-    item: &Item,
-    wants: &Item,
-    trade_quantity: u16,
-    wants_amount: u16,
-    lots: u16,
-) -> Res<()> {
-    let seller = ctx.author();
-    let trade = Trade::new(
-        seller.id,
-        *item,
-        trade_quantity,
-        *wants,
-        wants_amount,
-        lots,
-        TradeKind::Normal,
-    );
-
-    let data = ctx.data();
-    let trade_id = data.trades.write(|db| db.insert(trade.clone()))?;
-
-    let message = data
+    supported_locale: SupportedLocale,
+    seller: &serenity::User,
+    trade: &Trade,
+    data: &Data,
+    trade_id: u64,
+) -> Res<Message> {
+    let locale = supported_locale.to_locale();
+    Ok(data
         .trade_posting_channel
+        .get_channel(supported_locale)
         .send_message(
             ctx.http(),
             serenity::CreateMessage::default()
-                .embed(build_trade_embed(&trade, seller))
+                .embed(build_trade_embed(trade, seller, locale))
                 .components(vec![serenity::CreateActionRow::Buttons(vec![
                     serenity::CreateButton::new(format!("buy_{trade_id}"))
-                        .label("Buy")
+                        .label(t!("post.button_buy", locale = locale))
                         .style(serenity::ButtonStyle::Success),
                 ])]),
         )
         .await
         .inspect_err(|e| {
-            // Rollback the in-memory insert on failure
             print_err(e);
             if let Err(rollback_err) =
                 data.trades.write(|db| db.remove(trade_id))
             {
                 print_err(&rollback_err);
             }
-        })?;
+        })?)
+}
+
+#[expect(clippy::too_many_arguments)]
+async fn post_trade(
+    ctx: &Context<'_>,
+    component: serenity::ComponentInteraction,
+    item: ItemName,
+    wants: ItemName,
+    trade_quantity: u16,
+    wants_amount: u16,
+    lots: u16,
+    locale: &str,
+) -> Res<()> {
+    let supported_locale = SupportedLocale::from_locale_fallback(locale);
+    let seller = ctx.author();
+
+    let item_obj = ITEMS.iter().find(|i| i.name == item).unwrap();
+    let wants_obj = ITEMS.iter().find(|i| i.name == wants).unwrap();
+
+    let trade = Trade::new(
+        seller.id,
+        *item_obj,
+        trade_quantity,
+        *wants_obj,
+        wants_amount,
+        lots,
+        TradeKind::Normal,
+        supported_locale,
+    );
+
+    let data = ctx.data();
+    let trade_id = data.trades.write(|db| db.insert(trade.clone()))?;
+
+    let english_message = send_post_embed(
+        ctx,
+        SupportedLocale::en_US,
+        seller,
+        &trade,
+        data,
+        trade_id,
+    )
+    .await?;
+
+    let korean_message = match send_post_embed(
+        ctx,
+        SupportedLocale::ko_KR,
+        seller,
+        &trade,
+        data,
+        trade_id,
+    )
+    .await
+    {
+        Ok(m) => m,
+        Err(e) => {
+            english_message
+                .delete(ctx.http())
+                .await
+                .inspect_err(print_err)
+                .ok();
+            return Err(e);
+        }
+    };
 
     data.trades.write(|db| {
         if let Some(t) = db.get_mut(trade_id) {
-            t.message_id = Some(message.id);
+            t.english_message_id.insert(english_message.id);
+            t.korean_message_id.insert(korean_message.id);
         }
     })?;
     data.trades.save()?;
@@ -206,7 +310,7 @@ async fn post_trade(
             serenity::CreateInteractionResponse::Message(
                 serenity::CreateInteractionResponseMessage::default()
                     .ephemeral(true)
-                    .content("✅ Trade posted!"),
+                    .content(t!("new_trade.posted", locale = locale)),
             ),
         )
         .await?;
@@ -217,20 +321,37 @@ async fn post_trade(
 #[poise::command(slash_command)]
 pub async fn new_trade(
     ctx: Context<'_>,
+
     #[autocomplete = "autocomplete_item"]
     #[description = "The item you are offering"]
+    #[description_localized("ko", "제공할 아이템")]
     trading_item: String,
+
     #[description = "How many of the item you are offering per lot"]
+    #[description_localized("ko", "개당 당 제시할 아이템 수량")]
     trade_quantity: u16,
+
     #[autocomplete = "autocomplete_item"]
     #[description = "The item you want in return"]
+    #[description_localized("ko", "받고 싶은 아이템")]
     for_item: String,
+
     #[description = "How many of the wanted item you expect per lot"]
+    #[description_localized("ko", "원하는 아이템의 예상하는 갯수")]
     wants_amount: u16,
-    #[description = "Total amount of the offered item you have in stock"] stock: u16,
+
+    #[description = "Total amount of the offered item you have in stock"]
+    #[description_localized("ko", "보유 중인 총 재고량")]
+    stock: u16,
 ) -> Res<()> {
-    let (item, wants, lots) =
-        validate_input(&trading_item, &for_item, trade_quantity, stock)?;
+    let locale = get_user_locale(ctx.data(), ctx.author().id);
+    let (item, wants, lots) = validate_input(
+        &trading_item,
+        &for_item,
+        trade_quantity,
+        stock,
+        &locale,
+    )?;
     let Some(component) = show_confirmation(
         &ctx,
         item,
@@ -238,11 +359,21 @@ pub async fn new_trade(
         trade_quantity,
         wants_amount,
         lots,
+        &locale,
     )
     .await?
     else {
         return Ok(());
     };
-    post_trade(&ctx, component, item, wants, trade_quantity, wants_amount, lots)
-        .await
+    post_trade(
+        &ctx,
+        component,
+        item,
+        wants,
+        trade_quantity,
+        wants_amount,
+        lots,
+        &locale,
+    )
+    .await
 }

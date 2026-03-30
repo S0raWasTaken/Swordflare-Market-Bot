@@ -1,5 +1,7 @@
 use crate::{
-    Error, Res, TRADING_SERVER_LINK, magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
+    Error, Res, TRADING_SERVER_LINK,
+    database::supported_locale::{SupportedLocale, get_user_locale},
+    magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
     post::update_post,
 };
 use poise::serenity_prelude::{self as serenity, CreateMessage};
@@ -15,6 +17,8 @@ struct TradeContext {
     item_quantity: u16,
     wants: crate::items::Item,
     wanted_amount: u16,
+    buyer_locale: String,
+    seller_locale: String,
 }
 
 struct PendingTrade<'a> {
@@ -67,16 +71,19 @@ async fn resolve_trade(
     data: &crate::Data,
     buyer: &serenity::User,
 ) -> Res<Option<TradeContext>> {
+    let buyer_locale = get_user_locale(data, buyer.id);
     let trade_id: u64 = interaction
         .data
         .custom_id
         .strip_prefix("buy_")
-        .ok_or("Invalid custom_id")?
+        .ok_or(t!("error.invalid_custom_id", locale = buyer_locale))?
         .parse()?;
 
     let (seller_id, stock, item, item_quantity, wants, wanted_amount) = {
         let db = data.trades.borrow_data()?;
-        let trade = db.get(trade_id).ok_or("Trade not found")?;
+        let trade = db
+            .get(trade_id)
+            .ok_or(t!("error.trade_not_found", locale = buyer_locale))?;
         (
             trade.seller,
             trade.stock,
@@ -86,6 +93,7 @@ async fn resolve_trade(
             trade.wanted_amount,
         )
     };
+    let seller_locale = get_user_locale(data, seller_id);
 
     if buyer.id == seller_id {
         interaction
@@ -94,7 +102,10 @@ async fn resolve_trade(
                 serenity::CreateInteractionResponse::Message(
                     serenity::CreateInteractionResponseMessage::default()
                         .ephemeral(true)
-                        .content("❌ You can't buy your own trade."),
+                        .content(t!(
+                            "buy.error.self_buy",
+                            locale = buyer_locale
+                        )),
                 ),
             )
             .await?;
@@ -112,6 +123,8 @@ async fn resolve_trade(
         item_quantity,
         wants,
         wanted_amount,
+        buyer_locale,
+        seller_locale,
     }))
 }
 
@@ -122,24 +135,28 @@ async fn prompt_lots(
     interaction: &serenity::ComponentInteraction,
     trade_ctx: &TradeContext,
 ) -> Res<Option<(u16, serenity::ModalInteraction)>> {
+    let buyer_locale = &trade_ctx.buyer_locale;
     interaction
         .create_response(
             ctx,
             serenity::CreateInteractionResponse::Modal(
                 serenity::CreateModal::new(
                     format!("quantity_{}", trade_ctx.trade_id),
-                    "How many lots do you want?",
+                    t!("buy.modal.title", locale = buyer_locale),
                 )
                 .components(vec![
                     serenity::CreateActionRow::InputText(
                         serenity::CreateInputText::new(
                             serenity::InputTextStyle::Short,
-                            "Lots",
+                            t!("buy.modal.input_label", locale = buyer_locale),
                             "quantity",
                         )
                         .min_length(1)
                         .max_length(5)
-                        .placeholder("Enter number of lots"),
+                        .placeholder(t!(
+                            "buy.modal.input_placeholder",
+                            locale = buyer_locale
+                        )),
                     ),
                 ]),
             ),
@@ -168,8 +185,11 @@ async fn prompt_lots(
                 None
             }
         })
-        .ok_or("Missing lots input")
-        .and_then(|v| v.parse::<u16>().map_err(|_| "Invalid number"));
+        .ok_or(t!("error.missing_lots_input", locale = buyer_locale))
+        .and_then(|v| {
+            v.parse::<u16>()
+                .map_err(|_| t!("error.invalid_number", locale = buyer_locale))
+        });
 
     let lots = match parsed {
         Ok(q) => q,
@@ -193,12 +213,13 @@ async fn prompt_lots(
             .create_response(
                 ctx,
                 serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default().ephemeral(true).content(
-                        format!(
-                            "❌ Invalid amount. There are only {} lot(s) remaining.",
-                            trade_ctx.stock
-                        ),
-                    ),
+                    serenity::CreateInteractionResponseMessage::default()
+                        .ephemeral(true)
+                        .content(t!(
+                            "buy.error.invalid_amount",
+                            locale = buyer_locale,
+                            stock = trade_ctx.stock
+                        )),
                 ),
             )
             .await?;
@@ -210,32 +231,36 @@ async fn prompt_lots(
 
 /// Shows a confirmation embed summarising what the buyer is about to do.
 /// Returns false if they cancelled or timed out.
+#[expect(clippy::too_many_lines)]
 async fn confirm_purchase(
     ctx: &serenity::Context,
     modal: &serenity::ModalInteraction,
     trade_ctx: &TradeContext,
     lots: u16,
 ) -> Res<bool> {
+    let buyer_locale = &trade_ctx.buyer_locale;
     let embed = serenity::CreateEmbed::default()
-        .title("Confirm Purchase")
-        .description(format!(
-            "You're buying **{lots}** lot(s) from **{}**.",
-            trade_ctx.seller_name
+        .title(t!("buy.confirm.title", locale = buyer_locale))
+        .description(t!(
+            "buy.confirm.description",
+            locale = buyer_locale,
+            lots = lots,
+            seller = trade_ctx.seller_name
         ))
         .field(
-            "You will receive",
+            t!("buy.confirm.field_receive", locale = buyer_locale),
             format!(
                 "**{}** x{}",
-                trade_ctx.item,
+                trade_ctx.item.name.display(buyer_locale),
                 u32::from(trade_ctx.item_quantity) * u32::from(lots)
             ),
             true,
         )
         .field(
-            "You will give",
+            t!("buy.confirm.field_give", locale = buyer_locale),
             format!(
                 "**{}** x{}",
-                trade_ctx.wants,
+                trade_ctx.wants.name.display(buyer_locale),
                 u32::from(trade_ctx.wanted_amount) * u32::from(lots)
             ),
             true,
@@ -255,13 +280,19 @@ async fn confirm_purchase(
                                 "confirm_purchase_{}",
                                 trade_ctx.trade_id
                             ))
-                            .label("Confirm")
+                            .label(t!(
+                                "buy.confirm.button_confirm",
+                                locale = buyer_locale
+                            ))
                             .style(serenity::ButtonStyle::Success),
                             serenity::CreateButton::new(format!(
                                 "cancel_purchase_{}",
                                 trade_ctx.trade_id
                             ))
-                            .label("Cancel")
+                            .label(t!(
+                                "buy.confirm.button_cancel",
+                                locale = buyer_locale
+                            ))
                             .style(serenity::ButtonStyle::Danger),
                         ],
                     )]),
@@ -288,7 +319,10 @@ async fn confirm_purchase(
                 ctx,
                 serenity::CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::default()
-                        .content("Check your DMs!")
+                        .content(t!(
+                            "buy.confirm.check_dms",
+                            locale = buyer_locale
+                        ))
                         .embeds(vec![])
                         .components(vec![]),
                 ),
@@ -300,7 +334,10 @@ async fn confirm_purchase(
                 ctx,
                 serenity::CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::default()
-                        .content("❌ Purchase cancelled.")
+                        .content(t!(
+                            "buy.confirm.cancelled",
+                            locale = buyer_locale
+                        ))
                         .embeds(vec![])
                         .components(vec![]),
                 ),
@@ -326,6 +363,8 @@ async fn send_trade_dms<'a>(
         item_quantity,
         wants,
         wanted_amount,
+        buyer_locale,
+        seller_locale,
         ..
     } = trade_ctx;
 
@@ -337,26 +376,27 @@ async fn send_trade_dms<'a>(
         .send_message(
             ctx,
             CreateMessage::default()
-                .content(format!(
-                    "You're about to buy **x{} {}** in exchange for **x{} {}** \
-                    ({lots} lot(s)) from **{seller_name}**.\n\
-                    Go find them in-game and confirm once the trade is done.\n\
-                    {private_server_link}",
-                    item_quantity * lots,
-                    item,
-                    wanted_amount * lots,
-                    wants,
+                .content(t!(
+                    "buy.dm.buyer",
+                    locale = buyer_locale,
+                    item_total = item_quantity * lots,
+                    item = item.name.display(buyer_locale),
+                    wants_total = wanted_amount * lots,
+                    wants = wants.name.display(buyer_locale),
+                    lots = lots,
+                    seller = seller_name,
+                    server_link = private_server_link
                 ))
                 .components(vec![serenity::CreateActionRow::Buttons(vec![
                     serenity::CreateButton::new(format!(
                         "confirm_buy_{trade_id}"
                     ))
-                    .label("Confirm Trade Done")
+                    .label(t!("buy.dm.button_confirm", locale = buyer_locale))
                     .style(serenity::ButtonStyle::Success),
                     serenity::CreateButton::new(format!(
                         "cancel_buy_{trade_id}"
                     ))
-                    .label("Cancel")
+                    .label(t!("buy.dm.button_cancel", locale = buyer_locale))
                     .style(serenity::ButtonStyle::Danger),
                 ])]),
         )
@@ -370,23 +410,24 @@ async fn send_trade_dms<'a>(
         }
     };
 
-    let content = format!(
-        "**{}** wants to buy **x{} {}** from you in exchange for **x{} {}** \
-        ({lots} lot(s)).\nGo find them in-game and confirm once done.\n\
-        {private_server_link}",
-        buyer.name,
-        item_quantity * lots,
-        item,
-        wanted_amount * lots,
-        wants,
+    let content = t!(
+        "buy.dm.seller",
+        locale = seller_locale,
+        buyer = buyer.name,
+        item_total = item_quantity * lots,
+        item = item.name.display(seller_locale),
+        wants_total = wanted_amount * lots,
+        wants = wants.name.display(seller_locale),
+        lots = lots,
+        server_link = private_server_link
     );
 
     let components = vec![serenity::CreateActionRow::Buttons(vec![
         serenity::CreateButton::new(format!("confirm_sell_{trade_id}"))
-            .label("Confirm Trade Done")
+            .label(t!("buy.dm.button_confirm", locale = seller_locale))
             .style(serenity::ButtonStyle::Success),
         serenity::CreateButton::new(format!("cancel_sell_{trade_id}"))
-            .label("Cancel")
+            .label(t!("buy.dm.button_cancel", locale = seller_locale))
             .style(serenity::ButtonStyle::Danger),
     ])];
 
@@ -412,7 +453,14 @@ async fn await_confirmations(
     trade_ctx: &TradeContext,
     pending: &PendingTrade<'_>,
 ) -> Res<()> {
-    let TradeContext { trade_id, seller_id, seller_name, .. } = trade_ctx;
+    let TradeContext {
+        trade_id,
+        seller_id,
+        seller_name,
+        buyer_locale,
+        seller_locale,
+        ..
+    } = trade_ctx;
     let PendingTrade {
         buyer,
         buyer_dm,
@@ -460,10 +508,10 @@ async fn await_confirmations(
             if !buyer_int.data.custom_id.starts_with("confirm_buy_") {
                 buyer_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
                     serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true).content("⚠️ You cancelled the trade."),
+                        .ephemeral(true).content(t!("buy.await.you_cancelled", locale = buyer_locale)),
                 )).await?;
                 seller_dm.send_message(ctx, serenity::CreateMessage::default()
-                    .content(format!("⚠️ **{}** cancelled the trade.", buyer.name))
+                    .content(t!("buy.await.buyer_cancelled", locale = seller_locale, name = buyer.name))
                 ).await?;
                 dm_cleanup(ctx, buyer_msg, seller_msg).await;
                 return Ok(());
@@ -471,17 +519,17 @@ async fn await_confirmations(
 
             buyer_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
                 serenity::CreateInteractionResponseMessage::default()
-                    .ephemeral(true).content("✅ Got it! Waiting for the seller to confirm..."),
+                    .ephemeral(true).content(t!("buy.await.waiting_for_seller", locale = buyer_locale)),
             )).await?;
 
             let seller_int = seller_confirm.await??;
             if !seller_int.data.custom_id.starts_with("confirm_sell_") {
                 seller_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
                     serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true).content("⚠️ You cancelled the trade."),
+                        .ephemeral(true).content(t!("buy.await.you_cancelled", locale = seller_locale)),
                 )).await?;
                 buyer_int.create_followup(ctx, serenity::CreateInteractionResponseFollowup::default()
-                    .ephemeral(true).content(format!("⚠️ **{seller_name}** cancelled the trade."))
+                    .ephemeral(true).content(t!("buy.await.seller_cancelled", locale = buyer_locale, name = seller_name))
                 ).await?;
                 dm_cleanup(ctx, buyer_msg, seller_msg).await;
                 return Ok(());
@@ -495,10 +543,10 @@ async fn await_confirmations(
             if !seller_int.data.custom_id.starts_with("confirm_sell_") {
                 seller_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
                     serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true).content("⚠️ You cancelled the trade."),
+                        .ephemeral(true).content(t!("buy.await.you_cancelled", locale = seller_locale)),
                 )).await?;
                 buyer_dm.send_message(ctx, serenity::CreateMessage::default()
-                    .content(format!("⚠️ **{seller_name}** cancelled the trade."))
+                    .content(t!("buy.await.seller_cancelled", locale = buyer_locale, name = seller_name))
                 ).await?;
                 dm_cleanup(ctx, buyer_msg, seller_msg).await;
                 return Ok(());
@@ -506,17 +554,17 @@ async fn await_confirmations(
 
             seller_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
                 serenity::CreateInteractionResponseMessage::default()
-                    .ephemeral(true).content("✅ Got it! Waiting for the buyer to confirm..."),
+                    .ephemeral(true).content(t!("buy.await.waiting_for_buyer", locale = seller_locale)),
             )).await?;
 
             let buyer_int = buyer_confirm.await??;
             if !buyer_int.data.custom_id.starts_with("confirm_buy_") {
                 buyer_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
                     serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true).content("⚠️ You cancelled the trade."),
+                        .ephemeral(true).content(t!("buy.await.you_cancelled", locale = buyer_locale)),
                 )).await?;
                 seller_int.create_followup(ctx, serenity::CreateInteractionResponseFollowup::default()
-                    .ephemeral(true).content(format!("⚠️ **{}** cancelled the trade.", buyer.name))
+                    .ephemeral(true).content(t!("buy.await.buyer_cancelled", locale = seller_locale, name = buyer.name))
                 ).await?;
                 dm_cleanup(ctx, buyer_msg, seller_msg).await;
                 return Ok(());
@@ -557,6 +605,8 @@ async fn finish_trade(
         item_quantity,
         wants,
         wanted_amount,
+        buyer_locale,
+        seller_locale,
         ..
     } = trade_ctx;
     let PendingTrade { buyer, buyer_msg, seller_msg, lots, .. } = pending;
@@ -573,33 +623,38 @@ async fn finish_trade(
     })?;
     data.trades.save()?;
 
-    update_post(ctx, data, *trade_id).await?;
+    update_post(ctx, data, *trade_id, SupportedLocale::en_US).await?;
+    update_post(ctx, data, *trade_id, SupportedLocale::ko_KR).await?;
     dm_cleanup(ctx, buyer_msg, seller_msg).await;
 
-    let buyer_content = format!(
-        "✅ Trade confirmed! You gave **x{} {}** to **{seller_name}** and received **x{} {}**. Thanks for trading!",
-        wanted_amount * quantity,
-        wants,
-        item_quantity * quantity,
-        item,
+    let buyer_content = t!(
+        "buy.done.buyer",
+        locale = buyer_locale,
+        wants_total = wanted_amount * quantity,
+        wants = wants.name.display(buyer_locale),
+        seller = seller_name,
+        item_total = item_quantity * quantity,
+        item = item.name.display(buyer_locale),
     );
     let seller_content = if is_sold_out {
-        format!(
-            "✅ Trade confirmed! You gave **x{} {}** and received **x{} {}** from **{}** — all stock sold, post removed.",
-            item_quantity * quantity,
-            item,
-            wanted_amount * quantity,
-            wants,
-            buyer.name,
+        t!(
+            "buy.done.seller_sold_out",
+            locale = seller_locale,
+            wants_total = wanted_amount * quantity,
+            wants = wants.name.display(seller_locale),
+            buyer = buyer.name,
+            item_total = item_quantity * quantity,
+            item = item.name.display(seller_locale),
         )
     } else {
-        format!(
-            "✅ Trade confirmed! You gave **x{} {}** and received **x{} {}** from **{}**. Stock decremented.",
-            item_quantity * quantity,
-            item,
-            wanted_amount * quantity,
-            wants,
-            buyer.name,
+        t!(
+            "buy.done.seller",
+            locale = seller_locale,
+            wants_total = wanted_amount * quantity,
+            wants = wants.name.display(seller_locale),
+            buyer = buyer.name,
+            item_total = item_quantity * quantity,
+            item = item.name.display(seller_locale),
         )
     };
 

@@ -21,7 +21,10 @@ pub async fn cleanup(ctx: &SerenityContext, data: &Data) {
         match trade.status() {
             TradeStatus::Running => {}
             TradeStatus::Timeout => {
-                update_post(ctx, data, id).await.inspect_err(print_err).ok();
+                update_post(ctx, data, id, trade.locale)
+                    .await
+                    .inspect_err(print_err)
+                    .ok();
             }
             status => {
                 delete_post_message(ctx, data, trade, id, status).await;
@@ -38,7 +41,7 @@ async fn delete_post_message(
     trade_id: u64,
     status: TradeStatus,
 ) {
-    trade.delete_message(ctx, data).await;
+    trade.delete_messages(ctx, data).await.inspect_err(print_err).ok();
 
     if matches!(status, TradeStatus::Invalid) {
         let trades_db = &data.trades;
