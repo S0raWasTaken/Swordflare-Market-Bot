@@ -218,9 +218,6 @@ impl Trade {
         }
     }
 
-    /// # Panics
-    ///
-    /// Panics if the system clock has gone backwards since the trade was created.
     #[inline]
     pub fn is_inactive(&self) -> bool {
         self.last_updated
