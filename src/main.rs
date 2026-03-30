@@ -1,6 +1,10 @@
 #![warn(clippy::pedantic)]
 
-use std::{fmt::Display, sync::LazyLock, time::Duration};
+#[macro_use]
+extern crate rust_i18n;
+
+pub use rust_i18n::t;
+use std::{fmt::Display, sync::LazyLock};
 
 use dotenv::dotenv;
 use poise::{
@@ -12,15 +16,17 @@ use tokio::time::interval;
 
 use crate::{
     cleanup::cleanup, commands::commands, database::Data,
-    event_handler::event_handler,
+    event_handler::event_handler, magic_numbers::DATABASE_CLEANUP_INTERVAL,
 };
 
 mod cleanup;
 mod commands;
 mod database;
 mod event_handler;
+mod item_name;
 mod items;
 mod macros;
+mod magic_numbers;
 mod post;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -33,17 +39,32 @@ pub static TRADING_SERVER_LINK: LazyLock<String> = LazyLock::new(|| {
         .expect("TRADING_PRIVATE_SERVER_LINK must be set")
 });
 
+i18n!("locales", fallback = "en-US");
+
 #[tokio::main]
 async fn main() -> Res<()> {
     dotenv()?;
 
-    let (token, trading_channel_id, interaction_menu_channel_id) = get_vars!(
+    let (
+        token,
+        english_posting_channel_id,
+        korean_posting_channel_id,
+        english_menu_channel_id,
+        korean_menu_channel_id,
+    ) = get_vars!(
         "DISCORD_TOKEN",
-        "TRADING_CHANNEL_ID",
-        "INTERACTION_MENU_CHANNEL_ID"
+        "ENGLISH_POSTING_CHANNEL_ID",
+        "KOREAN_POSTING_CHANNEL_ID",
+        "ENGLISH_MENU_CHANNEL_ID",
+        "KOREAN_MENU_CHANNEL_ID"
     );
 
-    let data = Data::new(&trading_channel_id, &interaction_menu_channel_id)?;
+    let data = Data::new(
+        &english_posting_channel_id,
+        &korean_posting_channel_id,
+        &english_menu_channel_id,
+        &korean_menu_channel_id,
+    )?;
 
     let mut client =
         ClientBuilder::new(token, GatewayIntents::non_privileged())
@@ -94,8 +115,7 @@ fn framework(data: Data) -> Framework<Data, Error> {
                 let data_clone = data.clone(); // Custom clone, Arc inside
                 let ctx_clone = ctx.clone();
                 tokio::spawn(async move {
-                    // MAGIC NUMBER!!
-                    let mut interval = interval(Duration::from_mins(10));
+                    let mut interval = interval(DATABASE_CLEANUP_INTERVAL);
                     loop {
                         interval.tick().await;
                         cleanup(&ctx_clone, &data_clone).await;

@@ -1,16 +1,20 @@
 use poise::serenity_prelude as serenity;
 use std::fmt::Write;
 
-use crate::items::{
-    Category::{
-        ActiveSkill, Armor, Aura, Material, PassiveSkill, Shard, Weapon,
+use crate::{Context, Res, print_err};
+use crate::{
+    database::supported_locale::get_user_locale,
+    items::{
+        Category::{
+            ActiveSkill, Armor, Aura, Material, PassiveSkill, Shard, Weapon,
+        },
+        ITEMS,
     },
-    ITEMS,
 };
-use crate::{Context, Res};
 
 #[poise::command(slash_command)]
 pub async fn list_items(ctx: Context<'_>) -> Res<()> {
+    let locale = &get_user_locale(ctx.data(), ctx.author().id);
     let categories =
         [Weapon, Armor, PassiveSkill, ActiveSkill, Material, Aura, Shard];
 
@@ -19,14 +23,20 @@ pub async fn list_items(ctx: Context<'_>) -> Res<()> {
         .map(|category| {
             let description = ITEMS
                 .iter()
-                .filter(|i| matches!(&i.category, c if c == category))
+                .filter(|i| &i.category == category)
                 .fold(String::new(), |mut acc, i| {
-                    writeln!(acc, "**{}** — {:?}", i.name, i.rarity).unwrap();
+                    writeln!(
+                        acc,
+                        "**{}** — {}",
+                        i.name.display(locale),
+                        i.rarity.display(locale)
+                    )
+                    .unwrap();
                     acc
                 });
 
             serenity::CreateEmbed::default()
-                .title(format!("{category:?}"))
+                .title(category.display(locale))
                 .description(description)
         })
         .collect();
@@ -74,7 +84,12 @@ pub async fn list_items(ctx: Context<'_>) -> Res<()> {
             .await?;
     }
 
-    msg.message().await?.delete(ctx.serenity_context()).await?;
+    msg.message()
+        .await?
+        .delete(ctx.serenity_context())
+        .await
+        .inspect_err(print_err)
+        .ok();
 
     Ok(())
 }
