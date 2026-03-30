@@ -158,6 +158,11 @@ impl MessageInfo {
     pub fn id(&self) -> Res<MessageId> {
         self.id.ok_or(Self::ERROR_MSG.into())
     }
+
+    #[inline]
+    pub fn is_eq(&self, id: MessageId) -> bool {
+        self.id == Some(id)
+    }
 }
 
 /// Defines a single trade
@@ -184,6 +189,16 @@ pub struct Trade {
     pub korean_message_id: MessageInfo,
 
     pub moderated: bool,
+}
+
+impl PartialEq for Trade {
+    fn eq(&self, other: &Self) -> bool {
+        self.seller == other.seller
+            && self.item == other.item
+            && self.quantity == other.quantity
+            && self.wants == other.wants
+            && self.wanted_amount == other.wanted_amount
+    }
 }
 
 impl Trade {

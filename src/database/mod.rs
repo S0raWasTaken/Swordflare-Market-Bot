@@ -1,7 +1,10 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use daybreak::{FileDatabase, deser::Yaml};
-use poise::serenity_prelude::{ChannelId, UserId};
+use poise::serenity_prelude::{ChannelId, RoleId, UserId};
 
 use crate::{
     Res,
@@ -14,6 +17,7 @@ pub mod trade_db;
 pub type TradingDatabase = FileDatabase<TradeData, Yaml>;
 pub type LanguageDatabase =
     FileDatabase<HashMap<UserId, SupportedLocale>, Yaml>;
+pub type Blacklist = FileDatabase<HashSet<UserId>, Yaml>;
 
 #[derive(Clone, Copy)]
 pub struct DoubleChannelId {
@@ -43,9 +47,9 @@ impl DoubleChannelId {
 pub struct Data {
     pub trades: Arc<TradingDatabase>,
     pub languages: Arc<LanguageDatabase>,
+    pub blacklist: Arc<Blacklist>,
     pub trade_posting_channel: DoubleChannelId,
-    #[expect(unused, reason = "Will be the last thing to be implemented")]
-    pub bot_menu_channel: DoubleChannelId,
+    pub admin_role: RoleId,
 }
 
 impl Data {
@@ -53,8 +57,7 @@ impl Data {
         english_posting_channel: &str,
         korean_posting_channel: &str,
 
-        english_menu_channel: &str,
-        korean_menu_channel: &str,
+        admin_role_id: &str,
     ) -> Res<Self> {
         Ok(Self {
             trades: Arc::new(TradingDatabase::load_from_path_or_default(
@@ -63,14 +66,14 @@ impl Data {
             languages: Arc::new(LanguageDatabase::load_from_path_or_default(
                 "languages.yml",
             )?),
+            blacklist: Arc::new(Blacklist::load_from_path_or_default(
+                "blacklist.yml",
+            )?),
             trade_posting_channel: DoubleChannelId::new(
                 english_posting_channel,
                 korean_posting_channel,
             )?,
-            bot_menu_channel: DoubleChannelId::new(
-                english_menu_channel,
-                korean_menu_channel,
-            )?,
+            admin_role: RoleId::new(admin_role_id.parse()?),
         })
     }
 }
