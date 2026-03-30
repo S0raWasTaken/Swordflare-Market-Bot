@@ -38,7 +38,7 @@ pub async fn mark_as_invalid(ctx: Context<'_>, msg: Message) -> Res<()> {
     interaction_context = "Guild"
 )]
 pub async fn blacklist_user(ctx: Context<'_>, user: User) -> Res<()> {
-    ctx.defer_ephemeral().await?;
+    ctx.defer().await?;
     let inserted = ctx.data().blacklist.write(|db| db.insert(user.id))?;
 
     if !inserted {
@@ -57,7 +57,7 @@ pub async fn blacklist_user(ctx: Context<'_>, user: User) -> Res<()> {
     interaction_context = "Guild"
 )]
 pub async fn unblacklist_user(ctx: Context<'_>, user: User) -> Res<()> {
-    ctx.defer_ephemeral().await?;
+    ctx.defer().await?;
     let removed = ctx.data().blacklist.write(|db| db.remove(&user.id))?;
 
     if !removed {
