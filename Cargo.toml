@@ -7,7 +7,7 @@ edition = "2024"
 chrono = "0.4.44"
 daybreak = { version = "0.1.0", features = ["yaml_enc"] }
 dotenv = "0.15.0"
-poise = "0.6.1"
+poise = { git = "https://github.com/serenity-rs/poise", rev = "6f29d65a0e7f838799e59ba40016780fed74bc4a" }
 rust-i18n = "3.1.5"
 serde = "1.0.228"
 tokio = { version = "1.50.0", features = ["full"] }

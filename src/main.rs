@@ -50,12 +50,14 @@ async fn main() -> Res<()> {
         korean_posting_channel_id,
         english_menu_channel_id,
         korean_menu_channel_id,
+        admin_role_id,
     ) = get_vars!(
         "DISCORD_TOKEN",
         "ENGLISH_POSTING_CHANNEL_ID",
         "KOREAN_POSTING_CHANNEL_ID",
         "ENGLISH_MENU_CHANNEL_ID",
-        "KOREAN_MENU_CHANNEL_ID"
+        "KOREAN_MENU_CHANNEL_ID",
+        "ADMIN_ROLE_ID"
     );
 
     let data = Data::new(
@@ -63,6 +65,7 @@ async fn main() -> Res<()> {
         &korean_posting_channel_id,
         &english_menu_channel_id,
         &korean_menu_channel_id,
+        &admin_role_id,
     )?;
 
     let mut client =

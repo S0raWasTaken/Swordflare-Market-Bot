@@ -158,6 +158,11 @@ impl MessageInfo {
     pub fn id(&self) -> Res<MessageId> {
         self.id.ok_or(Self::ERROR_MSG.into())
     }
+
+    #[inline]
+    pub fn is_eq(&self, id: MessageId) -> bool {
+        self.id == Some(id)
+    }
 }
 
 /// Defines a single trade
