@@ -318,6 +318,8 @@ async fn post_trade(
     Ok(())
 }
 
+/// Make a new trade request
+/// 새로운 거래 요청을 만듭니다
 #[poise::command(slash_command)]
 pub async fn new_trade(
     ctx: Context<'_>,

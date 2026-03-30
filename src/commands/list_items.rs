@@ -12,6 +12,8 @@ use crate::{
     },
 };
 
+/// List all items in game
+/// 게임 내 모든 아이템 나열
 #[poise::command(slash_command)]
 pub async fn list_items(ctx: Context<'_>) -> Res<()> {
     let locale = &get_user_locale(ctx.data(), ctx.author().id);

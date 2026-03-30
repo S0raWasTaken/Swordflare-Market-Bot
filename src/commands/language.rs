@@ -1,5 +1,7 @@
 use crate::{Context, Res, database::supported_locale::SupportedLocale};
 
+/// Set your language
+/// 언어를 설정하세요
 #[poise::command(slash_command)]
 pub async fn set_language(
     ctx: Context<'_>,
