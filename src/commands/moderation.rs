@@ -1,6 +1,8 @@
 use poise::serenity_prelude::{Message, User};
 
-use crate::{Context, Error, Res, cleanup::clean_database};
+use crate::{
+    Context, Error, Res, cleanup::clean_database, commands::is_bot_admin,
+};
 
 #[poise::command(
     context_menu_command = "Mark post as invalid",
@@ -66,19 +68,4 @@ pub async fn unblacklist_user(ctx: Context<'_>, user: User) -> Res<()> {
 
     ctx.say("✅ User removed from the blacklist").await?;
     Ok(())
-}
-
-async fn is_bot_admin(ctx: Context<'_>) -> Res<bool> {
-    let Some(member) = ctx.author_member().await else {
-        return Ok(false);
-    };
-
-    let has_admin_role =
-        member.roles.iter().any(|r| r == &ctx.data().admin_role);
-
-    if let Some(member_permissions) = member.permissions {
-        Ok(member_permissions.administrator() || has_admin_role)
-    } else {
-        Ok(has_admin_role)
-    }
 }

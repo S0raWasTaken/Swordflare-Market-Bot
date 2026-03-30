@@ -1,3 +1,4 @@
+use crate::commands::check_if_blacklisted;
 use crate::database::Data;
 use crate::database::supported_locale::{SupportedLocale, get_user_locale};
 use crate::database::trade_db::{Trade, TradeKind, TradeStatus};
@@ -380,6 +381,8 @@ pub async fn new_trade(
     stock: u16,
 ) -> Res<()> {
     let locale = get_user_locale(ctx.data(), ctx.author().id);
+    check_if_blacklisted(ctx, &locale).await?;
+
     let (item, wants, lots) = validate_input(
         &trading_item,
         &for_item,
