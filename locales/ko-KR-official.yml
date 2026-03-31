@@ -9,6 +9,7 @@ error.missing_lots_input: "Missing lots input"
 error.invalid_number: "Invalid number"
 error.duplicate_post: "❌ Duplicate post!"
 error.blacklisted: "❌ You've been blacklisted and cannot use the market bot"
+error.bot_paused: "❌ Bot was paused by an administrator"
 
 # ── new_trade: confirmation embed ──────────────────────────────────────────────
 new_trade.confirm.title: "Confirm Trade Post"
@@ -76,7 +77,55 @@ post.field_stock: "Stock"
 post.stock_value: "%{lots} lot(s) remaining"
 post.stock_sold_out: "Sold out"
 post.footer_buyers: "%{count} buyer(s)"
+post.footer_bidders: "%{count} bidder(s)"
 post.button_buy: "Buy"
+
+# ── auction: errors ────────────────────────────────────────────────────────────
+auction.error.min_price_zero: "❌ Minimum price must be greater than zero."
+auction.error.duration_too_long: "❌ Duration cannot exceed %{max} hours."
+auction.error.duration_too_short: "❌ Duration cannot be less than %{min} minute(s)."
+auction.error.self_bid: "❌ You can't bid on your own auction."
+auction.error.expired: "❌ This auction has already ended."
+auction.error.invalid_bid: "❌ Your bid must be at least **%{min} %{currency}** and higher than the current highest bid."
+auction.error.max_value_reached: "❌ Impossible to bid higher. Maximum value reached."
+
+# ── auction: new auction confirmation ─────────────────────────────────────────
+auction.confirm.title: "Confirm Auction Post"
+auction.confirm.field_item: "Item being auctioned"
+auction.confirm.field_currency: "Bid currency"
+auction.confirm.field_min_price: "Starting bid"
+auction.confirm.field_duration: "Duration"
+auction.posted: "✅ Auction posted!"
+
+# ── auction: post embed ─ only used in Korean and English ─────────────────────
+auction.post.title: "Auction by %{seller}"
+auction.post.title_ended: "[ENDED] Auction by %{seller}"
+auction.post.ends_at: "Ends <t:%{unix}:R>"
+auction.post.ended_at: "Ended <t:%{unix}:R>"
+auction.post.field_item: "Item"
+auction.post.field_min_price: "Starting bid"
+auction.post.field_current_bid: "Current highest bid"
+auction.post.current_bid: "**%{amount} %{currency}** — %{bidder}"
+auction.post.current_bid_unknown: "**%{amount} %{currency}**"
+auction.post.no_bids: "No bids yet"
+auction.post.button_bid: "Place Bid"
+
+# ── auction: bid modal ─────────────────────────────────────────────────────────
+auction.modal.title: "Place a Bid"
+auction.modal.input_label: "Amount (min: %{min} %{currency})"
+auction.bid.accepted: "✅ Bid of **%{amount} %{currency}** placed successfully!"
+
+# ── auction: resolve (DMs sent when auction ends) ─────────────────────────────
+auction.resolve.winner_dm: |
+  🏆 You won the auction! You bid **%{amount} %{currency}** for **x%{quantity} %{item}**.
+  Go find the seller in-game and confirm once the trade is done.
+  %{server_link}
+auction.resolve.seller_dm: |
+  🏆 Your auction ended! **%{winner}** won with a bid of **%{amount} %{currency}** for **x%{quantity} %{item}**.
+  Go find them in-game and confirm once the trade is done.
+  %{server_link}
+auction.resolve.winner_declined: "⚠️ **%{winner}** declined the trade. Offering to the next highest bidder..."
+auction.resolve.seller_declined: "⚠️ The seller declined the trade. You will not be charged."
 
 # ── rarities ───────────────────────────────────────────────────────────────────
 rarity.common: "커먼"

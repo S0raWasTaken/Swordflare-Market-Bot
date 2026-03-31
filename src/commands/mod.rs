@@ -3,7 +3,11 @@ use crate::{
     commands::{
         language::set_language,
         list_items::list_items,
-        moderation::{blacklist_user, mark_as_invalid, unblacklist_user},
+        moderation::{
+            blacklist_user, list_blacklisted_users, mark_as_invalid, pause_bot,
+            resume_bot, unblacklist_user,
+        },
+        new_auction::new_auction,
         new_trade::new_trade,
     },
     database::Data,
@@ -12,6 +16,7 @@ use crate::{
 mod language;
 mod list_items;
 mod moderation;
+mod new_auction;
 mod new_trade;
 
 pub fn commands() -> Vec<poise::Command<Data, Error>> {
@@ -22,7 +27,18 @@ pub fn commands() -> Vec<poise::Command<Data, Error>> {
         mark_as_invalid(),
         blacklist_user(),
         unblacklist_user(),
+        list_blacklisted_users(),
+        new_auction(),
+        pause_bot(),
+        resume_bot(),
     ]
+}
+
+pub fn check_if_paused(ctx: Context<'_>, locale: &str) -> Res<()> {
+    if ctx.data().is_paused() {
+        return Err(t!("error.bot_paused", locale = locale).into());
+    }
+    Ok(())
 }
 
 pub async fn check_if_blacklisted(ctx: Context<'_>, locale: &str) -> Res<()> {
@@ -44,7 +60,7 @@ pub async fn is_bot_admin(ctx: Context<'_>) -> Res<bool> {
         member.roles.iter().any(|r| r == &ctx.data().admin_role);
 
     if let Some(member_permissions) = member.permissions {
-        Ok(member_permissions.administrator() || has_admin_role)
+        Ok(has_admin_role || member_permissions.administrator())
     } else {
         Ok(has_admin_role)
     }

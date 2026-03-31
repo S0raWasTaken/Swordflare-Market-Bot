@@ -1,6 +1,7 @@
 use crate::{
-    Error, Res, TRADING_SERVER_LINK,
+    Res, TRADING_SERVER_LINK,
     database::supported_locale::{SupportedLocale, get_user_locale},
+    event_handler::confirm_flow::{ConfirmOutcome, await_both_confirmations},
     magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
     post::update_post,
 };
@@ -446,7 +447,6 @@ async fn send_trade_dms<'a>(
 }
 
 /// Waits for both parties to confirm or cancel, then finalises or aborts.
-#[expect(clippy::too_many_lines)]
 async fn await_confirmations(
     ctx: &serenity::Context,
     data: &crate::Data,
@@ -462,115 +462,86 @@ async fn await_confirmations(
         ..
     } = trade_ctx;
     let PendingTrade {
-        buyer,
-        buyer_dm,
-        seller_dm,
-        buyer_msg,
-        seller_msg,
-        lots: _,
+        buyer, buyer_dm, seller_dm, buyer_msg, seller_msg, ..
     } = pending;
 
-    let ctx1 = ctx.clone();
-    let ctx2 = ctx.clone();
-    let buyer_id = buyer.id;
-    let trade_id = *trade_id;
-    let seller_id = *seller_id;
-
-    let mut buyer_confirm = tokio::spawn(async move {
-        serenity::collector::ComponentInteractionCollector::new(&ctx1)
-            .author_id(buyer_id)
-            .custom_ids(vec![
-                format!("confirm_buy_{trade_id}"),
-                format!("cancel_buy_{trade_id}"),
-            ])
-            .timeout(TRADE_CONFIRMATION_TIMEOUT)
-            .next()
-            .await
-            .ok_or::<Error>("Timed out".into())
-    });
-
-    let mut seller_confirm = tokio::spawn(async move {
-        serenity::collector::ComponentInteractionCollector::new(&ctx2)
-            .author_id(seller_id)
-            .custom_ids(vec![
-                format!("confirm_sell_{trade_id}"),
-                format!("cancel_sell_{trade_id}"),
-            ])
-            .timeout(TRADE_CONFIRMATION_TIMEOUT)
-            .next()
-            .await
-            .ok_or::<Error>("Timed out".into())
-    });
-
-    tokio::select! {
-        result = &mut buyer_confirm => {
-            let buyer_int = result??;
-            if !buyer_int.data.custom_id.starts_with("confirm_buy_") {
-                buyer_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true).content(t!("buy.await.you_cancelled", locale = buyer_locale)),
-                )).await?;
-                seller_dm.send_message(ctx, serenity::CreateMessage::default()
-                    .content(t!("buy.await.buyer_cancelled", locale = seller_locale, name = buyer.name))
-                ).await?;
-                dm_cleanup(ctx, buyer_msg, seller_msg).await;
-                return Ok(());
-            }
-
-            buyer_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
-                serenity::CreateInteractionResponseMessage::default()
-                    .ephemeral(true).content(t!("buy.await.waiting_for_seller", locale = buyer_locale)),
-            )).await?;
-
-            let seller_int = seller_confirm.await??;
-            if !seller_int.data.custom_id.starts_with("confirm_sell_") {
-                seller_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true).content(t!("buy.await.you_cancelled", locale = seller_locale)),
-                )).await?;
-                buyer_int.create_followup(ctx, serenity::CreateInteractionResponseFollowup::default()
-                    .ephemeral(true).content(t!("buy.await.seller_cancelled", locale = buyer_locale, name = seller_name))
-                ).await?;
-                dm_cleanup(ctx, buyer_msg, seller_msg).await;
-                return Ok(());
-            }
-
-            finish_trade(ctx, data, trade_ctx, pending, &buyer_int, &seller_int, true).await?;
+    match await_both_confirmations(
+        ctx,
+        buyer.id,
+        *seller_id,
+        *trade_id,
+        TRADE_CONFIRMATION_TIMEOUT,
+        t!("buy.await.waiting_for_seller", locale = buyer_locale).into_owned(),
+        t!("buy.await.waiting_for_buyer", locale = seller_locale).into_owned(),
+    )
+    .await
+    {
+        ConfirmOutcome::BothConfirmed { buyer_int, seller_int } => {
+            // ← drop buyer_confirmed_first
+            finish_trade(
+                ctx,
+                data,
+                trade_ctx,
+                pending,
+                &buyer_int,
+                &seller_int,
+            )
+            .await?;
         }
-
-        result = &mut seller_confirm => {
-            let seller_int = result??;
-            if !seller_int.data.custom_id.starts_with("confirm_sell_") {
-                seller_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true).content(t!("buy.await.you_cancelled", locale = seller_locale)),
-                )).await?;
-                buyer_dm.send_message(ctx, serenity::CreateMessage::default()
-                    .content(t!("buy.await.seller_cancelled", locale = buyer_locale, name = seller_name))
-                ).await?;
-                dm_cleanup(ctx, buyer_msg, seller_msg).await;
-                return Ok(());
-            }
-
-            seller_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
-                serenity::CreateInteractionResponseMessage::default()
-                    .ephemeral(true).content(t!("buy.await.waiting_for_buyer", locale = seller_locale)),
-            )).await?;
-
-            let buyer_int = buyer_confirm.await??;
-            if !buyer_int.data.custom_id.starts_with("confirm_buy_") {
-                buyer_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true).content(t!("buy.await.you_cancelled", locale = buyer_locale)),
-                )).await?;
-                seller_int.create_followup(ctx, serenity::CreateInteractionResponseFollowup::default()
-                    .ephemeral(true).content(t!("buy.await.buyer_cancelled", locale = seller_locale, name = buyer.name))
-                ).await?;
-                dm_cleanup(ctx, buyer_msg, seller_msg).await;
-                return Ok(());
-            }
-
-            finish_trade(ctx, data, trade_ctx, pending, &buyer_int, &seller_int, false).await?;
+        ConfirmOutcome::BuyerCancelled { buyer_int } => {
+            buyer_int
+                .create_response(
+                    ctx,
+                    serenity::CreateInteractionResponse::Message(
+                        serenity::CreateInteractionResponseMessage::default()
+                            .ephemeral(true)
+                            .content(t!(
+                                "buy.await.you_cancelled",
+                                locale = buyer_locale
+                            )),
+                    ),
+                )
+                .await?;
+            seller_dm
+                .send_message(
+                    ctx,
+                    serenity::CreateMessage::default().content(t!(
+                        "buy.await.buyer_cancelled",
+                        locale = seller_locale,
+                        name = buyer.name
+                    )),
+                )
+                .await?;
+            dm_cleanup(ctx, buyer_msg, seller_msg).await;
+        }
+        ConfirmOutcome::SellerCancelled { seller_int } => {
+            seller_int
+                .create_response(
+                    ctx,
+                    serenity::CreateInteractionResponse::Message(
+                        serenity::CreateInteractionResponseMessage::default()
+                            .ephemeral(true)
+                            .content(t!(
+                                "buy.await.you_cancelled",
+                                locale = seller_locale
+                            )),
+                    ),
+                )
+                .await?;
+            buyer_dm
+                .send_message(
+                    ctx,
+                    serenity::CreateMessage::default().content(t!(
+                        "buy.await.seller_cancelled",
+                        locale = buyer_locale,
+                        name = seller_name
+                    )),
+                )
+                .await?;
+            dm_cleanup(ctx, buyer_msg, seller_msg).await;
+        }
+        ConfirmOutcome::TimedOut => {
+            dm_cleanup(ctx, buyer_msg, seller_msg).await;
         }
     }
 
@@ -596,7 +567,6 @@ async fn finish_trade(
     pending: &PendingTrade<'_>,
     buyer_int: &serenity::ComponentInteraction,
     seller_int: &serenity::ComponentInteraction,
-    buyer_confirmed_first: bool,
 ) -> Res<()> {
     let TradeContext {
         trade_id,
@@ -658,45 +628,28 @@ async fn finish_trade(
         )
     };
 
-    if buyer_confirmed_first {
-        buyer_int
-            .create_followup(
-                ctx,
-                serenity::CreateInteractionResponseFollowup::default()
+    buyer_int
+        .create_response(
+            ctx,
+            serenity::CreateInteractionResponse::Message(
+                serenity::CreateInteractionResponseMessage::default()
                     .ephemeral(true)
                     .content(buyer_content),
-            )
-            .await?;
-        seller_int
-            .create_response(
-                ctx,
-                serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true)
-                        .content(seller_content),
-                ),
-            )
-            .await?;
-    } else {
-        buyer_int
-            .create_response(
-                ctx,
-                serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true)
-                        .content(buyer_content),
-                ),
-            )
-            .await?;
-        seller_int
-            .create_followup(
-                ctx,
-                serenity::CreateInteractionResponseFollowup::default()
+            ),
+        )
+        .await
+        .ok();
+    seller_int
+        .create_response(
+            ctx,
+            serenity::CreateInteractionResponse::Message(
+                serenity::CreateInteractionResponseMessage::default()
                     .ephemeral(true)
                     .content(seller_content),
-            )
-            .await?;
-    }
+            ),
+        )
+        .await
+        .ok();
 
     Ok(())
 }

@@ -1,8 +1,56 @@
-use poise::serenity_prelude::{Message, User};
+use std::time::Duration;
+
+use poise::{
+    CreateReply,
+    serenity_prelude::{
+        CreateActionRow, CreateButton, CreateEmbed, CreateEmbedFooter,
+        CreateInteractionResponse, CreateInteractionResponseMessage, Message,
+        MessageId, User,
+    },
+};
 
 use crate::{
-    Context, Error, Res, cleanup::clean_database, commands::is_bot_admin,
+    Context, Res,
+    cleanup::clean_database,
+    commands::is_bot_admin,
+    database::{
+        auction_db::{AuctionData, RunningAuction},
+        trade_db::TradeData,
+    },
 };
+
+const POST_NOT_FOUND: &str = "❌ Couldn't find post in database. You may as well delete this message manually.";
+
+fn try_set_in_trades_db(
+    db: &mut TradeData,
+    msg_id: MessageId,
+) -> Res<Option<RunningAuction>> {
+    let Some((trade_id, _)) = db.iter().find(|e| {
+        e.1.english_message_id.is_eq(msg_id)
+            || e.1.korean_message_id.is_eq(msg_id)
+    }) else {
+        return Err("This message will be shadowed".into());
+    };
+
+    db.get_mut(trade_id).expect("Write lock????? Hello????").moderated = true;
+    Ok(None)
+}
+
+fn try_remove_from_auctions_db(
+    db: &mut AuctionData,
+    msg_id: MessageId,
+) -> Res<Option<RunningAuction>> {
+    let Some((auction_id, auction)) = db.iter().find(|e| {
+        e.1.english_message_id.is_eq(msg_id)
+            || e.1.korean_message_id.is_eq(msg_id)
+    }) else {
+        return Err(POST_NOT_FOUND.into());
+    };
+    let auction = auction.clone();
+
+    db.remove(auction_id);
+    Ok(Some(auction))
+}
 
 #[poise::command(
     context_menu_command = "Mark post as invalid",
@@ -11,21 +59,24 @@ use crate::{
 )]
 pub async fn mark_as_invalid(ctx: Context<'_>, msg: Message) -> Res<()> {
     ctx.defer_ephemeral().await?;
-    ctx.data().trades.write(|db| {
-        let Some(trade_id) = db.iter().find(|e| {
-            e.1.english_message_id.is_eq(msg.id)
-                || e.1.korean_message_id.is_eq(msg.id)
-        }).map(|e| e.0) else {
-            return Err::<(), Error>(
-                "❌ Couldn't find post in database. You may as well delete this message manually.".into()
-            );
-        };
 
-        db.get_mut(trade_id).expect("Write lock????? Hello????").moderated = true;
-        Ok(())
-    })??;
+    let trades_result =
+        ctx.data().trades.write(|db| try_set_in_trades_db(db, msg.id))?;
 
-    ctx.data().trades.save()?;
+    if trades_result.is_ok() {
+        ctx.data().trades.save()?;
+    } else {
+        let auction = ctx
+            .data()
+            .running_auctions
+            .write(|db| try_remove_from_auctions_db(db, msg.id))??;
+
+        if let Some(auction) = auction {
+            auction.delete_messages(ctx).await?;
+        }
+        ctx.data().running_auctions.save()?;
+    }
+
     clean_database(ctx.serenity_context(), ctx.data()).await?;
 
     ctx.say("✅ Trade marked as invalid.").await?;
@@ -67,5 +118,119 @@ pub async fn unblacklist_user(ctx: Context<'_>, user: User) -> Res<()> {
     ctx.data().blacklist.save()?;
 
     ctx.say("✅ User removed from the blacklist").await?;
+    Ok(())
+}
+
+#[poise::command(
+    slash_command,
+    check = "is_bot_admin",
+    interaction_context = "Guild"
+)]
+pub async fn list_blacklisted_users(ctx: Context<'_>) -> Res<()> {
+    let blacklisted_users = {
+        ctx.data()
+            .blacklist
+            .borrow_data()?
+            .iter()
+            .map(|id| format!("<@{id}>: `{id}`"))
+            .collect::<Vec<_>>()
+    }
+    .chunks(10)
+    .map(|chunk| {
+        let description = chunk.join("\n");
+        CreateEmbed::default()
+            .title("Blacklisted Users")
+            .description(description)
+    })
+    .collect::<Vec<_>>();
+
+    if blacklisted_users.is_empty() {
+        ctx.say("✅ No blacklisted users.").await?;
+        return Ok(());
+    }
+
+    let max_page_number = blacklisted_users.len() - 1;
+    let mut page = 0;
+
+    let make_buttons = |page: usize| {
+        CreateActionRow::Buttons(vec![
+            CreateButton::new("prev").label("◀").disabled(page == 0),
+            CreateButton::new("next")
+                .label("▶")
+                .disabled(page == max_page_number),
+        ])
+    };
+
+    let make_reply = |page: usize| {
+        CreateReply::default()
+            .embed(blacklisted_users[page].clone().footer(
+                CreateEmbedFooter::new(format!("{page}/{max_page_number}")),
+            ))
+            .components(vec![make_buttons(page)])
+    };
+
+    let msg = ctx.send(make_reply(page)).await?;
+
+    let cached_message = msg.message().await?;
+
+    while let Some(interaction) = cached_message
+        .await_component_interaction(ctx.serenity_context())
+        .timeout(Duration::from_mins(1))
+        .await
+    {
+        match interaction.data.custom_id.as_str() {
+            "prev" => page = page.saturating_sub(1),
+            "next" => page = (page + 1).min(max_page_number),
+            _ => (),
+        }
+
+        interaction
+            .create_response(
+                ctx.serenity_context(),
+                CreateInteractionResponse::UpdateMessage(
+                    CreateInteractionResponseMessage::default()
+                        .embed(blacklisted_users[page].clone())
+                        .components(vec![make_buttons(page)]),
+                ),
+            )
+            .await?;
+    }
+
+    msg.delete(ctx).await?;
+
+    Ok(())
+}
+
+/// Pauses bot execution for whatever purpose
+#[poise::command(
+    slash_command,
+    check = "is_bot_admin",
+    interaction_context = "Guild"
+)]
+pub async fn pause_bot(ctx: Context<'_>) -> Res<()> {
+    ctx.defer_ephemeral().await?;
+
+    if !ctx.data().pause() {
+        return Err("❌ Already paused!".into());
+    }
+
+    ctx.say("✅ Paused!").await?;
+    Ok(())
+}
+
+/// Resumes bot execution
+#[poise::command(
+    slash_command,
+    check = "is_bot_admin",
+    interaction_context = "Guild"
+)]
+pub async fn resume_bot(ctx: Context<'_>) -> Res<()> {
+    ctx.defer_ephemeral().await?;
+
+    if !ctx.data().resume() {
+        return Err("❌ Already running!".into());
+    }
+
+    ctx.say("✅ Resumed!").await?;
     Ok(())
 }

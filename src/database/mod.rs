@@ -1,6 +1,9 @@
 use std::{
     collections::{HashMap, HashSet},
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering::Relaxed},
+    },
 };
 
 use daybreak::{FileDatabase, deser::Yaml};
@@ -8,9 +11,13 @@ use poise::serenity_prelude::{ChannelId, RoleId, UserId};
 
 use crate::{
     Res,
-    database::{supported_locale::SupportedLocale, trade_db::TradeData},
+    database::{
+        auction_db::AuctionData, supported_locale::SupportedLocale,
+        trade_db::TradeData,
+    },
 };
 
+pub mod auction_db;
 pub mod supported_locale;
 pub mod trade_db;
 
@@ -18,6 +25,7 @@ pub type TradingDatabase = FileDatabase<TradeData, Yaml>;
 pub type LanguageDatabase =
     FileDatabase<HashMap<UserId, SupportedLocale>, Yaml>;
 pub type Blacklist = FileDatabase<HashSet<UserId>, Yaml>;
+pub type RunningAuctions = FileDatabase<AuctionData, Yaml>;
 
 #[derive(Clone, Copy)]
 pub struct DoubleChannelId {
@@ -41,15 +49,23 @@ impl DoubleChannelId {
             _ => self.english,
         }
     }
+
+    /// 0: English Channel, 1: Korean Channel
+    pub fn get_both(&self) -> (ChannelId, ChannelId) {
+        (self.english, self.korean)
+    }
 }
 
 #[derive(Clone)]
 pub struct Data {
     pub trades: Arc<TradingDatabase>,
+    pub running_auctions: Arc<RunningAuctions>,
     pub languages: Arc<LanguageDatabase>,
     pub blacklist: Arc<Blacklist>,
-    pub trade_posting_channel: DoubleChannelId,
+    pub trades_channel: DoubleChannelId,
+    pub auctions_channel: DoubleChannelId,
     pub admin_role: RoleId,
+    paused: Arc<AtomicBool>,
 }
 
 impl Data {
@@ -57,23 +73,48 @@ impl Data {
         english_posting_channel: &str,
         korean_posting_channel: &str,
 
+        english_auctions_channel: &str,
+        korean_auctions_channel: &str,
+
         admin_role_id: &str,
     ) -> Res<Self> {
         Ok(Self {
             trades: Arc::new(TradingDatabase::load_from_path_or_default(
                 "trading_db.yml",
             )?),
+            running_auctions: Arc::new(
+                RunningAuctions::load_from_path_or_default(
+                    "running_auctions.yml",
+                )?,
+            ),
             languages: Arc::new(LanguageDatabase::load_from_path_or_default(
                 "languages.yml",
             )?),
             blacklist: Arc::new(Blacklist::load_from_path_or_default(
                 "blacklist.yml",
             )?),
-            trade_posting_channel: DoubleChannelId::new(
+            trades_channel: DoubleChannelId::new(
                 english_posting_channel,
                 korean_posting_channel,
             )?,
+            auctions_channel: DoubleChannelId::new(
+                english_auctions_channel,
+                korean_auctions_channel,
+            )?,
             admin_role: RoleId::new(admin_role_id.parse()?),
+            paused: Arc::new(AtomicBool::new(false)),
         })
+    }
+
+    pub fn pause(&self) -> bool {
+        !self.paused.swap(true, Relaxed)
+    }
+
+    pub fn resume(&self) -> bool {
+        self.paused.swap(false, Relaxed)
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.paused.load(Relaxed)
     }
 }
