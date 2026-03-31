@@ -89,7 +89,11 @@ pub async fn list_items(ctx: Context<'_>) -> Res<()> {
                 ctx.serenity_context(),
                 CreateInteractionResponse::UpdateMessage(
                     CreateInteractionResponseMessage::default()
-                        .embed(embeds[page].clone())
+                        .embed(embeds[page].clone().footer(
+                            CreateEmbedFooter::new(format!(
+                                "{page}/{max_page_number}"
+                            )),
+                        ))
                         .components(vec![make_buttons(page)]),
                 ),
             )
