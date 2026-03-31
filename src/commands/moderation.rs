@@ -164,7 +164,11 @@ pub async fn list_blacklisted_users(ctx: Context<'_>) -> Res<()> {
     let make_reply = |page: usize| {
         CreateReply::default()
             .embed(blacklisted_users[page].clone().footer(
-                CreateEmbedFooter::new(format!("{page}/{max_page_number}")),
+                CreateEmbedFooter::new(format!(
+                    "{}/{}",
+                    page + 1,
+                    max_page_number + 1
+                )),
             ))
             .components(vec![make_buttons(page)])
     };
