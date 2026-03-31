@@ -29,7 +29,7 @@ pub fn parse_duration(s: &str) -> Res<Duration> {
                     current.parse().map_err(|_| "Invalid number before 'm'")?;
 
                 let secs =
-                    n.checked_mul(3600).ok_or("Hours value too large")?;
+                    n.checked_mul(60).ok_or("Minutes value too large")?;
                 total_secs = total_secs
                     .checked_add(secs)
                     .ok_or("Total duration overflow")?;

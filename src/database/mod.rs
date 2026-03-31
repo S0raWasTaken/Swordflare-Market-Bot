@@ -49,6 +49,11 @@ impl DoubleChannelId {
             _ => self.english,
         }
     }
+
+    /// 0: English Channel, 1: Korean Channel
+    pub fn get_both(&self) -> (ChannelId, ChannelId) {
+        (self.english, self.korean)
+    }
 }
 
 #[derive(Clone)]
@@ -57,7 +62,8 @@ pub struct Data {
     pub running_auctions: Arc<RunningAuctions>,
     pub languages: Arc<LanguageDatabase>,
     pub blacklist: Arc<Blacklist>,
-    pub trade_posting_channel: DoubleChannelId,
+    pub trades_channel: DoubleChannelId,
+    pub auctions_channel: DoubleChannelId,
     pub admin_role: RoleId,
     paused: Arc<AtomicBool>,
 }
@@ -66,6 +72,9 @@ impl Data {
     pub fn new(
         english_posting_channel: &str,
         korean_posting_channel: &str,
+
+        english_auctions_channel: &str,
+        korean_auctions_channel: &str,
 
         admin_role_id: &str,
     ) -> Res<Self> {
@@ -84,9 +93,13 @@ impl Data {
             blacklist: Arc::new(Blacklist::load_from_path_or_default(
                 "blacklist.yml",
             )?),
-            trade_posting_channel: DoubleChannelId::new(
+            trades_channel: DoubleChannelId::new(
                 english_posting_channel,
                 korean_posting_channel,
+            )?,
+            auctions_channel: DoubleChannelId::new(
+                english_auctions_channel,
+                korean_auctions_channel,
             )?,
             admin_role: RoleId::new(admin_role_id.parse()?),
             paused: Arc::new(AtomicBool::new(false)),

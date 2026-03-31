@@ -283,13 +283,18 @@ impl Trade {
         ctx: &Context,
         data: &Data,
     ) -> Res<()> {
+        let (english_channel, korean_channel) = match self.kind {
+            TradeKind::Normal => data.trades_channel.get_both(),
+            TradeKind::Auction => data.auctions_channel.get_both(),
+        };
+
         let res_1 = self
             .korean_message_id
-            .delete(ctx, data.trade_posting_channel.korean)
+            .delete(ctx, korean_channel)
             .await
             .inspect_err(print_err);
         self.english_message_id
-            .delete(ctx, data.trade_posting_channel.english)
+            .delete(ctx, english_channel)
             .await
             .inspect_err(print_err)?;
 

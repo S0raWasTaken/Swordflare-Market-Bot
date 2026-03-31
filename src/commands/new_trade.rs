@@ -212,7 +212,7 @@ async fn send_post_embed(
 ) -> Res<Message> {
     let locale = supported_locale.to_locale();
     Ok(data
-        .trade_posting_channel
+        .trades_channel
         .get_channel(supported_locale)
         .send_message(
             ctx.http(),
@@ -406,8 +406,7 @@ pub async fn new_trade(
         let guild_id = ctx
             .guild_id()
             .ok_or("Unable to get Guild ID, this shouldn't ever happen")?;
-        let channel_id =
-            ctx.data().trade_posting_channel.get_channel(channel_locale);
+        let channel_id = ctx.data().trades_channel.get_channel(channel_locale);
 
         let message_id = match channel_locale {
             SupportedLocale::ko_KR => trade.korean_message_id,

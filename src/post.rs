@@ -205,7 +205,7 @@ pub async fn update_post(
     let sold_out = trade.is_sold_out();
     let embed = build_trade_embed(&trade, &seller, post_locale);
 
-    data.trade_posting_channel
+    data.trades_channel
         .get_channel(locale)
         .edit_message(
             ctx.http(),
@@ -367,7 +367,7 @@ pub async fn update_auction_post(
         post_locale,
     );
 
-    data.trade_posting_channel
+    data.auctions_channel
         .get_channel(locale)
         .edit_message(
             ctx.http(),

@@ -213,7 +213,7 @@ async fn send_auction_embed(
 ) -> Res<serenity::Message> {
     let locale = supported_locale.to_locale();
     Ok(data
-        .trade_posting_channel
+        .auctions_channel
         .get_channel(supported_locale)
         .send_message(
             ctx.http(),

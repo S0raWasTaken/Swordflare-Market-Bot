@@ -147,7 +147,7 @@ impl RunningAuction {
     }
 
     pub async fn delete_messages(self, ctx: Context<'_>) -> Res<()> {
-        let channels = ctx.data().trade_posting_channel;
+        let channels = ctx.data().auctions_channel;
 
         let eng_id = self.english_message_id.id();
         let kor_id = self.korean_message_id.id();

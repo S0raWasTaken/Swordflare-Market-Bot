@@ -49,17 +49,23 @@ async fn main() -> Res<()> {
         token,
         english_posting_channel_id,
         korean_posting_channel_id,
+        english_auctions_channel_id,
+        korean_auctions_channel_id,
         admin_role_id,
     ) = get_vars!(
         "DISCORD_TOKEN",
         "ENGLISH_POSTING_CHANNEL_ID",
         "KOREAN_POSTING_CHANNEL_ID",
+        "ENGLISH_AUCTIONS_CHANNEL_ID",
+        "KOREAN_AUCTIONS_CHANNEL_ID",
         "ADMIN_ROLE_ID"
     );
 
     let data = Data::new(
         &english_posting_channel_id,
         &korean_posting_channel_id,
+        &english_auctions_channel_id,
+        &korean_auctions_channel_id,
         &admin_role_id,
     )?;
 
