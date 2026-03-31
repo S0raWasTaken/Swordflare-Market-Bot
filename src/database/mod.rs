@@ -1,6 +1,9 @@
 use std::{
     collections::{HashMap, HashSet},
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering::Relaxed},
+    },
 };
 
 use daybreak::{FileDatabase, deser::Yaml};
@@ -56,6 +59,7 @@ pub struct Data {
     pub blacklist: Arc<Blacklist>,
     pub trade_posting_channel: DoubleChannelId,
     pub admin_role: RoleId,
+    paused: Arc<AtomicBool>,
 }
 
 impl Data {
@@ -85,6 +89,19 @@ impl Data {
                 korean_posting_channel,
             )?,
             admin_role: RoleId::new(admin_role_id.parse()?),
+            paused: Arc::new(AtomicBool::new(false)),
         })
+    }
+
+    pub fn pause(&self) -> bool {
+        !self.paused.swap(true, Relaxed)
+    }
+
+    pub fn resume(&self) -> bool {
+        self.paused.swap(false, Relaxed)
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.paused.load(Relaxed)
     }
 }

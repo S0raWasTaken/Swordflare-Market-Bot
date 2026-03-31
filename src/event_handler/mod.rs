@@ -26,7 +26,7 @@ pub async fn event_handler(
     if let FullEvent::InteractionCreate { interaction } = event
         && let Interaction::Component(component) = interaction
     {
-        if is_blacklisted(ctx, component, data).await? {
+        if is_blacklisted(ctx, component, data).await? || data.is_paused() {
             return Ok(());
         }
 

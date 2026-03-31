@@ -4,8 +4,8 @@ use crate::{
         language::set_language,
         list_items::list_items,
         moderation::{
-            blacklist_user, list_blacklisted_users, mark_as_invalid,
-            unblacklist_user,
+            blacklist_user, list_blacklisted_users, mark_as_invalid, pause_bot,
+            resume_bot, unblacklist_user,
         },
         new_auction::new_auction,
         new_trade::new_trade,
@@ -29,7 +29,16 @@ pub fn commands() -> Vec<poise::Command<Data, Error>> {
         unblacklist_user(),
         list_blacklisted_users(),
         new_auction(),
+        pause_bot(),
+        resume_bot(),
     ]
+}
+
+pub fn check_if_paused(ctx: Context<'_>, locale: &str) -> Res<()> {
+    if ctx.data().is_paused() {
+        return Err(t!("error.bot_paused", locale = locale).into());
+    }
+    Ok(())
 }
 
 pub async fn check_if_blacklisted(ctx: Context<'_>, locale: &str) -> Res<()> {

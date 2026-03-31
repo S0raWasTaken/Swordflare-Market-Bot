@@ -200,3 +200,37 @@ pub async fn list_blacklisted_users(ctx: Context<'_>) -> Res<()> {
 
     Ok(())
 }
+
+/// Pauses bot execution for whatever purpose
+#[poise::command(
+    slash_command,
+    check = "is_bot_admin",
+    interaction_context = "Guild"
+)]
+pub async fn pause_bot(ctx: Context<'_>) -> Res<()> {
+    ctx.defer_ephemeral().await?;
+
+    if !ctx.data().pause() {
+        return Err("❌ Already paused!".into());
+    }
+
+    ctx.say("✅ Paused!").await?;
+    Ok(())
+}
+
+/// Resumes bot execution
+#[poise::command(
+    slash_command,
+    check = "is_bot_admin",
+    interaction_context = "Guild"
+)]
+pub async fn resume_bot(ctx: Context<'_>) -> Res<()> {
+    ctx.defer_ephemeral().await?;
+
+    if !ctx.data().resume() {
+        return Err("❌ Already running!".into());
+    }
+
+    ctx.say("✅ Resumed!").await?;
+    Ok(())
+}

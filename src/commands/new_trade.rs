@@ -1,4 +1,4 @@
-use crate::commands::check_if_blacklisted;
+use crate::commands::{check_if_blacklisted, check_if_paused};
 use crate::database::Data;
 use crate::database::supported_locale::{SupportedLocale, get_user_locale};
 use crate::database::trade_db::{Trade, TradeKind, TradeStatus};
@@ -114,7 +114,7 @@ fn build_confirm_embed(
 }
 
 async fn show_confirmation(
-    ctx: &Context<'_>,
+    ctx: Context<'_>,
     item: ItemName,
     wants: ItemName,
     trade_quantity: u16,
@@ -172,7 +172,7 @@ async fn show_confirmation(
     else {
         reply
             .edit(
-                *ctx,
+                ctx,
                 CreateReply::default()
                     .content(t!("new_trade.confirm.timed_out", locale = locale))
                     .components(vec![]),
@@ -203,7 +203,7 @@ async fn show_confirmation(
 }
 
 async fn send_post_embed(
-    ctx: &Context<'_>,
+    ctx: Context<'_>,
     supported_locale: SupportedLocale,
     seller: &serenity::User,
     trade: &Trade,
@@ -237,7 +237,7 @@ async fn send_post_embed(
 
 #[expect(clippy::too_many_arguments)]
 async fn post_trade(
-    ctx: &Context<'_>,
+    ctx: Context<'_>,
     component: serenity::ComponentInteraction,
     item: ItemName,
     wants: ItemName,
@@ -380,15 +380,16 @@ pub async fn new_trade(
     #[description_localized("ko", "보유 중인 총 재고량")]
     stock: u16,
 ) -> Res<()> {
-    let locale = get_user_locale(ctx.data(), ctx.author().id);
-    check_if_blacklisted(ctx, &locale).await?;
+    let locale = &get_user_locale(ctx.data(), ctx.author().id);
+    check_if_blacklisted(ctx, locale).await?;
+    check_if_paused(ctx, locale)?;
 
     let (item, wants, lots) = validate_input(
         &trading_item,
         &for_item,
         trade_quantity,
         stock,
-        &locale,
+        locale,
     )?;
 
     if let Some(trade) = check_dupe(
@@ -401,8 +402,7 @@ pub async fn new_trade(
         lots,
     )? {
         let channel_locale =
-            SupportedLocale::from_locale_fallback(&locale).korean_or_english();
-        // https://discord.com/channels/1486558411008114788/1486735432816263189/1486736920066396222
+            SupportedLocale::from_locale_fallback(locale).korean_or_english();
         let guild_id = ctx
             .guild_id()
             .ok_or("Unable to get Guild ID, this shouldn't ever happen")?;
@@ -426,27 +426,27 @@ pub async fn new_trade(
     }
 
     let Some(component) = show_confirmation(
-        &ctx,
+        ctx,
         item,
         wants,
         trade_quantity,
         wants_amount,
         lots,
-        &locale,
+        locale,
     )
     .await?
     else {
         return Ok(());
     };
     post_trade(
-        &ctx,
+        ctx,
         component,
         item,
         wants,
         trade_quantity,
         wants_amount,
         lots,
-        &locale,
+        locale,
     )
     .await
 }

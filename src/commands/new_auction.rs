@@ -4,7 +4,7 @@ use std::time::Duration;
 use crate::{
     Context, Res,
     cleanup::resolve_auction,
-    commands::check_if_blacklisted,
+    commands::{check_if_blacklisted, check_if_paused},
     database::{
         Data,
         auction_db::RunningAuction,
@@ -88,7 +88,7 @@ fn validate_input(
 
 #[expect(clippy::too_many_lines, reason = "Come on, 101/100")]
 async fn show_confirmation(
-    ctx: &Context<'_>,
+    ctx: Context<'_>,
     item: ItemName,
     quantity: u16,
     currency: ItemName,
@@ -173,7 +173,7 @@ async fn show_confirmation(
     else {
         reply
             .edit(
-                *ctx,
+                ctx,
                 CreateReply::default()
                     .content(t!("new_trade.confirm.timed_out", locale = locale))
                     .components(vec![]),
@@ -204,7 +204,7 @@ async fn show_confirmation(
 }
 
 async fn send_auction_embed(
-    ctx: &Context<'_>,
+    ctx: Context<'_>,
     supported_locale: SupportedLocale,
     seller: &serenity::User,
     auction: &RunningAuction,
@@ -238,7 +238,7 @@ async fn send_auction_embed(
 
 #[expect(clippy::too_many_arguments)]
 async fn post_auction(
-    ctx: &Context<'_>,
+    ctx: Context<'_>,
     component: serenity::ComponentInteraction,
     item: ItemName,
     quantity: u16,
@@ -381,8 +381,9 @@ pub async fn new_auction(
     #[description_localized("ko", "경매 기간 예: 1h30m (최대 48h)")]
     duration: String,
 ) -> Res<()> {
-    let locale = get_user_locale(ctx.data(), ctx.author().id);
-    check_if_blacklisted(ctx, &locale).await?;
+    let locale = &get_user_locale(ctx.data(), ctx.author().id);
+    check_if_blacklisted(ctx, locale).await?;
+    check_if_paused(ctx, locale)?;
 
     let (item, currency, duration) = validate_input(
         &item,
@@ -390,11 +391,11 @@ pub async fn new_auction(
         &currency_item,
         min_price,
         &duration,
-        &locale,
+        locale,
     )?;
 
     let Some(component) = show_confirmation(
-        &ctx, item, quantity, currency, min_price, duration, &locale,
+        ctx, item, quantity, currency, min_price, duration, locale,
     )
     .await?
     else {
@@ -402,7 +403,7 @@ pub async fn new_auction(
     };
 
     post_auction(
-        &ctx, component, item, quantity, currency, min_price, duration, &locale,
+        ctx, component, item, quantity, currency, min_price, duration, locale,
     )
     .await
 }

@@ -9,6 +9,7 @@ error.missing_lots_input: "Missing lots input"
 error.invalid_number: "Invalid number"
 error.duplicate_post: "❌ Duplicate post!"
 error.blacklisted: "❌ You've been blacklisted and cannot use the market bot"
+error.bot_paused: "❌ Bot was paused by an administrator"
 
 # ── new_trade: confirmation embed ──────────────────────────────────────────────
 new_trade.confirm.title: "Confirm Trade Post"

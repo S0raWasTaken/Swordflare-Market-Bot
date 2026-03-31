@@ -4,6 +4,7 @@ use poise::serenity_prelude::{
 };
 use std::fmt::Write;
 
+use crate::commands::check_if_paused;
 use crate::{Context, Res};
 use crate::{
     database::supported_locale::get_user_locale,
@@ -20,6 +21,8 @@ use crate::{
 #[poise::command(slash_command, interaction_context = "Guild")]
 pub async fn list_items(ctx: Context<'_>) -> Res<()> {
     let locale = &get_user_locale(ctx.data(), ctx.author().id);
+    check_if_paused(ctx, locale)?;
+
     let categories =
         [Weapon, Armor, PassiveSkill, ActiveSkill, Material, Aura, Shard];
 
