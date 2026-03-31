@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
-    time::SystemTime,
+    time::{Duration, SystemTime},
 };
 
 use poise::serenity_prelude::{ChannelId, Context, MessageId, UserId};
@@ -8,7 +8,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     Res,
-    database::{Data, supported_locale::SupportedLocale},
+    database::{
+        Data, auction_db::RunningAuction, supported_locale::SupportedLocale,
+    },
     items::Item,
     magic_numbers::{MODERATION_HOLD_PERIOD, TRADE_EXPIRATION_TIME},
     print_err,
@@ -20,7 +22,6 @@ pub struct TradeData {
     next_id: u64,
 }
 
-#[expect(dead_code)]
 impl TradeData {
     #[inline]
     pub fn insert(&mut self, trade: Trade) -> u64 {
@@ -51,18 +52,6 @@ impl TradeData {
     pub fn iter(&self) -> impl Iterator<Item = (u64, &Trade)> {
         self.inner.iter().map(|(&id, trade)| (id, trade))
     }
-
-    #[inline]
-    #[must_use]
-    pub fn len(&self) -> usize {
-        self.inner.len()
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.inner.is_empty()
-    }
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, Debug)]
@@ -71,7 +60,7 @@ pub enum TradeKind {
     Auction,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum TradeStatus {
     /// Post message is up and running.
     Running,
@@ -183,12 +172,39 @@ pub struct Trade {
     last_updated: SystemTime,
     created_at: SystemTime,
 
+    pub duration: Duration,
+
     pub buyers: HashSet<UserId>,
 
     pub english_message_id: MessageInfo,
     pub korean_message_id: MessageInfo,
 
     pub moderated: bool,
+}
+
+impl From<(RunningAuction, Option<UserId>)> for Trade {
+    fn from((auction, winner): (RunningAuction, Option<UserId>)) -> Self {
+        let highest_bid =
+            auction.highest_bid().unwrap_or((UserId::default(), 0));
+
+        Self {
+            seller: auction.seller,
+            item: auction.item,
+            quantity: auction.quantity,
+            wants: auction.currency_item,
+            wanted_amount: highest_bid.1,
+            stock: 1,
+            kind: TradeKind::Auction,
+            locale: auction.locale,
+            last_updated: auction.start_time,
+            created_at: auction.start_time,
+            duration: auction.duration,
+            buyers: winner.into_iter().collect(),
+            english_message_id: auction.english_message_id,
+            korean_message_id: auction.korean_message_id,
+            moderated: false,
+        }
+    }
 }
 
 impl PartialEq for Trade {
@@ -224,6 +240,7 @@ impl Trade {
             stock,
             last_updated: time_of_creation,
             created_at: time_of_creation,
+            duration: TRADE_EXPIRATION_TIME,
             buyers: HashSet::new(),
             english_message_id: MessageInfo::default(),
             korean_message_id: MessageInfo::default(),
@@ -237,7 +254,7 @@ impl Trade {
     pub fn is_inactive(&self) -> bool {
         self.last_updated
             .elapsed()
-            .is_ok_and(|elapsed| elapsed > TRADE_EXPIRATION_TIME) // Treat clock regression as not expired
+            .is_ok_and(|elapsed| elapsed > self.duration) // Treat clock regression as not expired
             || self.is_sold_out()
             || self.moderated
     }

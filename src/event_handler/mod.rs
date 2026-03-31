@@ -1,16 +1,21 @@
 use poise::serenity_prelude::{
     ComponentInteraction, Context as SerenityContext,
     CreateInteractionResponse, CreateInteractionResponseMessage, FullEvent,
-    Interaction,
+    Interaction, Permissions,
 };
 
 use crate::{
     Error, Res,
     database::{Data, supported_locale::get_user_locale},
-    event_handler::buy_interaction::handle_buy_interaction,
+    event_handler::{
+        auction_bid::handle_bid_interaction,
+        buy_interaction::handle_buy_interaction,
+    },
 };
 
+mod auction_bid;
 mod buy_interaction;
+pub mod confirm_flow;
 
 pub async fn event_handler(
     ctx: &SerenityContext,
@@ -26,8 +31,29 @@ pub async fn event_handler(
         }
 
         let custom_id = component.data.custom_id.as_str();
-        if custom_id.starts_with("buy_") {
-            handle_buy_interaction(ctx, component, data).await?;
+
+        let result = match custom_id {
+            id if id.starts_with("buy_") => {
+                handle_buy_interaction(ctx, component, data).await
+            }
+            id if id.starts_with("bid_") => {
+                handle_bid_interaction(ctx, component, data).await
+            }
+            _ => return Ok(()),
+        };
+
+        if let Err(e) = result {
+            component
+                .create_response(
+                    ctx,
+                    CreateInteractionResponse::Message(
+                        CreateInteractionResponseMessage::default()
+                            .ephemeral(true)
+                            .content(format!("❌ {e}")),
+                    ),
+                )
+                .await
+                .ok();
         }
     }
 
@@ -40,30 +66,22 @@ async fn is_blacklisted(
     data: &Data,
 ) -> Res<bool> {
     let user_id = interaction.user.id;
-    let guild_id = interaction.guild_id.ok_or("Expected guild interaction")?;
 
-    let (member_roles, permissions) = {
-        let guild =
-            guild_id.to_guild_cached(ctx).ok_or("Guild not in cache")?;
-        let member =
-            guild.members.get(&user_id).ok_or("Member not in cache")?;
-        let channel = guild
-            .channels
-            .get(&interaction.channel_id)
-            .ok_or("Channel not in cache")?;
-        let permissions = guild.user_permissions_in(channel, member);
-        (member.roles.clone(), permissions)
+    // DM interactions can't be blacklisted
+    let Some(guild_id) = interaction.guild_id else {
+        return Ok(false);
     };
 
-    if permissions.administrator()
-        || member_roles.iter().any(|r| r == &data.admin_role)
-    {
+    let member = guild_id.member(ctx, user_id).await?;
+    let is_exempt = member.roles.iter().any(|r| r == &data.admin_role)
+        || member.permissions.is_some_and(Permissions::administrator);
+
+    if is_exempt {
         return Ok(false);
     }
 
     if data.blacklist.borrow_data()?.contains(&user_id) {
         let locale = get_user_locale(data, user_id);
-
         interaction
             .create_response(
                 ctx,

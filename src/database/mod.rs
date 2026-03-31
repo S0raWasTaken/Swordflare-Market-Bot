@@ -8,9 +8,13 @@ use poise::serenity_prelude::{ChannelId, RoleId, UserId};
 
 use crate::{
     Res,
-    database::{supported_locale::SupportedLocale, trade_db::TradeData},
+    database::{
+        auction_db::AuctionData, supported_locale::SupportedLocale,
+        trade_db::TradeData,
+    },
 };
 
+pub mod auction_db;
 pub mod supported_locale;
 pub mod trade_db;
 
@@ -18,6 +22,7 @@ pub type TradingDatabase = FileDatabase<TradeData, Yaml>;
 pub type LanguageDatabase =
     FileDatabase<HashMap<UserId, SupportedLocale>, Yaml>;
 pub type Blacklist = FileDatabase<HashSet<UserId>, Yaml>;
+pub type RunningAuctions = FileDatabase<AuctionData, Yaml>;
 
 #[derive(Clone, Copy)]
 pub struct DoubleChannelId {
@@ -46,6 +51,7 @@ impl DoubleChannelId {
 #[derive(Clone)]
 pub struct Data {
     pub trades: Arc<TradingDatabase>,
+    pub running_auctions: Arc<RunningAuctions>,
     pub languages: Arc<LanguageDatabase>,
     pub blacklist: Arc<Blacklist>,
     pub trade_posting_channel: DoubleChannelId,
@@ -63,6 +69,11 @@ impl Data {
             trades: Arc::new(TradingDatabase::load_from_path_or_default(
                 "trading_db.yml",
             )?),
+            running_auctions: Arc::new(
+                RunningAuctions::load_from_path_or_default(
+                    "running_auctions.yml",
+                )?,
+            ),
             languages: Arc::new(LanguageDatabase::load_from_path_or_default(
                 "languages.yml",
             )?),
