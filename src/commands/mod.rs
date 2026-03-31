@@ -3,7 +3,10 @@ use crate::{
     commands::{
         language::set_language,
         list_items::list_items,
-        moderation::{blacklist_user, mark_as_invalid, unblacklist_user},
+        moderation::{
+            blacklist_user, list_blacklisted_users, mark_as_invalid,
+            unblacklist_user,
+        },
         new_auction::new_auction,
         new_trade::new_trade,
     },
@@ -24,6 +27,7 @@ pub fn commands() -> Vec<poise::Command<Data, Error>> {
         mark_as_invalid(),
         blacklist_user(),
         unblacklist_user(),
+        list_blacklisted_users(),
         new_auction(),
     ]
 }

@@ -63,12 +63,10 @@ async fn main() -> Res<()> {
         &admin_role_id,
     )?;
 
-    let mut client = ClientBuilder::new(
-        token,
-        GatewayIntents::non_privileged() | GatewayIntents::GUILD_MEMBERS,
-    )
-    .framework(framework(data))
-    .await?;
+    let mut client =
+        ClientBuilder::new(token, GatewayIntents::non_privileged())
+            .framework(framework(data))
+            .await?;
 
     client.start().await?;
 

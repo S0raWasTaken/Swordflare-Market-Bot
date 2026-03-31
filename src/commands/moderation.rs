@@ -1,4 +1,13 @@
-use poise::serenity_prelude::{Message, MessageId, User};
+use std::time::Duration;
+
+use poise::{
+    CreateReply,
+    serenity_prelude::{
+        CreateActionRow, CreateButton, CreateEmbed, CreateEmbedFooter,
+        CreateInteractionResponse, CreateInteractionResponseMessage, Message,
+        MessageId, User,
+    },
+};
 
 use crate::{
     Context, Res,
@@ -109,5 +118,85 @@ pub async fn unblacklist_user(ctx: Context<'_>, user: User) -> Res<()> {
     ctx.data().blacklist.save()?;
 
     ctx.say("✅ User removed from the blacklist").await?;
+    Ok(())
+}
+
+#[poise::command(
+    slash_command,
+    check = "is_bot_admin",
+    interaction_context = "Guild"
+)]
+pub async fn list_blacklisted_users(ctx: Context<'_>) -> Res<()> {
+    let blacklisted_users = {
+        ctx.data()
+            .blacklist
+            .borrow_data()?
+            .iter()
+            .map(|id| format!("<@{id}>: `{id}`"))
+            .collect::<Vec<_>>()
+    }
+    .chunks(10)
+    .map(|chunk| {
+        let description = chunk.join("\n");
+        CreateEmbed::default()
+            .title("Blacklisted Users")
+            .description(description)
+    })
+    .collect::<Vec<_>>();
+
+    if blacklisted_users.is_empty() {
+        ctx.say("✅ No blacklisted users.").await?;
+        return Ok(());
+    }
+
+    let max_page_number = blacklisted_users.len() - 1;
+    let mut page = 0;
+
+    let make_buttons = |page: usize| {
+        CreateActionRow::Buttons(vec![
+            CreateButton::new("prev").label("◀").disabled(page == 0),
+            CreateButton::new("next")
+                .label("▶")
+                .disabled(page == max_page_number),
+        ])
+    };
+
+    let make_reply = |page: usize| {
+        CreateReply::default()
+            .embed(blacklisted_users[page].clone().footer(
+                CreateEmbedFooter::new(format!("{page}/{max_page_number}")),
+            ))
+            .components(vec![make_buttons(page)])
+    };
+
+    let msg = ctx.send(make_reply(page)).await?;
+
+    let cached_message = msg.message().await?;
+
+    while let Some(interaction) = cached_message
+        .await_component_interaction(ctx.serenity_context())
+        .timeout(Duration::from_mins(1))
+        .await
+    {
+        match interaction.data.custom_id.as_str() {
+            "prev" => page = page.saturating_sub(1),
+            "next" => page = (page + 1).min(max_page_number),
+            _ => (),
+        }
+
+        interaction
+            .create_response(
+                ctx.serenity_context(),
+                CreateInteractionResponse::UpdateMessage(
+                    CreateInteractionResponseMessage::default()
+                        .embed(blacklisted_users[page].clone())
+                        .components(vec![make_buttons(page)]),
+                ),
+            )
+            .await?;
+    }
+
+    msg.delete(ctx).await?;
+
     Ok(())
 }
