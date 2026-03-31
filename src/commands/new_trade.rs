@@ -420,8 +420,13 @@ pub async fn new_trade(
 
         ctx.defer_ephemeral().await?;
 
-        ctx.say(message_link).await?;
-        return Err(t!("error.duplicate_post", locale = locale,).into());
+        ctx.say(format!(
+            "{}\n{}",
+            t!("error.duplicate_post", locale = locale),
+            message_link
+        ))
+        .await?;
+        return Ok(());
     }
 
     let Some(component) = show_confirmation(
