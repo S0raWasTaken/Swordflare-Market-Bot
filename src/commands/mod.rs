@@ -60,7 +60,7 @@ pub async fn is_bot_admin(ctx: Context<'_>) -> Res<bool> {
         member.roles.iter().any(|r| r == &ctx.data().admin_role);
 
     if let Some(member_permissions) = member.permissions {
-        Ok(member_permissions.administrator() || has_admin_role)
+        Ok(has_admin_role || member_permissions.administrator())
     } else {
         Ok(has_admin_role)
     }
