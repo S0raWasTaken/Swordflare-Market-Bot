@@ -17,7 +17,7 @@ mod language;
 mod list_items;
 mod moderation;
 mod new_auction;
-mod new_trade;
+pub mod new_trade;
 
 pub fn commands() -> Vec<poise::Command<Data, Error>> {
     vec![

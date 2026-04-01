@@ -202,6 +202,28 @@ async fn show_confirmation(
     Ok(Some(component))
 }
 
+pub fn trade_buttons(
+    trade_id: u64,
+    locale: &str,
+    sold_out: bool,
+) -> serenity::CreateActionRow {
+    serenity::CreateActionRow::Buttons(vec![
+        serenity::CreateButton::new(format!("buy_{trade_id}"))
+            .label(t!("post.button_buy", locale = locale))
+            .style(serenity::ButtonStyle::Success)
+            .disabled(sold_out),
+        serenity::CreateButton::new(format!("edit_{trade_id}"))
+            .label(t!("post.button_edit", locale = locale))
+            .style(serenity::ButtonStyle::Secondary),
+        serenity::CreateButton::new(format!("refresh_{trade_id}"))
+            .label(t!("post.button_refresh", locale = locale))
+            .style(serenity::ButtonStyle::Secondary),
+        serenity::CreateButton::new(format!("report_{trade_id}"))
+            .label(t!("post.button_report", locale = locale))
+            .style(serenity::ButtonStyle::Danger),
+    ])
+}
+
 async fn send_post_embed(
     ctx: Context<'_>,
     supported_locale: SupportedLocale,
@@ -211,6 +233,8 @@ async fn send_post_embed(
     trade_id: u64,
 ) -> Res<Message> {
     let locale = supported_locale.to_locale();
+    let buttons = trade_buttons(trade_id, locale, false);
+
     Ok(data
         .trades_channel
         .get_channel(supported_locale)
@@ -218,11 +242,7 @@ async fn send_post_embed(
             ctx.http(),
             serenity::CreateMessage::default()
                 .embed(build_trade_embed(trade, seller, locale))
-                .components(vec![serenity::CreateActionRow::Buttons(vec![
-                    serenity::CreateButton::new(format!("buy_{trade_id}"))
-                        .label(t!("post.button_buy", locale = locale))
-                        .style(serenity::ButtonStyle::Success),
-                ])]),
+                .components(vec![buttons]),
         )
         .await
         .inspect_err(|e| {

@@ -2,6 +2,7 @@ use poise::serenity_prelude::{self as serenity, CacheHttp};
 
 use crate::{
     Res,
+    commands::new_trade::trade_buttons,
     database::{
         Data,
         auction_db::RunningAuction,
@@ -211,12 +212,7 @@ pub async fn update_post(
             ctx.http(),
             message_id,
             serenity::EditMessage::default().embed(embed).components(vec![
-                serenity::CreateActionRow::Buttons(vec![
-                    serenity::CreateButton::new(format!("buy_{trade_id}"))
-                        .label(t!("post.button_buy", locale = post_locale))
-                        .style(serenity::ButtonStyle::Success)
-                        .disabled(sold_out),
-                ]),
+                trade_buttons(trade_id, post_locale, sold_out),
             ]),
         )
         .await?;

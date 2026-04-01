@@ -1,42 +1,21 @@
 use crate::{
-    Res, TRADING_SERVER_LINK,
-    database::supported_locale::{SupportedLocale, get_user_locale},
+    Data, Res, TRADING_SERVER_LINK,
+    database::{
+        supported_locale::{SupportedLocale, get_user_locale},
+        trade_db::Trade,
+    },
     event_handler::confirm_flow::{ConfirmOutcome, await_both_confirmations},
     magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
     post::update_post,
 };
 use poise::serenity_prelude::{self as serenity, CreateMessage};
 
-// ── Data types ────────────────────────────────────────────────────────────────
-
-struct TradeContext {
-    trade_id: u64,
-    seller_id: serenity::UserId,
-    seller_name: String,
-    stock: u16,
-    item: crate::items::Item,
-    item_quantity: u16,
-    wants: crate::items::Item,
-    wanted_amount: u16,
-    buyer_locale: String,
-    seller_locale: String,
-}
-
-struct PendingTrade<'a> {
-    buyer_dm: serenity::PrivateChannel,
-    seller_dm: serenity::PrivateChannel,
-    buyer_msg: serenity::Message,
-    seller_msg: serenity::Message,
-    buyer: &'a serenity::User,
-    lots: u16,
-}
-
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 pub async fn handle_buy_interaction(
     ctx: &serenity::Context,
     interaction: &serenity::ComponentInteraction,
-    data: &crate::Data,
+    data: &Data,
 ) -> Res<()> {
     let buyer = &interaction.user;
 
@@ -69,7 +48,7 @@ pub async fn handle_buy_interaction(
 async fn resolve_trade(
     ctx: &serenity::Context,
     interaction: &serenity::ComponentInteraction,
-    data: &crate::Data,
+    data: &Data,
     buyer: &serenity::User,
 ) -> Res<Option<TradeContext>> {
     let buyer_locale = get_user_locale(data, buyer.id);
@@ -81,10 +60,7 @@ async fn resolve_trade(
         .parse()?;
 
     let (seller_id, stock, item, item_quantity, wants, wanted_amount) = {
-        let db = data.trades.borrow_data()?;
-        let trade = db
-            .get(trade_id)
-            .ok_or(t!("error.trade_not_found", locale = buyer_locale))?;
+        let trade = fetch_trade(data, trade_id, &buyer_locale)?.1;
         (
             trade.seller,
             trade.stock,
@@ -449,7 +425,7 @@ async fn send_trade_dms<'a>(
 /// Waits for both parties to confirm or cancel, then finalises or aborts.
 async fn await_confirmations(
     ctx: &serenity::Context,
-    data: &crate::Data,
+    data: &Data,
     trade_ctx: &TradeContext,
     pending: &PendingTrade<'_>,
 ) -> Res<()> {
@@ -562,7 +538,7 @@ async fn dm_cleanup(
 
 async fn finish_trade(
     ctx: &serenity::Context,
-    data: &crate::Data,
+    data: &Data,
     trade_ctx: &TradeContext,
     pending: &PendingTrade<'_>,
     buyer_int: &serenity::ComponentInteraction,
@@ -652,4 +628,45 @@ async fn finish_trade(
         .ok();
 
     Ok(())
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+pub fn fetch_trade(
+    data: &Data,
+    trade_id: u64,
+    locale: &str,
+) -> Res<(u64, Trade)> {
+    Ok((
+        trade_id,
+        data.trades
+            .borrow_data()?
+            .get(trade_id)
+            .ok_or(t!("error.trade_not_found", locale = locale))
+            .cloned()?,
+    ))
+}
+
+// ── Data types ────────────────────────────────────────────────────────────────
+
+struct TradeContext {
+    trade_id: u64,
+    seller_id: serenity::UserId,
+    seller_name: String,
+    stock: u16,
+    item: crate::items::Item,
+    item_quantity: u16,
+    wants: crate::items::Item,
+    wanted_amount: u16,
+    buyer_locale: String,
+    seller_locale: String,
+}
+
+struct PendingTrade<'a> {
+    buyer_dm: serenity::PrivateChannel,
+    seller_dm: serenity::PrivateChannel,
+    buyer_msg: serenity::Message,
+    seller_msg: serenity::Message,
+    buyer: &'a serenity::User,
+    lots: u16,
 }

@@ -9,13 +9,14 @@ use crate::{
     database::{Data, supported_locale::get_user_locale},
     event_handler::{
         auction_bid::handle_bid_interaction,
-        buy_interaction::handle_buy_interaction,
+        buy_interaction::handle_buy_interaction, handle_edit::handle_edit,
     },
 };
 
 mod auction_bid;
 mod buy_interaction;
 pub mod confirm_flow;
+mod handle_edit;
 
 pub async fn event_handler(
     ctx: &SerenityContext,
@@ -39,6 +40,18 @@ pub async fn event_handler(
             id if id.starts_with("bid_") => {
                 handle_bid_interaction(ctx, component, data).await
             }
+
+            // Extra trade buttons
+            id if id.starts_with("edit_") => {
+                handle_edit(ctx, component, data).await
+            }
+
+            id if id.starts_with("refresh_") => Ok(()),
+            id if id.starts_with("report_") => Ok(()),
+
+            // Extra auction buttons
+            id if id.starts_with("au_cancel_") => Ok(()),
+
             _ => return Ok(()),
         };
 

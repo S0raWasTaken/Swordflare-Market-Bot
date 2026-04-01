@@ -23,6 +23,16 @@ new_trade.confirm.timed_out: "⏰ Trade confirmation timed out."
 new_trade.confirm.cancelled: "❌ Trade cancelled."
 new_trade.posted: "✅ Trade posted!"
 
+# ── trade_edit ─────────────────────────────────────────────────────────────────
+edit.error.not_seller: "❌ You can't edit someone else's post!"
+edit.error.missing_stock_input: "❌ Missing stock input"
+
+edit.modal.title: "What's your new stock?"
+edit.modal.input_label: "Stock"
+edit.modal.placeholder: "Enter new stock"
+
+edit.success: "✅ Stock updated!"
+
 # ── set_language ───────────────────────────────────────────────────────────────
 set_language.success: "✅ Language set!"
 
@@ -78,7 +88,12 @@ post.stock_value: "%{lots} lot(s) remaining"
 post.stock_sold_out: "Sold out"
 post.footer_buyers: "%{count} buyer(s)"
 post.footer_bidders: "%{count} bidder(s)"
+
 post.button_buy: "Buy"
+post.button_edit: "Edit stock"
+post.button_refresh: "Refresh Time"
+post.button_finish: "Finish"
+post.button_report: "Report"
 
 # ── auction: errors ────────────────────────────────────────────────────────────
 auction.error.min_price_zero: "❌ Minimum price must be greater than zero."
@@ -108,7 +123,10 @@ auction.post.field_current_bid: "Current highest bid"
 auction.post.current_bid: "**%{amount} %{currency}** — %{bidder}"
 auction.post.current_bid_unknown: "**%{amount} %{currency}**"
 auction.post.no_bids: "No bids yet"
+
 auction.post.button_bid: "Place Bid"
+auction.post.button_cancel: "Cancel"
+auction.post.button_report: "Report"
 
 # ── auction: bid modal ─────────────────────────────────────────────────────────
 auction.modal.title: "Place a Bid"
