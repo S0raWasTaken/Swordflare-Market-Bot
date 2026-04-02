@@ -12,7 +12,7 @@ use poise::serenity_prelude::{
 };
 
 use crate::{
-    Res,
+    Error, Res,
     database::{
         auction_db::AuctionData,
         supported_locale::SupportedLocale,
@@ -162,6 +162,27 @@ impl Data {
                 }
             })
         })?)
+    }
+
+    pub fn new_report(
+        &self,
+        reporter: UserId,
+        report: String,
+        trade_id: u64,
+        locale: &str,
+    ) -> Res<(bool, String)> {
+        self.trades.write(|db| {
+            let trade = db
+                .get_mut(trade_id)
+                .ok_or(t!("error.trade_not_found", locale = locale))?;
+
+            let link = trade.message_link(self, SupportedLocale::en_US)?;
+
+            Ok::<(bool, String), Error>((
+                trade.add_report(reporter, report),
+                link,
+            ))
+        })?
     }
 
     pub fn pause(&self) -> bool {

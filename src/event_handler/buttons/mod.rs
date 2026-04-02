@@ -19,6 +19,7 @@ pub mod bid;
 pub mod buy;
 pub mod edit;
 pub mod refresh;
+pub mod report;
 
 // ── Common ────────────────────────────────────────────────────────────────────
 
@@ -26,14 +27,14 @@ pub type ControlFlow<T> = std::ops::ControlFlow<(), T>;
 
 pub async fn resolve_trade(
     button_ctx: &ButtonContext<'_>,
-    error_msg: &str,
+    error_condition: impl Fn(UserId) -> Option<String>,
 ) -> Res<ControlFlow<(u64, Trade)>> {
     let locale = &button_ctx.locale();
     let trade_id = button_ctx.trade_id()?;
     let trade = fetch_trade(button_ctx.data, trade_id, locale)?;
 
-    if !button_ctx.interaction_user_is_seller(trade.seller) {
-        button_ctx.reply_ephemeral(error_msg).await?;
+    if let Some(error_msg) = error_condition(trade.seller) {
+        button_ctx.reply_ephemeral(&error_msg).await?;
         return Ok(Break(()));
     }
 
@@ -75,29 +76,35 @@ macro_rules! break_or {
     };
 }
 
-pub fn parse_input_modal(
+pub fn parse_number_in_modal(
     modal: &ModalInteraction,
     locale: &str,
     error_msg: String,
 ) -> Res<u64> {
-    Ok(modal
+    Ok(parse_modal(modal, error_msg).and_then(|value| {
+        Ok(value
+            .parse::<u64>()
+            .map_err(|_| t!("error.invalid_number", locale = locale))?)
+    })?)
+}
+
+pub fn parse_modal(
+    modal: &ModalInteraction,
+    error_msg: String,
+) -> Result<String, String> {
+    modal
         .data
         .components
         .iter()
         .flat_map(|row| row.components.iter())
         .find_map(|component| {
             if let ActionRowComponent::InputText(text) = component {
-                text.value.as_deref()
+                text.value.clone()
             } else {
                 None
             }
         })
         .ok_or(error_msg)
-        .and_then(|value| {
-            Ok(value
-                .parse::<u64>()
-                .map_err(|_| t!("error.invalid_number", locale = locale))?)
-        })?)
 }
 
 pub async fn modal_collector(

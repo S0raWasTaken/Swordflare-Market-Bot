@@ -26,7 +26,7 @@ new_trade.posted: "✅ Trade posted!"
 
 # ── trade_edit ─────────────────────────────────────────────────────────────────
 edit.error.not_seller: "❌ You can't edit someone else's post!"
-edit.error.missing_stock_input: "❌ Missing stock input"
+edit.error.missing_stock_input: "❌ Missing stock input."
 
 edit.modal.title: "What's your new stock?"
 edit.modal.input_label: "Stock"
@@ -35,12 +35,21 @@ edit.modal.placeholder: "Enter new stock"
 edit.success: "✅ Stock updated!"
 
 # ── trade_refresh ──────────────────────────────────────────────────────────────
-refresh.error.not_seller: "❌ You can't refresh someone else's post"
+refresh.error.not_seller: "❌ You can't refresh someone else's post!"
 
 refresh.success: "✅ Post refreshed!"
 
 # ── trade_report ───────────────────────────────────────────────────────────────
+report.error.is_seller: "❌ You can't report your own post!"
+report.error.missing_input: "❌ Missing report input."
+report.error.empty: "❌ Report text cannot be empty."
+report.error.already_reported: "❌ You already reported this post!"
 
+report.modal.title: "What's wrong with this post?"
+report.modal.label: "Report"
+report.modal.placeholder: "Shortly describe what happened"
+
+report.success: "✅ Post reported!"
 
 # ── set_language ───────────────────────────────────────────────────────────────
 set_language.success: "✅ Language set!"

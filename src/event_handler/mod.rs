@@ -8,7 +8,7 @@ use crate::{
     database::{Data, supported_locale::get_user_locale},
     event_handler::buttons::{
         bid::handle_bid, buy::handle_buy, edit::handle_edit,
-        interaction_response, refresh::handle_refresh,
+        interaction_response, refresh::handle_refresh, report::handle_report,
     },
 };
 
@@ -48,7 +48,7 @@ pub async fn event_handler(
 
             "edit_" => handle_edit(ctx, component, data).await,
             "refresh_" => handle_refresh(ctx, component, data).await,
-            "report_" => return Ok(()),
+            "report_" => handle_report(ctx, component, data).await,
 
             "au_cancel_" => return Ok(())
         };

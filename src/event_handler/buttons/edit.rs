@@ -10,7 +10,7 @@ use crate::{
     database::{Data, trade_db::Trade},
     event_handler::buttons::{
         ButtonContext, ControlFlow, input_action_row, input_text,
-        interaction_response, modal, modal_collector, parse_input_modal,
+        interaction_response, modal, modal_collector, parse_number_in_modal,
         resolve_trade, update_posts,
     },
 };
@@ -25,8 +25,16 @@ pub async fn handle_edit(
     let edit_ctx = ButtonContext::new(interaction, ctx, data, "edit_");
     let not_seller = t!("edit.error.not_seller", locale = &edit_ctx.locale());
 
+    let error_condition = |seller| {
+        if edit_ctx.interaction_user_is_seller(seller) {
+            None
+        } else {
+            Some(not_seller.to_string())
+        }
+    };
+
     let (trade_id, trade) =
-        break_or!(resolve_trade(&edit_ctx, &not_seller).await?);
+        break_or!(resolve_trade(&edit_ctx, error_condition).await?);
     let (lots, modal) = break_or!(prompt_edit(&edit_ctx, &trade).await?);
 
     update_trade(&edit_ctx, trade_id, lots).await?;
@@ -67,7 +75,7 @@ async fn prompt_edit(
         return Ok(Break(()));
     };
 
-    let parsed = parse_input_modal(
+    let parsed = parse_number_in_modal(
         &modal,
         locale,
         t!("edit.error.missing_stock_input", locale = locale).to_string(),

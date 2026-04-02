@@ -12,7 +12,7 @@ use crate::{
     },
     event_handler::buttons::{
         ButtonContext, ControlFlow, input_action_row, input_text,
-        interaction_response, modal, modal_collector, parse_input_modal,
+        interaction_response, modal, modal_collector, parse_number_in_modal,
     },
     post::update_auction_post,
 };
@@ -118,7 +118,7 @@ async fn prompt_bid(
         return Ok(Break(()));
     };
 
-    let amount = match parse_input_modal(
+    let amount = match parse_number_in_modal(
         &modal,
         locale,
         t!("auction.error.missing_bid_input", locale = locale).to_string(),

@@ -173,7 +173,9 @@ pub async fn list_reports(ctx: Context<'_>, msg: Message) -> Res<()> {
 
     // It can still go over 2000 given the right circumstances, so let's
     // slice it again for good measure.
-    ctx.say(&full_list[..2000]).await?;
+    full_list.truncate(2000);
+
+    ctx.say(full_list).await?;
 
     Ok(())
 }
