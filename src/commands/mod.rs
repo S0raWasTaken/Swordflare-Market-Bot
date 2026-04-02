@@ -4,8 +4,8 @@ use crate::{
         language::set_language,
         list_items::list_items,
         moderation::{
-            blacklist_user, list_blacklisted_users, mark_as_invalid, pause_bot,
-            resume_bot, unblacklist_user,
+            blacklist_user, list_blacklisted_users, list_reports,
+            mark_as_invalid, pause_bot, resume_bot, unblacklist_user,
         },
         new_auction::new_auction,
         new_trade::new_trade,
@@ -31,6 +31,7 @@ pub fn commands() -> Vec<poise::Command<Data, Error>> {
         new_auction(),
         pause_bot(),
         resume_bot(),
+        list_reports(),
     ]
 }
 
