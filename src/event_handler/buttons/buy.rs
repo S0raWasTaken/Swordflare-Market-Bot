@@ -1,42 +1,27 @@
 use crate::{
-    Res, TRADING_SERVER_LINK,
+    Data, Res, TRADING_SERVER_LINK,
     database::supported_locale::{SupportedLocale, get_user_locale},
-    event_handler::confirm_flow::{ConfirmOutcome, await_both_confirmations},
+    event_handler::{
+        buttons::{
+            fetch_trade, input_action_row, input_text, interaction_response,
+            modal, modal_collector, parse_number_in_modal,
+        },
+        confirm_flow::{ConfirmOutcome, await_both_confirmations},
+    },
     magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
     post::update_post,
 };
-use poise::serenity_prelude::{self as serenity, CreateMessage};
-
-// ── Data types ────────────────────────────────────────────────────────────────
-
-struct TradeContext {
-    trade_id: u64,
-    seller_id: serenity::UserId,
-    seller_name: String,
-    stock: u16,
-    item: crate::items::Item,
-    item_quantity: u16,
-    wants: crate::items::Item,
-    wanted_amount: u16,
-    buyer_locale: String,
-    seller_locale: String,
-}
-
-struct PendingTrade<'a> {
-    buyer_dm: serenity::PrivateChannel,
-    seller_dm: serenity::PrivateChannel,
-    buyer_msg: serenity::Message,
-    seller_msg: serenity::Message,
-    buyer: &'a serenity::User,
-    lots: u16,
-}
+use poise::serenity_prelude::{
+    self as serenity, ComponentInteraction, CreateInteractionResponse,
+    CreateMessage, UserId,
+};
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
-pub async fn handle_buy_interaction(
+pub async fn handle_buy(
     ctx: &serenity::Context,
     interaction: &serenity::ComponentInteraction,
-    data: &crate::Data,
+    data: &Data,
 ) -> Res<()> {
     let buyer = &interaction.user;
 
@@ -56,9 +41,56 @@ pub async fn handle_buy_interaction(
 
     let pending = send_trade_dms(ctx, &trade_ctx, buyer, lots).await?;
 
-    await_confirmations(ctx, data, &trade_ctx, &pending).await?;
+    let outcome = await_confirmations(ctx, data, &trade_ctx, &pending).await?;
 
-    Ok(())
+    log_outcome(ctx, data, outcome, lots, buyer.id, trade_ctx.trade_id).await
+}
+
+pub async fn log_outcome(
+    ctx: &serenity::Context,
+    data: &Data,
+    outcome: TradeResult,
+    lots_bought: u64,
+    buyer: UserId,
+    trade_id: u64,
+) -> Res<()> {
+    let trade_message = |id: u64| {
+        let trade = fetch_trade(data, id, "en-US")?;
+        let trade_display = trade.display_simple("en-US");
+
+        let seller = trade.seller;
+        let link = trade.message_link(data, SupportedLocale::en_US)?;
+
+        Res::<(String, u64)>::Ok((
+            format!(
+                "seller: <@{seller}>, buyer: <@{buyer}>, trade: {trade_display}\n\
+            {link}"
+            ),
+            trade.quantity,
+        ))
+    };
+
+    let message = match outcome {
+        TradeResult::Confirmed => {
+            let (message, quantity) = trade_message(trade_id)?;
+            format!(
+                "Trade confirmed ─ {}\nBought: x{lots_bought} ({})",
+                message,
+                lots_bought * quantity
+            )
+        }
+        TradeResult::BuyerCancelled => {
+            format!("Buyer cancelled a trade ─ {}", trade_message(trade_id)?.0)
+        }
+        TradeResult::SellerCancelled => {
+            format!("Seller cancelled a trade ─ {}", trade_message(trade_id)?.0)
+        }
+        TradeResult::TimedOut => {
+            format!("Trade timed out ─ {}", trade_message(trade_id)?.0)
+        }
+    };
+
+    data.log(ctx, &message).await
 }
 
 // ── Steps ─────────────────────────────────────────────────────────────────────
@@ -69,7 +101,7 @@ pub async fn handle_buy_interaction(
 async fn resolve_trade(
     ctx: &serenity::Context,
     interaction: &serenity::ComponentInteraction,
-    data: &crate::Data,
+    data: &Data,
     buyer: &serenity::User,
 ) -> Res<Option<TradeContext>> {
     let buyer_locale = get_user_locale(data, buyer.id);
@@ -81,10 +113,21 @@ async fn resolve_trade(
         .parse()?;
 
     let (seller_id, stock, item, item_quantity, wants, wanted_amount) = {
-        let db = data.trades.borrow_data()?;
-        let trade = db
-            .get(trade_id)
-            .ok_or(t!("error.trade_not_found", locale = buyer_locale))?;
+        let trade = fetch_trade(data, trade_id, &buyer_locale)?;
+
+        if trade.is_inactive() {
+            interaction
+                .create_response(
+                    ctx,
+                    interaction_response(
+                        &t!("buy.error.inactive", locale = buyer_locale),
+                        true,
+                    ),
+                )
+                .await?;
+            return Ok(None);
+        }
+
         (
             trade.seller,
             trade.stock,
@@ -100,13 +143,9 @@ async fn resolve_trade(
         interaction
             .create_response(
                 ctx,
-                serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true)
-                        .content(t!(
-                            "buy.error.self_buy",
-                            locale = buyer_locale
-                        )),
+                interaction_response(
+                    &t!("buy.error.self_buy", locale = buyer_locale),
+                    true,
                 ),
             )
             .await?;
@@ -133,64 +172,45 @@ async fn resolve_trade(
 /// Returns None if the user timed out.
 async fn prompt_lots(
     ctx: &serenity::Context,
-    interaction: &serenity::ComponentInteraction,
+    interaction: &ComponentInteraction,
     trade_ctx: &TradeContext,
-) -> Res<Option<(u16, serenity::ModalInteraction)>> {
+) -> Res<Option<(u64, serenity::ModalInteraction)>> {
     let buyer_locale = &trade_ctx.buyer_locale;
+    let custom_id = format!("quantity_{}", trade_ctx.trade_id);
+
     interaction
         .create_response(
             ctx,
-            serenity::CreateInteractionResponse::Modal(
-                serenity::CreateModal::new(
-                    format!("quantity_{}", trade_ctx.trade_id),
-                    t!("buy.modal.title", locale = buyer_locale),
+            CreateInteractionResponse::Modal(
+                modal(
+                    &custom_id,
+                    &t!("buy.modal.title", locale = buyer_locale),
                 )
-                .components(vec![
-                    serenity::CreateActionRow::InputText(
-                        serenity::CreateInputText::new(
-                            serenity::InputTextStyle::Short,
-                            t!("buy.modal.input_label", locale = buyer_locale),
-                            "quantity",
-                        )
-                        .min_length(1)
-                        .max_length(5)
-                        .placeholder(t!(
+                .components(vec![input_action_row(
+                    input_text(
+                        &t!("buy.modal.input_label", locale = buyer_locale),
+                        "quantity",
+                        &t!(
                             "buy.modal.input_placeholder",
                             locale = buyer_locale
-                        )),
+                        ),
                     ),
-                ]),
+                )]),
             ),
         )
         .await?;
 
-    let Some(modal) = serenity::collector::ModalInteractionCollector::new(ctx)
-        .author_id(interaction.user.id)
-        .custom_ids(vec![format!("quantity_{}", trade_ctx.trade_id)])
-        .timeout(TRADE_CONFIRMATION_TIMEOUT)
-        .next()
-        .await
+    let Some(modal) =
+        modal_collector(ctx, interaction.user.id, custom_id).await
     else {
         return Ok(None);
     };
 
-    let parsed = modal
-        .data
-        .components
-        .iter()
-        .flat_map(|r| r.components.iter())
-        .find_map(|c| {
-            if let serenity::ActionRowComponent::InputText(t) = c {
-                t.value.as_deref()
-            } else {
-                None
-            }
-        })
-        .ok_or(t!("error.missing_lots_input", locale = buyer_locale))
-        .and_then(|v| {
-            v.parse::<u16>()
-                .map_err(|_| t!("error.invalid_number", locale = buyer_locale))
-        });
+    let parsed = parse_number_in_modal(
+        &modal,
+        buyer_locale,
+        t!("error.missing_lots_input", locale = buyer_locale).to_string(),
+    );
 
     let lots = match parsed {
         Ok(q) => q,
@@ -198,11 +218,7 @@ async fn prompt_lots(
             modal
                 .create_response(
                     ctx,
-                    serenity::CreateInteractionResponse::Message(
-                        serenity::CreateInteractionResponseMessage::default()
-                            .ephemeral(true)
-                            .content(format!("❌ {e}")),
-                    ),
+                    interaction_response(&format!("❌ {e}"), true),
                 )
                 .await?;
             return Ok(None);
@@ -213,14 +229,13 @@ async fn prompt_lots(
         modal
             .create_response(
                 ctx,
-                serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true)
-                        .content(t!(
-                            "buy.error.invalid_amount",
-                            locale = buyer_locale,
-                            stock = trade_ctx.stock
-                        )),
+                interaction_response(
+                    &t!(
+                        "buy.error.invalid_amount",
+                        locale = buyer_locale,
+                        stock = trade_ctx.stock
+                    ),
+                    true,
                 ),
             )
             .await?;
@@ -237,7 +252,7 @@ async fn confirm_purchase(
     ctx: &serenity::Context,
     modal: &serenity::ModalInteraction,
     trade_ctx: &TradeContext,
-    lots: u16,
+    lots: u64,
 ) -> Res<bool> {
     let buyer_locale = &trade_ctx.buyer_locale;
     let embed = serenity::CreateEmbed::default()
@@ -253,7 +268,7 @@ async fn confirm_purchase(
             format!(
                 "**{}** x{}",
                 trade_ctx.item.name.display(buyer_locale),
-                u32::from(trade_ctx.item_quantity) * u32::from(lots)
+                trade_ctx.item_quantity * lots
             ),
             true,
         )
@@ -262,7 +277,7 @@ async fn confirm_purchase(
             format!(
                 "**{}** x{}",
                 trade_ctx.wants.name.display(buyer_locale),
-                u32::from(trade_ctx.wanted_amount) * u32::from(lots)
+                trade_ctx.wanted_amount * lots
             ),
             true,
         )
@@ -354,7 +369,7 @@ async fn send_trade_dms<'a>(
     ctx: &serenity::Context,
     trade_ctx: &TradeContext,
     buyer: &'a serenity::User,
-    lots: u16,
+    lots: u64,
 ) -> Res<PendingTrade<'a>> {
     let TradeContext {
         trade_id,
@@ -449,10 +464,10 @@ async fn send_trade_dms<'a>(
 /// Waits for both parties to confirm or cancel, then finalises or aborts.
 async fn await_confirmations(
     ctx: &serenity::Context,
-    data: &crate::Data,
+    data: &Data,
     trade_ctx: &TradeContext,
     pending: &PendingTrade<'_>,
-) -> Res<()> {
+) -> Res<TradeResult> {
     let TradeContext {
         trade_id,
         seller_id,
@@ -465,7 +480,7 @@ async fn await_confirmations(
         buyer, buyer_dm, seller_dm, buyer_msg, seller_msg, ..
     } = pending;
 
-    match await_both_confirmations(
+    let outcome = match await_both_confirmations(
         ctx,
         buyer.id,
         *seller_id,
@@ -487,6 +502,7 @@ async fn await_confirmations(
                 &seller_int,
             )
             .await?;
+            TradeResult::Confirmed
         }
         ConfirmOutcome::BuyerCancelled { buyer_int } => {
             buyer_int
@@ -513,6 +529,7 @@ async fn await_confirmations(
                 )
                 .await?;
             dm_cleanup(ctx, buyer_msg, seller_msg).await;
+            TradeResult::BuyerCancelled
         }
         ConfirmOutcome::SellerCancelled { seller_int } => {
             seller_int
@@ -539,13 +556,15 @@ async fn await_confirmations(
                 )
                 .await?;
             dm_cleanup(ctx, buyer_msg, seller_msg).await;
+            TradeResult::SellerCancelled
         }
         ConfirmOutcome::TimedOut => {
             dm_cleanup(ctx, buyer_msg, seller_msg).await;
+            TradeResult::TimedOut
         }
-    }
+    };
 
-    Ok(())
+    Ok(outcome)
 }
 
 /// Deletes both DM messages.
@@ -562,7 +581,7 @@ async fn dm_cleanup(
 
 async fn finish_trade(
     ctx: &serenity::Context,
-    data: &crate::Data,
+    data: &Data,
     trade_ctx: &TradeContext,
     pending: &PendingTrade<'_>,
     buyer_int: &serenity::ComponentInteraction,
@@ -584,13 +603,19 @@ async fn finish_trade(
 
     let is_sold_out = data.trades.write(|db| {
         if let Some(trade) = db.get_mut(*trade_id) {
+            if trade.stock < quantity {
+                return Err(t!(
+                    "error.insufficient_stock",
+                    locale = buyer_locale
+                ));
+            }
             trade.stock = trade.stock.saturating_sub(quantity);
             trade.buyers.insert(buyer.id);
-            trade.is_sold_out()
+            Ok(trade.is_sold_out())
         } else {
-            false
+            Err(t!("error.trade_not_found", locale = buyer_locale))
         }
-    })?;
+    })??;
     data.trades.save()?;
 
     update_post(ctx, data, *trade_id, SupportedLocale::en_US).await?;
@@ -652,4 +677,35 @@ async fn finish_trade(
         .ok();
 
     Ok(())
+}
+
+// ── Data types ────────────────────────────────────────────────────────────────
+
+struct TradeContext {
+    trade_id: u64,
+    seller_id: serenity::UserId,
+    seller_name: String,
+    stock: u64,
+    item: crate::items::Item,
+    item_quantity: u64,
+    wants: crate::items::Item,
+    wanted_amount: u64,
+    buyer_locale: String,
+    seller_locale: String,
+}
+
+struct PendingTrade<'a> {
+    buyer_dm: serenity::PrivateChannel,
+    seller_dm: serenity::PrivateChannel,
+    buyer_msg: serenity::Message,
+    seller_msg: serenity::Message,
+    buyer: &'a serenity::User,
+    lots: u64,
+}
+
+pub enum TradeResult {
+    Confirmed, // Trade ID
+    BuyerCancelled,
+    SellerCancelled,
+    TimedOut,
 }

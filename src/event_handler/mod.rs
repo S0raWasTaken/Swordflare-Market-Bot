@@ -1,21 +1,31 @@
 use poise::serenity_prelude::{
-    ComponentInteraction, Context as SerenityContext,
-    CreateInteractionResponse, CreateInteractionResponseMessage, FullEvent,
-    Interaction, Permissions,
+    ComponentInteraction, Context as SerenityContext, FullEvent, Interaction,
+    Permissions,
 };
 
 use crate::{
     Error, Res,
     database::{Data, supported_locale::get_user_locale},
-    event_handler::{
-        auction_bid::handle_bid_interaction,
-        buy_interaction::handle_buy_interaction,
+    event_handler::buttons::{
+        auction_cancel::handle_auction_cancel, bid::handle_bid,
+        buy::handle_buy, edit::handle_edit, interaction_response,
+        refresh::handle_refresh, report::handle_report,
     },
 };
 
-mod auction_bid;
-mod buy_interaction;
+pub mod buttons;
 pub mod confirm_flow;
+
+macro_rules! match_prefix {
+    ($matched:expr, $($starts_with:expr => $fun:expr),*) => {
+        match $matched {
+            $(
+                id if id.starts_with($starts_with) => $fun,
+            )*
+            _ => return Ok(())
+        }
+    };
+}
 
 pub async fn event_handler(
     ctx: &SerenityContext,
@@ -32,25 +42,23 @@ pub async fn event_handler(
 
         let custom_id = component.data.custom_id.as_str();
 
-        let result = match custom_id {
-            id if id.starts_with("buy_") => {
-                handle_buy_interaction(ctx, component, data).await
-            }
-            id if id.starts_with("bid_") => {
-                handle_bid_interaction(ctx, component, data).await
-            }
-            _ => return Ok(()),
+        let result = match_prefix! {
+            custom_id,
+            "buy_" => handle_buy(ctx, component, data).await,
+            "bid_" => handle_bid(ctx, component, data).await,
+
+            "edit_" => handle_edit(ctx, component, data).await,
+            "refresh_" => handle_refresh(ctx, component, data).await,
+            "report_" => handle_report(ctx, component, data).await,
+
+            "au_cancel_" => handle_auction_cancel(ctx, component, data).await
         };
 
         if let Err(e) = result {
             component
                 .create_response(
                     ctx,
-                    CreateInteractionResponse::Message(
-                        CreateInteractionResponseMessage::default()
-                            .ephemeral(true)
-                            .content(format!("❌ {e}")),
-                    ),
+                    interaction_response(&e.to_string(), true),
                 )
                 .await
                 .ok();
@@ -85,10 +93,9 @@ async fn is_blacklisted(
         interaction
             .create_response(
                 ctx,
-                CreateInteractionResponse::Message(
-                    CreateInteractionResponseMessage::default()
-                        .ephemeral(true)
-                        .content(t!("error.blacklisted", locale = locale)),
+                interaction_response(
+                    &t!("error.blacklisted", locale = locale),
+                    true,
                 ),
             )
             .await?;

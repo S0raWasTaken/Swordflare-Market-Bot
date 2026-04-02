@@ -39,35 +39,20 @@ pub static TRADING_SERVER_LINK: LazyLock<String> = LazyLock::new(|| {
         .expect("TRADING_PRIVATE_SERVER_LINK must be set")
 });
 
+pub static ACTIVE_GUILD_ID: LazyLock<u64> = LazyLock::new(|| {
+    std::env::var("ACTIVE_GUILD_ID")
+        .expect("ACTIVE_GUILD_ID must be set")
+        .parse()
+        .expect("ACTIVE_GUILD_ID must be a number")
+});
+
 i18n!("locales", fallback = "en-US");
 
 #[tokio::main]
 async fn main() -> Res<()> {
-    dotenv()?;
+    dotenv().ok();
 
-    let (
-        token,
-        english_posting_channel_id,
-        korean_posting_channel_id,
-        english_auctions_channel_id,
-        korean_auctions_channel_id,
-        admin_role_id,
-    ) = get_vars!(
-        "DISCORD_TOKEN",
-        "ENGLISH_POSTING_CHANNEL_ID",
-        "KOREAN_POSTING_CHANNEL_ID",
-        "ENGLISH_AUCTIONS_CHANNEL_ID",
-        "KOREAN_AUCTIONS_CHANNEL_ID",
-        "ADMIN_ROLE_ID"
-    );
-
-    let data = Data::new(
-        &english_posting_channel_id,
-        &korean_posting_channel_id,
-        &english_auctions_channel_id,
-        &korean_auctions_channel_id,
-        &admin_role_id,
-    )?;
+    let (data, token) = Data::new()?;
 
     let mut client =
         ClientBuilder::new(token, GatewayIntents::non_privileged())

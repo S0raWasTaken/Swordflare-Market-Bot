@@ -3,12 +3,14 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use poise::serenity_prelude::UserId;
+use poise::serenity_prelude::{self, UserId};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Context, Res,
-    database::{supported_locale::SupportedLocale, trade_db::MessageInfo},
+    ACTIVE_GUILD_ID, Res,
+    database::{
+        Data, supported_locale::SupportedLocale, trade_db::MessageInfo,
+    },
     items::Item,
 };
 
@@ -52,18 +54,19 @@ impl AuctionData {
 
 /// A currently running auction. Once it expires and is resolved,
 /// it gets moved into the trades database as `TradeKind::Auction`.
+#[expect(clippy::unsafe_derive_deserialize, reason = "tokio::join!")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunningAuction {
     pub seller: UserId,
 
     pub item: Item,
-    pub quantity: u16,
+    pub quantity: u64,
 
     pub currency_item: Item,
-    pub min_price: u16,
+    pub min_price: u64,
 
     /// `UserId` -> their current bid amount
-    pub bids: HashMap<UserId, u16>,
+    pub bids: HashMap<UserId, u64>,
 
     pub start_time: SystemTime,
     pub end_time: SystemTime,
@@ -80,9 +83,9 @@ impl RunningAuction {
     pub fn new(
         seller: UserId,
         item: Item,
-        quantity: u16,
+        quantity: u64,
         currency_item: Item,
-        min_price: u16,
+        min_price: u64,
         duration: Duration,
         locale: SupportedLocale,
     ) -> Self {
@@ -105,7 +108,7 @@ impl RunningAuction {
 
     /// Returns the current highest bid, or `None` if no bids yet.
     #[must_use]
-    pub fn highest_bid(&self) -> Option<(UserId, u16)> {
+    pub fn highest_bid(&self) -> Option<(UserId, u64)> {
         self.bids
             .iter()
             .max_by_key(|(_, amount)| **amount)
@@ -115,20 +118,20 @@ impl RunningAuction {
     /// Returns true if the auction has expired.
     #[must_use]
     pub fn is_expired(&self) -> bool {
-        self.end_time.elapsed().is_ok_and(|e| e > Duration::ZERO)
+        self.end_time.elapsed().is_ok()
     }
 
     /// Returns the minimum valid next bid — either `min_price` if no bids,
     /// or highest bid + 1.
     #[must_use]
-    pub fn min_next_bid(&self) -> Option<u16> {
+    pub fn min_next_bid(&self) -> Option<u64> {
         self.highest_bid()
             .map_or(Some(self.min_price), |(_, amount)| amount.checked_add(1))
     }
 
     /// Returns true if `amount` is a valid new bid for `user`.
     #[must_use]
-    pub fn is_valid_bid(&self, user: UserId, amount: u16) -> bool {
+    pub fn is_valid_bid(&self, user: UserId, amount: u64) -> bool {
         let Some(min_next_bid) = self.min_next_bid() else {
             return false;
         };
@@ -146,17 +149,60 @@ impl RunningAuction {
         true
     }
 
-    pub async fn delete_messages(self, ctx: Context<'_>) -> Res<()> {
-        let channels = ctx.data().auctions_channel;
+    pub fn message_link(
+        &self,
+        locale: SupportedLocale,
+        data: &Data,
+    ) -> Res<String> {
+        let guild_id = *ACTIVE_GUILD_ID;
+        let channel_id = data.auctions_channel.get_channel(locale);
+        let message_id = match locale {
+            SupportedLocale::ko_KR => self.korean_message_id.id(),
+            _ => self.english_message_id.id(),
+        }?;
 
-        let eng_id = self.english_message_id.id();
-        let kor_id = self.korean_message_id.id();
+        Ok(format!(
+            "https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
+        ))
+    }
 
-        let eng_result =
-            channels.english.delete_message(ctx.http(), eng_id?).await;
-        let kor_result =
-            channels.korean.delete_message(ctx.http(), kor_id?).await;
+    pub fn display_log(&self, data: &Data) -> Res<String> {
+        let seller_id = self.seller;
 
+        let auction_display = self.display_simple("en-US");
+        let link = self.message_link(SupportedLocale::en_US, data)?;
+
+        Ok(format!(
+            "<@{seller_id}> started an auction: \
+            {auction_display}.\n\
+            {link}"
+        ))
+    }
+
+    pub fn display_simple(&self, locale: &str) -> String {
+        format!(
+            "{} x{} for {} x{} minimum",
+            self.item.name.display(locale),
+            self.quantity,
+            self.currency_item.name.display(locale),
+            self.min_price
+        )
+    }
+
+    pub async fn delete_messages(
+        self,
+        ctx: &serenity_prelude::Context,
+        data: &Data,
+    ) -> Res<()> {
+        let channels = data.auctions_channel;
+
+        let eng_id = self.english_message_id.id()?;
+        let kor_id = self.korean_message_id.id()?;
+
+        let (eng_result, kor_result) = tokio::join! {
+                    channels.english.delete_message(ctx, eng_id),
+                    channels.korean.delete_message(ctx, kor_id)
+        };
         eng_result?;
         kor_result?;
         Ok(())

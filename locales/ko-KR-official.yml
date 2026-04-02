@@ -10,6 +10,7 @@ error.invalid_number: "Invalid number"
 error.duplicate_post: "❌ Duplicate post!"
 error.blacklisted: "❌ You've been blacklisted and cannot use the market bot"
 error.bot_paused: "❌ Bot was paused by an administrator"
+error.insufficient_stock: "Insufficient Stock"
 
 # ── new_trade: confirmation embed ──────────────────────────────────────────────
 new_trade.confirm.title: "Confirm Trade Post"
@@ -23,6 +24,33 @@ new_trade.confirm.timed_out: "⏰ Trade confirmation timed out."
 new_trade.confirm.cancelled: "❌ Trade cancelled."
 new_trade.posted: "✅ Trade posted!"
 
+# ── trade_edit ─────────────────────────────────────────────────────────────────
+edit.error.not_seller: "❌ You can't edit someone else's post!"
+edit.error.missing_stock_input: "❌ Missing stock input."
+
+edit.modal.title: "What's your new stock?"
+edit.modal.input_label: "Stock"
+edit.modal.placeholder: "Enter new stock"
+
+edit.success: "✅ Stock updated!"
+
+# ── trade_refresh ──────────────────────────────────────────────────────────────
+refresh.error.not_seller: "❌ You can't refresh someone else's post!"
+
+refresh.success: "✅ Post refreshed!"
+
+# ── trade_report ───────────────────────────────────────────────────────────────
+report.error.is_seller: "❌ You can't report your own post!"
+report.error.missing_input: "❌ Missing report input."
+report.error.empty: "❌ Report text cannot be empty."
+report.error.already_reported: "❌ You already reported this post!"
+
+report.modal.title: "What's wrong with this post?"
+report.modal.label: "Report"
+report.modal.placeholder: "Shortly describe what happened"
+
+report.success: "✅ Post reported!"
+
 # ── set_language ───────────────────────────────────────────────────────────────
 set_language.success: "✅ Language set!"
 
@@ -32,6 +60,7 @@ buy.modal.input_label: "Lots"
 buy.modal.input_placeholder: "Enter number of lots"
 buy.error.self_buy: "❌ You can't buy your own trade."
 buy.error.invalid_amount: "❌ Invalid amount. There are only %{stock} lot(s) remaining."
+buy.error.inactive: "❌ This trade is inactive."
 
 # ── buy interaction: purchase confirmation ─────────────────────────────────────
 buy.confirm.title: "Confirm Purchase"
@@ -70,15 +99,21 @@ buy.done.seller_sold_out: "✅ Trade confirmed! You gave **x%{item_total} %{item
 # ── post embed ─ only used in Korean and English ─ Do not translate for other languages
 post.title: "Trade by %{seller}"
 post.title_sold_out: "[SOLD OUT] Trade by %{seller}"
+post.title_expired: "[EXPIRED] Trade by %{seller}"
 post.expires: "Expires <t:%{unix}:R>"
+post.expired: "Expired <t:%{unix}:R>"
 post.field_offering: "Offering"
 post.field_wants: "Wants"
 post.field_stock: "Stock"
 post.stock_value: "%{lots} lot(s) remaining"
 post.stock_sold_out: "Sold out"
 post.footer_buyers: "%{count} buyer(s)"
-post.footer_bidders: "%{count} bidder(s)"
+
 post.button_buy: "Buy"
+post.button_edit: "Edit stock"
+post.button_refresh: "Refresh Time"
+post.button_finish: "Finish"
+post.button_report: "Report"
 
 # ── auction: errors ────────────────────────────────────────────────────────────
 auction.error.min_price_zero: "❌ Minimum price must be greater than zero."
@@ -87,6 +122,7 @@ auction.error.duration_too_short: "❌ Duration cannot be less than %{min} minut
 auction.error.self_bid: "❌ You can't bid on your own auction."
 auction.error.expired: "❌ This auction has already ended."
 auction.error.invalid_bid: "❌ Your bid must be at least **%{min} %{currency}** and higher than the current highest bid."
+auction.error.missing_bid_input: "❌ Missing bid input"
 auction.error.max_value_reached: "❌ Impossible to bid higher. Maximum value reached."
 
 # ── auction: new auction confirmation ─────────────────────────────────────────
@@ -108,7 +144,10 @@ auction.post.field_current_bid: "Current highest bid"
 auction.post.current_bid: "**%{amount} %{currency}** — %{bidder}"
 auction.post.current_bid_unknown: "**%{amount} %{currency}**"
 auction.post.no_bids: "No bids yet"
+
 auction.post.button_bid: "Place Bid"
+auction.post.button_cancel: "Cancel"
+auction.post.button_report: "Report"
 
 # ── auction: bid modal ─────────────────────────────────────────────────────────
 auction.modal.title: "Place a Bid"

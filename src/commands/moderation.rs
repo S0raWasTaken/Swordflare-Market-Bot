@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{fmt::Write, time::Duration};
 
 use poise::{
     CreateReply,
@@ -72,7 +72,7 @@ pub async fn mark_as_invalid(ctx: Context<'_>, msg: Message) -> Res<()> {
             .write(|db| try_remove_from_auctions_db(db, msg.id))??;
 
         if let Some(auction) = auction {
-            auction.delete_messages(ctx).await?;
+            auction.delete_messages(ctx.serenity_context(), ctx.data()).await?;
         }
         ctx.data().running_auctions.save()?;
     }
@@ -118,6 +118,65 @@ pub async fn unblacklist_user(ctx: Context<'_>, user: User) -> Res<()> {
     ctx.data().blacklist.save()?;
 
     ctx.say("✅ User removed from the blacklist").await?;
+    Ok(())
+}
+
+#[poise::command(
+    context_menu_command = "List Reports",
+    check = "is_bot_admin",
+    interaction_context = "Guild"
+)]
+pub async fn list_reports(ctx: Context<'_>, msg: Message) -> Res<()> {
+    ctx.defer_ephemeral().await?;
+
+    let Some(post_reports) = ctx.data().trades.read(|db| {
+        db.iter().find_map(|entry| {
+            if entry.1.english_message_id.is_eq(msg.id)
+                || entry.1.korean_message_id.is_eq(msg.id)
+            {
+                Some(entry.1.reports.clone())
+            } else {
+                None
+            }
+        })
+    })?
+    else {
+        ctx.say("Post was not found in the database").await?;
+        return Ok(());
+    };
+
+    if post_reports.is_empty() {
+        ctx.say("There are no reports for this post").await?;
+        return Ok(());
+    }
+
+    let mut full_list = String::new();
+
+    for (user, report_message) in post_reports {
+        writeln!(full_list, "<@{user}>: `{report_message}`")?;
+    }
+
+    if full_list.len() > 2000 {
+        let mut lines: Vec<_> = full_list[..2000].lines().collect();
+
+        let total = full_list.lines().count();
+
+        lines.truncate(lines.len().saturating_sub(2));
+
+        let skipped = total - lines.len();
+
+        let mut trimmed = lines.join("\n");
+        write!(trimmed, "\n... {skipped} left")?;
+
+        full_list = trimmed;
+    }
+
+    // It can still go over 2000 given the right circumstances, so let's
+    // slice it again for good measure.
+    full_list.truncate(2000);
+
+    ctx.say(full_list).await?;
+
     Ok(())
 }
 
@@ -218,6 +277,13 @@ pub async fn pause_bot(ctx: Context<'_>) -> Res<()> {
         return Err("❌ Already paused!".into());
     }
 
+    let guild = ctx.guild_id().ok_or(
+        r#"Cannot find guild. 
+        Which is weird, because interaction_context = "Guild""#,
+    )?;
+
+    guild.edit_nickname(ctx.http(), Some("[PAUSED]")).await?;
+
     ctx.say("✅ Paused!").await?;
     Ok(())
 }
@@ -234,6 +300,13 @@ pub async fn resume_bot(ctx: Context<'_>) -> Res<()> {
     if !ctx.data().resume() {
         return Err("❌ Already running!".into());
     }
+
+    let guild = ctx.guild_id().ok_or(
+        r#"Cannot find guild. 
+        Which is weird, because interaction_context = "Guild" "#,
+    )?;
+
+    guild.edit_nickname(ctx.http(), None).await?;
 
     ctx.say("✅ Resumed!").await?;
     Ok(())

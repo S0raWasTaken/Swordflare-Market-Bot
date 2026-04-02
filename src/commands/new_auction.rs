@@ -1,4 +1,9 @@
-use poise::{CreateReply, serenity_prelude as serenity};
+use poise::{
+    CreateReply,
+    serenity_prelude::{
+        self as serenity, ButtonStyle, CreateActionRow, CreateButton,
+    },
+};
 use std::time::Duration;
 
 use crate::{
@@ -42,9 +47,9 @@ const MIN_AUCTION_DURATION: Duration = Duration::from_mins(1);
 
 fn validate_input(
     item: &str,
-    quantity: u16,
+    quantity: u64,
     currency_item: &str,
-    min_price: u16,
+    min_price: u64,
     duration_str: &str,
     locale: &str,
 ) -> Res<(ItemName, ItemName, Duration)> {
@@ -90,9 +95,9 @@ fn validate_input(
 async fn show_confirmation(
     ctx: Context<'_>,
     item: ItemName,
-    quantity: u16,
+    quantity: u64,
     currency: ItemName,
-    min_price: u16,
+    min_price: u64,
     duration: Duration,
     locale: &str,
 ) -> Res<Option<serenity::ComponentInteraction>> {
@@ -203,6 +208,17 @@ async fn show_confirmation(
     Ok(Some(component))
 }
 
+pub fn auction_buttons(auction_id: u64, locale: &str) -> CreateActionRow {
+    CreateActionRow::Buttons(vec![
+        CreateButton::new(format!("bid_{auction_id}"))
+            .label(t!("auction.post.button_bid", locale = locale))
+            .style(ButtonStyle::Primary),
+        CreateButton::new(format!("au_cancel_{auction_id}"))
+            .label(t!("buy.confirm.button_cancel", locale = locale))
+            .style(ButtonStyle::Danger),
+    ])
+}
+
 async fn send_auction_embed(
     ctx: Context<'_>,
     supported_locale: SupportedLocale,
@@ -219,11 +235,7 @@ async fn send_auction_embed(
             ctx.http(),
             serenity::CreateMessage::default()
                 .embed(build_auction_embed(auction, seller, None, locale))
-                .components(vec![serenity::CreateActionRow::Buttons(vec![
-                    serenity::CreateButton::new(format!("bid_{auction_id}"))
-                        .label(t!("auction.post.button_bid", locale = locale))
-                        .style(serenity::ButtonStyle::Primary),
-                ])]),
+                .components(vec![auction_buttons(auction_id, locale)]),
         )
         .await
         .inspect_err(|e| {
@@ -241,19 +253,19 @@ async fn post_auction(
     ctx: Context<'_>,
     component: serenity::ComponentInteraction,
     item: ItemName,
-    quantity: u16,
+    quantity: u64,
     currency: ItemName,
-    min_price: u16,
+    min_price: u64,
     duration: Duration,
     locale: &str,
-) -> Res<()> {
+) -> Res<RunningAuction> {
     let supported_locale = SupportedLocale::from_locale_fallback(locale);
     let seller = ctx.author();
 
     let item_obj = item.item();
     let currency_obj = currency.item();
 
-    let auction = RunningAuction::new(
+    let mut auction = RunningAuction::new(
         seller.id,
         *item_obj,
         quantity,
@@ -303,6 +315,10 @@ async fn post_auction(
             return Err(e);
         }
     };
+
+    auction.english_message_id.insert(english_message.id);
+    auction.korean_message_id.insert(korean_message.id);
+
     data.running_auctions.write(|db| {
         if let Some(a) = db.get_mut(auction_id) {
             a.english_message_id.insert(english_message.id);
@@ -350,7 +366,7 @@ async fn post_auction(
         )
         .await?;
 
-    Ok(())
+    Ok(auction)
 }
 
 /// Start a new auction
@@ -366,7 +382,7 @@ pub async fn new_auction(
 
     #[description = "How many of the item you are auctioning"]
     #[description_localized("ko", "경매할 아이템 수량")]
-    quantity: u16,
+    quantity: u64,
 
     #[autocomplete = "autocomplete_item"]
     #[description = "The item used as currency for bids"]
@@ -375,7 +391,7 @@ pub async fn new_auction(
 
     #[description = "Minimum starting bid"]
     #[description_localized("ko", "최소 시작 입찰가")]
-    min_price: u16,
+    min_price: u64,
 
     #[description = "Duration e.g. 1h30m (max 48h)"]
     #[description_localized("ko", "경매 기간 예: 1h30m (최대 48h)")]
@@ -402,8 +418,16 @@ pub async fn new_auction(
         return Ok(());
     };
 
-    post_auction(
+    let auction = post_auction(
         ctx, component, item, quantity, currency, min_price, duration, locale,
     )
-    .await
+    .await?;
+
+    ctx.data()
+        .log(ctx.http(), &auction.display_log(ctx.data())?)
+        .await
+        .inspect_err(print_err)
+        .ok();
+
+    Ok(())
 }
