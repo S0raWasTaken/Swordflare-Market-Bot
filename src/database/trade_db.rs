@@ -322,6 +322,9 @@ impl Trade {
         }
         .id()?;
 
+        // Please don't try reading data.trades here,
+        // you'll deadlock database::Data::new_report(..)
+
         Ok(format!(
             "https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
         ))

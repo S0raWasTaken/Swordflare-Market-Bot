@@ -39,7 +39,10 @@ pub async fn handle_report(
     let (modal, report_text) =
         break_or!(prompt_report(&report_ctx, locale).await?);
 
-    log_and_save_report(&report_ctx, &modal, report_text, data, locale).await?;
+    break_or!(
+        log_and_save_report(&report_ctx, &modal, report_text, data, locale)
+            .await?
+    );
 
     modal
         .create_response(
@@ -86,7 +89,13 @@ async fn prompt_report(
 
     let report_text = match parsed {
         Ok(mut text) => {
-            text.truncate(128);
+            if text.len() > 128
+                && let Some((idx, _)) = text.char_indices().nth(128)
+            {
+                // We'll most likely never reach this,
+                // but we can't just fully trust the api.
+                text.truncate(idx);
+            }
             text
         }
         Err(error) => {
@@ -104,7 +113,10 @@ async fn prompt_report(
         modal
             .create_response(
                 report_ctx.ctx,
-                interaction_response(&t!("report.error.empty"), true),
+                interaction_response(
+                    &t!("report.error.empty", locale = locale),
+                    true,
+                ),
             )
             .await?;
         return Ok(Break(()));
@@ -119,7 +131,7 @@ pub async fn log_and_save_report(
     report: String,
     data: &Data,
     locale: &str,
-) -> Res<()> {
+) -> Res<ControlFlow<()>> {
     let reporter = report_ctx.user().id;
     let reports_channel = data.reports_channel;
 
@@ -154,7 +166,8 @@ pub async fn log_and_save_report(
                 ),
             )
             .await?;
+        return Ok(Break(()));
     }
 
-    Ok(())
+    Ok(Continue(()))
 }

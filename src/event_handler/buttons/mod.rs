@@ -81,11 +81,9 @@ pub fn parse_number_in_modal(
     locale: &str,
     error_msg: String,
 ) -> Res<u64> {
-    Ok(parse_modal(modal, error_msg).and_then(|value| {
-        Ok(value
-            .parse::<u64>()
-            .map_err(|_| t!("error.invalid_number", locale = locale))?)
-    })?)
+    parse_modal(modal, error_msg)?
+        .parse::<u64>()
+        .map_err(|_| t!("error.invalid_number", locale = locale).into())
 }
 
 pub fn parse_modal(

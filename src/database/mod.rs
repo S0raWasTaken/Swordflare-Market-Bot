@@ -176,6 +176,7 @@ impl Data {
                 .get_mut(trade_id)
                 .ok_or(t!("error.trade_not_found", locale = locale))?;
 
+            // This doesn't try reading Data::trades, so it should be dealock safe.
             let link = trade.message_link(self, SupportedLocale::en_US)?;
 
             Ok::<(bool, String), Error>((
