@@ -1,4 +1,9 @@
-use poise::{CreateReply, serenity_prelude as serenity};
+use poise::{
+    CreateReply,
+    serenity_prelude::{
+        self as serenity, ButtonStyle, CreateActionRow, CreateButton,
+    },
+};
 use std::time::Duration;
 
 use crate::{
@@ -203,6 +208,17 @@ async fn show_confirmation(
     Ok(Some(component))
 }
 
+pub fn auction_buttons(auction_id: u64, locale: &str) -> CreateActionRow {
+    CreateActionRow::Buttons(vec![
+        CreateButton::new(format!("bid_{auction_id}"))
+            .label(t!("auction.post.button_bid", locale = locale))
+            .style(ButtonStyle::Primary),
+        CreateButton::new(format!("au_cancel_{auction_id}"))
+            .label(t!("buy.confirm.button_cancel", locale = locale))
+            .style(ButtonStyle::Danger),
+    ])
+}
+
 async fn send_auction_embed(
     ctx: Context<'_>,
     supported_locale: SupportedLocale,
@@ -219,11 +235,7 @@ async fn send_auction_embed(
             ctx.http(),
             serenity::CreateMessage::default()
                 .embed(build_auction_embed(auction, seller, None, locale))
-                .components(vec![serenity::CreateActionRow::Buttons(vec![
-                    serenity::CreateButton::new(format!("bid_{auction_id}"))
-                        .label(t!("auction.post.button_bid", locale = locale))
-                        .style(serenity::ButtonStyle::Primary),
-                ])]),
+                .components(vec![auction_buttons(auction_id, locale)]),
         )
         .await
         .inspect_err(|e| {

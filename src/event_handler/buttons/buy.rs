@@ -4,13 +4,17 @@ use crate::{
     event_handler::{
         buttons::{
             fetch_trade, input_action_row, input_text, interaction_response,
+            modal, modal_collector, parse_number_in_modal,
         },
         confirm_flow::{ConfirmOutcome, await_both_confirmations},
     },
     magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
     post::update_post,
 };
-use poise::serenity_prelude::{self as serenity, CreateMessage, UserId};
+use poise::serenity_prelude::{
+    self as serenity, ComponentInteraction, CreateInteractionResponse,
+    CreateMessage, UserId,
+};
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
@@ -168,17 +172,19 @@ async fn resolve_trade(
 /// Returns None if the user timed out.
 async fn prompt_lots(
     ctx: &serenity::Context,
-    interaction: &serenity::ComponentInteraction,
+    interaction: &ComponentInteraction,
     trade_ctx: &TradeContext,
 ) -> Res<Option<(u64, serenity::ModalInteraction)>> {
     let buyer_locale = &trade_ctx.buyer_locale;
+    let custom_id = format!("quantity_{}", trade_ctx.trade_id);
+
     interaction
         .create_response(
             ctx,
-            serenity::CreateInteractionResponse::Modal(
-                serenity::CreateModal::new(
-                    format!("quantity_{}", trade_ctx.trade_id),
-                    t!("buy.modal.title", locale = buyer_locale),
+            CreateInteractionResponse::Modal(
+                modal(
+                    &custom_id,
+                    &t!("buy.modal.title", locale = buyer_locale),
                 )
                 .components(vec![input_action_row(
                     input_text(
@@ -194,33 +200,17 @@ async fn prompt_lots(
         )
         .await?;
 
-    let Some(modal) = serenity::collector::ModalInteractionCollector::new(ctx)
-        .author_id(interaction.user.id)
-        .custom_ids(vec![format!("quantity_{}", trade_ctx.trade_id)])
-        .timeout(TRADE_CONFIRMATION_TIMEOUT)
-        .next()
-        .await
+    let Some(modal) =
+        modal_collector(ctx, interaction.user.id, custom_id).await
     else {
         return Ok(None);
     };
 
-    let parsed = modal
-        .data
-        .components
-        .iter()
-        .flat_map(|r| r.components.iter())
-        .find_map(|c| {
-            if let serenity::ActionRowComponent::InputText(t) = c {
-                t.value.as_deref()
-            } else {
-                None
-            }
-        })
-        .ok_or(t!("error.missing_lots_input", locale = buyer_locale))
-        .and_then(|v| {
-            v.parse::<u64>()
-                .map_err(|_| t!("error.invalid_number", locale = buyer_locale))
-        });
+    let parsed = parse_number_in_modal(
+        &modal,
+        buyer_locale,
+        t!("error.missing_lots_input", locale = buyer_locale).to_string(),
+    );
 
     let lots = match parsed {
         Ok(q) => q,
@@ -228,11 +218,7 @@ async fn prompt_lots(
             modal
                 .create_response(
                     ctx,
-                    serenity::CreateInteractionResponse::Message(
-                        serenity::CreateInteractionResponseMessage::default()
-                            .ephemeral(true)
-                            .content(format!("❌ {e}")),
-                    ),
+                    interaction_response(&format!("❌ {e}"), true),
                 )
                 .await?;
             return Ok(None);
@@ -243,14 +229,13 @@ async fn prompt_lots(
         modal
             .create_response(
                 ctx,
-                serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true)
-                        .content(t!(
-                            "buy.error.invalid_amount",
-                            locale = buyer_locale,
-                            stock = trade_ctx.stock
-                        )),
+                interaction_response(
+                    &t!(
+                        "buy.error.invalid_amount",
+                        locale = buyer_locale,
+                        stock = trade_ctx.stock
+                    ),
+                    true,
                 ),
             )
             .await?;

@@ -123,10 +123,19 @@ auction.error.duration_too_short: "❌ Duration cannot be less than %{min} minut
 auction.error.self_bid: "❌ You can't bid on your own auction."
 auction.error.expired: "❌ This auction has already ended."
 auction.error.invalid_bid: "❌ Your bid must be at least **%{min} %{currency}** and higher than the current highest bid."
-auction.error.missing_bid_input: "❌ Missing bid input"
-auction.error.max_value_reached: "❌ Impossible to bid higher. Maximum value reached"
+auction.error.missing_bid_input: "❌ Missing bid input."
+auction.error.max_value_reached: "❌ Impossible to bid higher. Maximum value reached."
 
-# ── auction: new auction confirmation ─────────────────────────────────────────
+# ── auction_cancel ─────────────────────────────────────────────────────────────
+cancel.error.not_found: "❌ Auction not found."
+cancel.error.not_seller: "❌ You can't cancel someone else's auction!"
+
+cancel.embed.title: "Cancel Auction"
+cancel.embed.description: "Are you sure you want to cancel this auction?"
+
+cancel.success: "✅ Auction cancelled!"
+
+# ── auction: new auction confirmation ──────────────────────────────────────────
 auction.confirm.title: "Confirm Auction Post"
 auction.confirm.field_item: "Item being auctioned"
 auction.confirm.field_currency: "Bid currency"
@@ -134,7 +143,7 @@ auction.confirm.field_min_price: "Starting bid"
 auction.confirm.field_duration: "Duration"
 auction.posted: "✅ Auction posted!"
 
-# ── auction: post embed ─ only used in Korean and English ─────────────────────
+# ── auction: post embed ─ only used in Korean and English ──────────────────────
 auction.post.title: "Auction by %{seller}"
 auction.post.title_ended: "[ENDED] Auction by %{seller}"
 auction.post.ends_at: "Ends <t:%{unix}:R>"
@@ -155,7 +164,7 @@ auction.modal.title: "Place a Bid"
 auction.modal.input_label: "Amount (min: %{min} %{currency})"
 auction.bid.accepted: "✅ Bid of **%{amount} %{currency}** placed successfully!"
 
-# ── auction: resolve (DMs sent when auction ends) ─────────────────────────────
+# ── auction: resolve (DMs sent when auction ends) ──────────────────────────────
 auction.resolve.winner_dm: |
   🏆 You won the auction! You bid **%{amount} %{currency}** for **x%{quantity} %{item}**.
   Go find the seller in-game and confirm once the trade is done.

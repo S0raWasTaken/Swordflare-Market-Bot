@@ -3,11 +3,11 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use poise::serenity_prelude::UserId;
+use poise::serenity_prelude::{self, UserId};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ACTIVE_GUILD_ID, Context, Res,
+    ACTIVE_GUILD_ID, Res,
     database::{
         Data, supported_locale::SupportedLocale, trade_db::MessageInfo,
     },
@@ -54,6 +54,7 @@ impl AuctionData {
 
 /// A currently running auction. Once it expires and is resolved,
 /// it gets moved into the trades database as `TradeKind::Auction`.
+#[expect(clippy::unsafe_derive_deserialize, reason = "tokio::join!")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunningAuction {
     pub seller: UserId,
@@ -188,17 +189,20 @@ impl RunningAuction {
         )
     }
 
-    pub async fn delete_messages(self, ctx: Context<'_>) -> Res<()> {
-        let channels = ctx.data().auctions_channel;
+    pub async fn delete_messages(
+        self,
+        ctx: &serenity_prelude::Context,
+        data: &Data,
+    ) -> Res<()> {
+        let channels = data.auctions_channel;
 
         let eng_id = self.english_message_id.id()?;
         let kor_id = self.korean_message_id.id()?;
 
-        let eng_result =
-            channels.english.delete_message(ctx.http(), eng_id).await;
-        let kor_result =
-            channels.korean.delete_message(ctx.http(), kor_id).await;
-
+        let (eng_result, kor_result) = tokio::join! {
+                    channels.english.delete_message(ctx, eng_id),
+                    channels.korean.delete_message(ctx, kor_id)
+        };
         eng_result?;
         kor_result?;
         Ok(())

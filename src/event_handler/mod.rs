@@ -7,8 +7,9 @@ use crate::{
     Error, Res,
     database::{Data, supported_locale::get_user_locale},
     event_handler::buttons::{
-        bid::handle_bid, buy::handle_buy, edit::handle_edit,
-        interaction_response, refresh::handle_refresh, report::handle_report,
+        auction_cancel::handle_auction_cancel, bid::handle_bid,
+        buy::handle_buy, edit::handle_edit, interaction_response,
+        refresh::handle_refresh, report::handle_report,
     },
 };
 
@@ -50,7 +51,7 @@ pub async fn event_handler(
             "refresh_" => handle_refresh(ctx, component, data).await,
             "report_" => handle_report(ctx, component, data).await,
 
-            "au_cancel_" => return Ok(())
+            "au_cancel_" => handle_auction_cancel(ctx, component, data).await
         };
 
         if let Err(e) = result {

@@ -16,7 +16,7 @@ use crate::{
 mod language;
 mod list_items;
 mod moderation;
-mod new_auction;
+pub mod new_auction;
 pub mod new_trade;
 
 pub fn commands() -> Vec<poise::Command<Data, Error>> {

@@ -72,7 +72,7 @@ pub async fn mark_as_invalid(ctx: Context<'_>, msg: Message) -> Res<()> {
             .write(|db| try_remove_from_auctions_db(db, msg.id))??;
 
         if let Some(auction) = auction {
-            auction.delete_messages(ctx).await?;
+            auction.delete_messages(ctx.serenity_context(), ctx.data()).await?;
         }
         ctx.data().running_auctions.save()?;
     }

@@ -2,7 +2,7 @@ use poise::serenity_prelude::{self as serenity, CacheHttp};
 
 use crate::{
     Res,
-    commands::new_trade::trade_buttons,
+    commands::{new_auction::auction_buttons, new_trade::trade_buttons},
     database::{
         Data,
         auction_db::RunningAuction,
@@ -370,16 +370,7 @@ pub async fn update_auction_post(
                 if expired {
                     vec![]
                 } else {
-                    vec![serenity::CreateActionRow::Buttons(vec![
-                        serenity::CreateButton::new(format!(
-                            "bid_{auction_id}"
-                        ))
-                        .label(t!(
-                            "auction.post.button_bid",
-                            locale = post_locale
-                        ))
-                        .style(serenity::ButtonStyle::Primary),
-                    ])]
+                    vec![auction_buttons(auction_id, post_locale)]
                 },
             ),
         )

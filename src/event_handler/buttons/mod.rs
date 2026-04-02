@@ -15,6 +15,7 @@ use crate::{
     magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
 };
 
+pub mod auction_cancel;
 pub mod bid;
 pub mod buy;
 pub mod edit;
@@ -83,6 +84,7 @@ pub fn parse_number_in_modal(
 ) -> Res<u64> {
     parse_modal(modal, error_msg)?
         .parse::<u64>()
+        .map(|n| n.min(9_999_999_999_999_999_999))
         .map_err(|_| t!("error.invalid_number", locale = locale).into())
 }
 
@@ -175,6 +177,7 @@ impl<'a> ButtonContext<'a> {
         &self.interaction.user
     }
 
+    /// Also works for auction id
     pub fn trade_id(&self) -> Res<u64> {
         Ok(self
             .interaction
