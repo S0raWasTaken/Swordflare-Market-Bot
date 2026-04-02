@@ -99,19 +99,16 @@ async fn prompt_bid(
     bid_ctx
         .create_response(CreateInteractionResponse::Modal(
             modal(&custom_id, &t!("auction.modal.title", locale = locale))
-                .components(vec![input_action_row(
-                    input_text(
-                        &t!(
-                            "auction.modal.input_label",
-                            locale = locale,
-                            min = min_next_bid,
-                            currency = currency_name
-                        ),
-                        "bid_amount",
-                        &min_next_bid.to_string(),
-                    )
-                    .max_length(5),
-                )]),
+                .components(vec![input_action_row(input_text(
+                    &t!(
+                        "auction.modal.input_label",
+                        locale = locale,
+                        min = min_next_bid,
+                        currency = currency_name
+                    ),
+                    "bid_amount",
+                    &min_next_bid.to_string(),
+                ))]),
         ))
         .await?;
 

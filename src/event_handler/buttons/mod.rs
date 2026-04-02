@@ -132,7 +132,7 @@ pub fn input_text(
     CreateInputText::new(InputTextStyle::Short, label, custom_id)
         .placeholder(placeholder)
         .min_length(1)
-        .max_length(5)
+        .max_length(19)
 }
 
 #[inline]

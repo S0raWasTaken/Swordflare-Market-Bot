@@ -2,7 +2,9 @@ use crate::{
     Data, Res, TRADING_SERVER_LINK,
     database::supported_locale::{SupportedLocale, get_user_locale},
     event_handler::{
-        buttons::{fetch_trade, interaction_response},
+        buttons::{
+            fetch_trade, input_action_row, input_text, interaction_response,
+        },
         confirm_flow::{ConfirmOutcome, await_both_confirmations},
     },
     magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
@@ -178,21 +180,16 @@ async fn prompt_lots(
                     format!("quantity_{}", trade_ctx.trade_id),
                     t!("buy.modal.title", locale = buyer_locale),
                 )
-                .components(vec![
-                    serenity::CreateActionRow::InputText(
-                        serenity::CreateInputText::new(
-                            serenity::InputTextStyle::Short,
-                            t!("buy.modal.input_label", locale = buyer_locale),
-                            "quantity",
-                        )
-                        .min_length(1)
-                        .max_length(5)
-                        .placeholder(t!(
+                .components(vec![input_action_row(
+                    input_text(
+                        &t!("buy.modal.input_label", locale = buyer_locale),
+                        "quantity",
+                        &t!(
                             "buy.modal.input_placeholder",
                             locale = buyer_locale
-                        )),
+                        ),
                     ),
-                ]),
+                )]),
             ),
         )
         .await?;
