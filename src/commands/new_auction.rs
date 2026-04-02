@@ -246,14 +246,14 @@ async fn post_auction(
     min_price: u16,
     duration: Duration,
     locale: &str,
-) -> Res<()> {
+) -> Res<RunningAuction> {
     let supported_locale = SupportedLocale::from_locale_fallback(locale);
     let seller = ctx.author();
 
     let item_obj = item.item();
     let currency_obj = currency.item();
 
-    let auction = RunningAuction::new(
+    let mut auction = RunningAuction::new(
         seller.id,
         *item_obj,
         quantity,
@@ -303,6 +303,10 @@ async fn post_auction(
             return Err(e);
         }
     };
+
+    auction.english_message_id.insert(english_message.id);
+    auction.korean_message_id.insert(korean_message.id);
+
     data.running_auctions.write(|db| {
         if let Some(a) = db.get_mut(auction_id) {
             a.english_message_id.insert(english_message.id);
@@ -350,7 +354,7 @@ async fn post_auction(
         )
         .await?;
 
-    Ok(())
+    Ok(auction)
 }
 
 /// Start a new auction
@@ -402,8 +406,10 @@ pub async fn new_auction(
         return Ok(());
     };
 
-    post_auction(
+    let auction = post_auction(
         ctx, component, item, quantity, currency, min_price, duration, locale,
     )
-    .await
+    .await?;
+
+    ctx.data().log(ctx.http(), &auction.display_log(ctx.data())?).await
 }

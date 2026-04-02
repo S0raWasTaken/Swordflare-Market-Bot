@@ -7,14 +7,18 @@ use std::{
 };
 
 use daybreak::{FileDatabase, deser::Yaml};
-use poise::serenity_prelude::{ChannelId, RoleId, UserId};
+use poise::serenity_prelude::{
+    CacheHttp, ChannelId, CreateAllowedMentions, CreateMessage, RoleId, UserId,
+};
 
 use crate::{
     Res,
     database::{
-        auction_db::AuctionData, supported_locale::SupportedLocale,
-        trade_db::TradeData,
+        auction_db::AuctionData,
+        supported_locale::SupportedLocale,
+        trade_db::{Trade, TradeData, TradeStatus},
     },
+    get_vars,
 };
 
 pub mod auction_db;
@@ -64,46 +68,100 @@ pub struct Data {
     pub blacklist: Arc<Blacklist>,
     pub trades_channel: DoubleChannelId,
     pub auctions_channel: DoubleChannelId,
+    pub logs_channel: ChannelId,
+    pub reports_channel: ChannelId,
     pub admin_role: RoleId,
     paused: Arc<AtomicBool>,
 }
 
 impl Data {
-    pub fn new(
-        english_posting_channel: &str,
-        korean_posting_channel: &str,
+    pub fn new() -> Res<(Self, String)> {
+        let (
+            token,
+            english_posting_channel_id,
+            korean_posting_channel_id,
+            english_auctions_channel_id,
+            korean_auctions_channel_id,
+            logs_channel_id,
+            reports_channel_id,
+            admin_role_id,
+        ) = get_vars!(
+            "DISCORD_TOKEN",
+            "ENGLISH_POSTING_CHANNEL_ID",
+            "KOREAN_POSTING_CHANNEL_ID",
+            "ENGLISH_AUCTIONS_CHANNEL_ID",
+            "KOREAN_AUCTIONS_CHANNEL_ID",
+            "LOGS_CHANNEL_ID",
+            "REPORTS_CHANNEL_ID",
+            "ADMIN_ROLE_ID"
+        );
 
-        english_auctions_channel: &str,
-        korean_auctions_channel: &str,
-
-        admin_role_id: &str,
-    ) -> Res<Self> {
-        Ok(Self {
-            trades: Arc::new(TradingDatabase::load_from_path_or_default(
-                "trading_db.yml",
-            )?),
-            running_auctions: Arc::new(
-                RunningAuctions::load_from_path_or_default(
-                    "running_auctions.yml",
+        Ok((
+            Self {
+                trades: Arc::new(TradingDatabase::load_from_path_or_default(
+                    "trading_db.yml",
+                )?),
+                running_auctions: Arc::new(
+                    RunningAuctions::load_from_path_or_default(
+                        "running_auctions.yml",
+                    )?,
+                ),
+                languages: Arc::new(
+                    LanguageDatabase::load_from_path_or_default(
+                        "languages.yml",
+                    )?,
+                ),
+                blacklist: Arc::new(Blacklist::load_from_path_or_default(
+                    "blacklist.yml",
+                )?),
+                trades_channel: DoubleChannelId::new(
+                    &english_posting_channel_id,
+                    &korean_posting_channel_id,
                 )?,
-            ),
-            languages: Arc::new(LanguageDatabase::load_from_path_or_default(
-                "languages.yml",
-            )?),
-            blacklist: Arc::new(Blacklist::load_from_path_or_default(
-                "blacklist.yml",
-            )?),
-            trades_channel: DoubleChannelId::new(
-                english_posting_channel,
-                korean_posting_channel,
-            )?,
-            auctions_channel: DoubleChannelId::new(
-                english_auctions_channel,
-                korean_auctions_channel,
-            )?,
-            admin_role: RoleId::new(admin_role_id.parse()?),
-            paused: Arc::new(AtomicBool::new(false)),
-        })
+                auctions_channel: DoubleChannelId::new(
+                    &english_auctions_channel_id,
+                    &korean_auctions_channel_id,
+                )?,
+                logs_channel: ChannelId::new(logs_channel_id.parse()?),
+                reports_channel: ChannelId::new(reports_channel_id.parse()?),
+                admin_role: RoleId::new(admin_role_id.parse()?),
+                paused: Arc::new(AtomicBool::new(false)),
+            },
+            token,
+        ))
+    }
+
+    pub async fn log(
+        &self,
+        cache_http: impl CacheHttp,
+        message: &str,
+    ) -> Res<()> {
+        let log_channel = self.logs_channel;
+        log_channel
+            .send_message(
+                cache_http,
+                CreateMessage::default().content(message).allowed_mentions(
+                    CreateAllowedMentions::new()
+                        .empty_roles()
+                        .empty_users()
+                        .everyone(false),
+                ),
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub fn find_duplicate_trade(&self, trade: &Trade) -> Res<Option<Trade>> {
+        Ok(self.trades.read(|db| {
+            db.iter().find_map(|t| {
+                if matches!(t.1.status(), TradeStatus::Running) && t.1 == trade
+                {
+                    Some(t.1.clone())
+                } else {
+                    None
+                }
+            })
+        })?)
     }
 
     pub fn pause(&self) -> bool {

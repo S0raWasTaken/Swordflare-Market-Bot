@@ -1,7 +1,9 @@
-use poise::serenity_prelude::Context as SerenityContext;
+use poise::serenity_prelude::{Context as SerenityContext, UserId};
 use tokio::time::interval;
 
 use crate::database::supported_locale::SupportedLocale;
+use crate::event_handler::buttons::buy::TradeResult;
+use crate::event_handler::buttons::interaction_response;
 use crate::event_handler::confirm_flow::{
     ConfirmOutcome, await_both_confirmations, dm_cleanup,
 };
@@ -101,7 +103,7 @@ pub async fn resolve_auction(
         Err(e) => {
             print_err(&e);
             // Can't resolve - create trade with no winner and remove auction
-            let trade = Trade::from((auction, None));
+            let trade = Trade::from((&auction, None));
             data.trades.write(|db| db.insert(trade))?;
             data.trades.save()?;
             data.running_auctions.write(|db| db.remove(auction_id))?;
@@ -111,6 +113,8 @@ pub async fn resolve_auction(
     };
 
     let mut confirmed_winner = None;
+
+    let mut outcome_failed = true;
 
     for (winner_id, winning_bid) in &ranked_bidders {
         let winner_locale = crate::database::supported_locale::get_user_locale(
@@ -182,7 +186,7 @@ pub async fn resolve_auction(
             Err(e) => {
                 print_err(&e);
                 data.trades
-                    .write(|db| db.insert(Trade::from((auction, None))))?;
+                    .write(|db| db.insert(Trade::from((&auction, None))))?;
                 data.trades.save()?;
                 data.running_auctions.write(|db| db.remove(auction_id))?;
                 data.running_auctions.save()?;
@@ -236,7 +240,7 @@ pub async fn resolve_auction(
             }
         };
 
-        match await_both_confirmations(
+        let failed_outcome = match await_both_confirmations(
             ctx,
             *winner_id,
             seller_id,
@@ -269,26 +273,41 @@ pub async fn resolve_auction(
                     item = auction.item.name.display(&seller_locale),
                 );
 
-                buyer_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true).content(buyer_content)
-                )).await.ok();
-                seller_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true).content(seller_content)
-                )).await.ok();
+                buyer_int
+                    .create_response(
+                        ctx,
+                        interaction_response(&buyer_content, true),
+                    )
+                    .await
+                    .ok();
+                seller_int
+                    .create_response(
+                        ctx,
+                        interaction_response(&seller_content, true),
+                    )
+                    .await
+                    .ok();
 
                 dm_cleanup(ctx, &winner_msg, &seller_msg).await;
 
                 confirmed_winner = Some((*winner_id, *winning_bid));
+                outcome_failed = false;
                 break;
             }
             ConfirmOutcome::BuyerCancelled { buyer_int } => {
-                buyer_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
-                        serenity::CreateInteractionResponseMessage::default()
-                            .ephemeral(true)
-                            .content(t!("buy.await.you_cancelled", locale = winner_locale)),
-                    )).await.ok();
+                buyer_int
+                    .create_response(
+                        ctx,
+                        interaction_response(
+                            &t!(
+                                "buy.await.you_cancelled",
+                                locale = winner_locale
+                            ),
+                            true,
+                        ),
+                    )
+                    .await
+                    .ok();
                 seller_dm
                     .send_message(
                         ctx,
@@ -301,6 +320,7 @@ pub async fn resolve_auction(
                     .await
                     .ok();
                 dm_cleanup(ctx, &winner_msg, &seller_msg).await;
+                TradeResult::BuyerCancelled
             }
             ConfirmOutcome::SellerCancelled { seller_int } => {
                 seller_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
@@ -319,14 +339,23 @@ pub async fn resolve_auction(
                     .await
                     .ok();
                 dm_cleanup(ctx, &winner_msg, &seller_msg).await;
+                TradeResult::SellerCancelled
             }
             ConfirmOutcome::TimedOut => {
                 dm_cleanup(ctx, &winner_msg, &seller_msg).await;
+                TradeResult::TimedOut
             }
-        }
+        };
+        log_attempts(ctx, data, failed_outcome, &auction, *winner_id).await?;
     }
 
-    let trade = Trade::from((auction, confirmed_winner.map(|(id, _)| id)));
+    let final_outcome = if outcome_failed {
+        AuctionResult::Failed
+    } else {
+        AuctionResult::Success
+    };
+
+    let trade = Trade::from((&auction, confirmed_winner.map(|(id, _)| id)));
 
     data.trades.write(|db| db.insert(trade))?;
     data.trades.save()?;
@@ -335,7 +364,80 @@ pub async fn resolve_auction(
     data.running_auctions.write(|db| db.remove(auction_id))?;
     data.running_auctions.save()?;
 
-    Ok(())
+    log_final_result(
+        ctx,
+        data,
+        final_outcome,
+        &auction,
+        confirmed_winner.map(|w| w.0),
+    )
+    .await
+}
+
+async fn log_final_result(
+    ctx: &SerenityContext,
+    data: &Data,
+    final_outcome: AuctionResult,
+    auction: &RunningAuction,
+    winner: Option<UserId>,
+) -> Res<()> {
+    let winner_display = winner.map_or("None".to_string(), |w| w.to_string());
+    let auction_message = make_auction_message(data, auction, &winner_display)?;
+
+    let message = match final_outcome {
+        AuctionResult::Success => {
+            format!("Auction successful ─ {auction_message}")
+        }
+        AuctionResult::Failed => format!("Auction failed ─ {auction_message}"),
+    };
+
+    data.log(ctx, &message).await
+}
+
+async fn log_attempts(
+    ctx: &SerenityContext,
+    data: &Data,
+    failed_outcome: TradeResult,
+    auction: &RunningAuction,
+    current_winner: UserId,
+) -> Res<()> {
+    let auction_message =
+        make_auction_message(data, auction, &current_winner.to_string())?;
+
+    let message = match failed_outcome {
+        TradeResult::BuyerCancelled => {
+            format!("Auction attempt cancelled by bidder ─ {auction_message}",)
+        }
+        TradeResult::SellerCancelled => {
+            format!("Auction attempt cancelled by seller ─ {auction_message}",)
+        }
+        TradeResult::TimedOut => {
+            format!("Auction attempt timed out ─ {auction_message}",)
+        }
+        TradeResult::Confirmed => unreachable!(),
+    };
+
+    data.log(ctx, &message).await
+}
+
+fn make_auction_message(
+    data: &Data,
+    auction: &RunningAuction,
+    current_winner: &str,
+) -> Res<String> {
+    let auction_display = auction.display_simple("en-US");
+    let seller = auction.seller;
+    let link = auction.message_link(SupportedLocale::en_US, data)?;
+
+    Ok(format!(
+        "seller: <@{seller}>, bidder: <@{current_winner}>, auction: {auction_display}\n\
+            {link}"
+    ))
+}
+
+enum AuctionResult {
+    Success,
+    Failed,
 }
 
 /// Will also delete from the database if it's marked as Invalid

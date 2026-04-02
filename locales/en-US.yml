@@ -33,6 +33,14 @@ edit.modal.placeholder: "Enter new stock"
 
 edit.success: "✅ Stock updated!"
 
+# ── trade_refresh ──────────────────────────────────────────────────────────────
+refresh.error.not_seller: "❌ You can't refresh someone else's post"
+
+refresh.success: "✅ Post refreshed!"
+
+# ── trade_report ───────────────────────────────────────────────────────────────
+
+
 # ── set_language ───────────────────────────────────────────────────────────────
 set_language.success: "✅ Language set!"
 
@@ -42,6 +50,7 @@ buy.modal.input_label: "Lots"
 buy.modal.input_placeholder: "Enter number of lots"
 buy.error.self_buy: "❌ You can't buy your own trade."
 buy.error.invalid_amount: "❌ Invalid amount. There are only %{stock} lot(s) remaining."
+buy.error.inactive: "❌ This trade is inactive."
 
 # ── buy interaction: purchase confirmation ─────────────────────────────────────
 buy.confirm.title: "Confirm Purchase"
@@ -80,7 +89,9 @@ buy.done.seller_sold_out: "✅ Trade confirmed! You gave **x%{item_total} %{item
 # ── post embed ─ only used in Korean and English ─ Do not translate for other languages
 post.title: "Trade by %{seller}"
 post.title_sold_out: "[SOLD OUT] Trade by %{seller}"
+post.title_expired: "[EXPIRED] Trade by %{seller}"
 post.expires: "Expires <t:%{unix}:R>"
+post.expired: "Expired <t:%{unix}:R>"
 post.field_offering: "Offering"
 post.field_wants: "Wants"
 post.field_stock: "Stock"

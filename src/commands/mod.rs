@@ -34,6 +34,8 @@ pub fn commands() -> Vec<poise::Command<Data, Error>> {
     ]
 }
 
+// ─ Common ─────────────────────────────────────────────────────────────────────
+
 pub fn check_if_paused(ctx: Context<'_>, locale: &str) -> Res<()> {
     if ctx.data().is_paused() {
         return Err(t!("error.bot_paused", locale = locale).into());
@@ -65,3 +67,5 @@ pub async fn is_bot_admin(ctx: Context<'_>) -> Res<bool> {
         Ok(has_admin_role)
     }
 }
+
+// ─ Helpers ────────────────────────────────────────────────────────────────────

@@ -1,7 +1,8 @@
 use crate::commands::{check_if_blacklisted, check_if_paused};
 use crate::database::Data;
 use crate::database::supported_locale::{SupportedLocale, get_user_locale};
-use crate::database::trade_db::{Trade, TradeKind, TradeStatus};
+use crate::database::trade_db::{Trade, TradeKind};
+use crate::event_handler::buttons::interaction_response;
 use crate::post::build_trade_embed;
 use crate::print_err;
 use crate::{Context, Res, item_name::ItemName, items::ITEMS, t};
@@ -205,16 +206,16 @@ async fn show_confirmation(
 pub fn trade_buttons(
     trade_id: u64,
     locale: &str,
-    sold_out: bool,
+    buy_disabled: bool,
 ) -> serenity::CreateActionRow {
     serenity::CreateActionRow::Buttons(vec![
         serenity::CreateButton::new(format!("buy_{trade_id}"))
             .label(t!("post.button_buy", locale = locale))
             .style(serenity::ButtonStyle::Success)
-            .disabled(sold_out),
+            .disabled(buy_disabled),
         serenity::CreateButton::new(format!("edit_{trade_id}"))
             .label(t!("post.button_edit", locale = locale))
-            .style(serenity::ButtonStyle::Secondary),
+            .style(serenity::ButtonStyle::Primary),
         serenity::CreateButton::new(format!("refresh_{trade_id}"))
             .label(t!("post.button_refresh", locale = locale))
             .style(serenity::ButtonStyle::Secondary),
@@ -265,14 +266,14 @@ async fn post_trade(
     wants_amount: u16,
     lots: u16,
     locale: &str,
-) -> Res<()> {
+) -> Res<Trade> {
     let supported_locale = SupportedLocale::from_locale_fallback(locale);
     let seller = ctx.author();
 
     let item_obj = ITEMS.iter().find(|i| i.name == item).unwrap();
     let wants_obj = ITEMS.iter().find(|i| i.name == wants).unwrap();
 
-    let trade = Trade::new(
+    let mut trade = Trade::new(
         seller.id,
         *item_obj,
         trade_quantity,
@@ -317,6 +318,9 @@ async fn post_trade(
         }
     };
 
+    trade.english_message_id.insert(english_message.id);
+    trade.korean_message_id.insert(korean_message.id);
+
     data.trades.write(|db| {
         if let Some(t) = db.get_mut(trade_id) {
             t.english_message_id.insert(english_message.id);
@@ -328,15 +332,14 @@ async fn post_trade(
     component
         .create_response(
             ctx,
-            serenity::CreateInteractionResponse::Message(
-                serenity::CreateInteractionResponseMessage::default()
-                    .ephemeral(true)
-                    .content(t!("new_trade.posted", locale = locale)),
+            interaction_response(
+                &t!("new_trade.posted", locale = locale),
+                true,
             ),
         )
         .await?;
 
-    Ok(())
+    Ok(trade)
 }
 
 fn check_dupe(
@@ -359,17 +362,7 @@ fn check_dupe(
         SupportedLocale::default(),
     );
 
-    Ok(data.trades.read(|db| {
-        db.iter().find_map(|t| {
-            if matches!(t.1.status(), TradeStatus::Running)
-                && *t.1 == test_trade
-            {
-                Some(t.1.clone())
-            } else {
-                None
-            }
-        })
-    })?)
+    data.find_duplicate_trade(&test_trade)
 }
 
 /// Make a new trade request
@@ -462,7 +455,7 @@ pub async fn new_trade(
     else {
         return Ok(());
     };
-    post_trade(
+    let trade = post_trade(
         ctx,
         component,
         item,
@@ -472,5 +465,7 @@ pub async fn new_trade(
         lots,
         locale,
     )
-    .await
+    .await?;
+
+    ctx.data().log(ctx.http(), &trade.display_log(ctx.data())?).await
 }

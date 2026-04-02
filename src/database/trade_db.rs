@@ -7,7 +7,7 @@ use poise::serenity_prelude::{ChannelId, Context, MessageId, UserId};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Res,
+    ACTIVE_GUILD_ID, Res,
     database::{
         Data, auction_db::RunningAuction, supported_locale::SupportedLocale,
     },
@@ -175,6 +175,7 @@ pub struct Trade {
     pub duration: Duration,
 
     pub buyers: HashSet<UserId>,
+    pub reports: HashMap<UserId, String>,
 
     pub english_message_id: MessageInfo,
     pub korean_message_id: MessageInfo,
@@ -182,8 +183,8 @@ pub struct Trade {
     pub moderated: bool,
 }
 
-impl From<(RunningAuction, Option<UserId>)> for Trade {
-    fn from((auction, winner): (RunningAuction, Option<UserId>)) -> Self {
+impl From<(&RunningAuction, Option<UserId>)> for Trade {
+    fn from((auction, winner): (&RunningAuction, Option<UserId>)) -> Self {
         let highest_bid =
             auction.highest_bid().unwrap_or((UserId::default(), 0));
 
@@ -203,6 +204,7 @@ impl From<(RunningAuction, Option<UserId>)> for Trade {
             english_message_id: auction.english_message_id,
             korean_message_id: auction.korean_message_id,
             moderated: false,
+            reports: HashMap::default(),
         }
     }
 }
@@ -247,16 +249,18 @@ impl Trade {
             moderated: false,
             kind: trade_kind,
             locale,
+            reports: HashMap::default(),
         }
     }
 
     #[inline]
     pub fn is_inactive(&self) -> bool {
-        self.last_updated
-            .elapsed()
-            .is_ok_and(|elapsed| elapsed > self.duration) // Treat clock regression as not expired
-            || self.is_sold_out()
-            || self.moderated
+        self.is_expired() || self.is_sold_out() || self.moderated
+    }
+
+    #[inline]
+    pub fn is_expired(&self) -> bool {
+        self.last_updated.elapsed().is_ok_and(|elapsed| elapsed > self.duration) // Treat clock regression as not expired
     }
 
     #[inline]
@@ -268,14 +272,80 @@ impl Trade {
     // Don't even risk callers (me, myself and I) from editing this field, lol
     #[inline]
     #[must_use]
+    #[expect(dead_code, reason = "For future database operations")]
     pub fn created_at(&self) -> SystemTime {
         self.created_at
     }
 
     #[inline]
     #[must_use]
+    pub fn last_updated(&self) -> SystemTime {
+        self.last_updated
+    }
+
+    #[inline]
+    #[must_use]
     pub fn status(&self) -> TradeStatus {
         TradeStatus::from(self)
+    }
+
+    #[inline]
+    pub fn refresh(&mut self) {
+        self.last_updated = SystemTime::now();
+    }
+
+    pub fn add_report(&mut self, user: UserId, report: String) -> bool {
+        // Logical error: report should be sanitized prior to calling this function.
+        assert!(!report.is_empty() || report.len() > 128);
+
+        if self.reports.contains_key(&user) {
+            return false; // Only allow 1 report per user
+        }
+
+        self.reports.insert(user, report);
+        true
+    }
+
+    pub fn message_link(
+        &self,
+        data: &Data,
+        locale: SupportedLocale,
+    ) -> Res<String> {
+        let guild_id = *ACTIVE_GUILD_ID;
+        let channel_id = data.trades_channel.get_channel(locale);
+        let message_id = match locale {
+            SupportedLocale::ko_KR => self.korean_message_id,
+            _ => self.english_message_id,
+        }
+        .id()?;
+
+        Ok(format!(
+            "https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
+        ))
+    }
+
+    pub fn display_log(&self, data: &Data) -> Res<String> {
+        let seller_id = self.seller;
+        let lots = self.stock;
+        let link = self.message_link(data, SupportedLocale::en_US)?;
+        let trade_display = self.display_simple("en-US");
+
+        Ok(format!(
+            "<@{seller_id}> posted a trade: \
+            {trade_display}. \
+            Stock: {lots} lot(s)\n\
+            {link}"
+        ))
+    }
+
+    pub fn display_simple(&self, locale: &str) -> String {
+        format!(
+            "{} x{} for {} x{}",
+            self.item.name.display(locale),
+            self.quantity,
+            self.wants.name.display(locale),
+            self.wanted_amount
+        )
     }
 
     pub async fn delete_messages(

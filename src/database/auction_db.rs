@@ -7,8 +7,10 @@ use poise::serenity_prelude::UserId;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Context, Res,
-    database::{supported_locale::SupportedLocale, trade_db::MessageInfo},
+    ACTIVE_GUILD_ID, Context, Res,
+    database::{
+        Data, supported_locale::SupportedLocale, trade_db::MessageInfo,
+    },
     items::Item,
 };
 
@@ -144,6 +146,46 @@ impl RunningAuction {
             return false;
         }
         true
+    }
+
+    pub fn message_link(
+        &self,
+        locale: SupportedLocale,
+        data: &Data,
+    ) -> Res<String> {
+        let guild_id = *ACTIVE_GUILD_ID;
+        let channel_id = data.auctions_channel.get_channel(locale);
+        let message_id = match locale {
+            SupportedLocale::ko_KR => self.korean_message_id.id(),
+            _ => self.english_message_id.id(),
+        }?;
+
+        Ok(format!(
+            "https://discord.com/channels/{guild_id}/{channel_id}/{message_id}"
+        ))
+    }
+
+    pub fn display_log(&self, data: &Data) -> Res<String> {
+        let seller_id = self.seller;
+
+        let auction_display = self.display_simple("en-US");
+        let link = self.message_link(SupportedLocale::en_US, data)?;
+
+        Ok(format!(
+            "<@{seller_id}> started an auction: \
+            {auction_display}.\n\
+            {link}"
+        ))
+    }
+
+    pub fn display_simple(&self, locale: &str) -> String {
+        format!(
+            "{} x{} for {} x{} minimum",
+            self.item.name.display(locale),
+            self.quantity,
+            self.currency_item.name.display(locale),
+            self.min_price
+        )
     }
 
     pub async fn delete_messages(self, ctx: Context<'_>) -> Res<()> {

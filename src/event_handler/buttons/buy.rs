@@ -1,18 +1,18 @@
 use crate::{
     Data, Res, TRADING_SERVER_LINK,
-    database::{
-        supported_locale::{SupportedLocale, get_user_locale},
-        trade_db::Trade,
+    database::supported_locale::{SupportedLocale, get_user_locale},
+    event_handler::{
+        buttons::{fetch_trade, interaction_response},
+        confirm_flow::{ConfirmOutcome, await_both_confirmations},
     },
-    event_handler::confirm_flow::{ConfirmOutcome, await_both_confirmations},
     magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
     post::update_post,
 };
-use poise::serenity_prelude::{self as serenity, CreateMessage};
+use poise::serenity_prelude::{self as serenity, CreateMessage, UserId};
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
-pub async fn handle_buy_interaction(
+pub async fn handle_buy(
     ctx: &serenity::Context,
     interaction: &serenity::ComponentInteraction,
     data: &Data,
@@ -35,9 +35,56 @@ pub async fn handle_buy_interaction(
 
     let pending = send_trade_dms(ctx, &trade_ctx, buyer, lots).await?;
 
-    await_confirmations(ctx, data, &trade_ctx, &pending).await?;
+    let outcome = await_confirmations(ctx, data, &trade_ctx, &pending).await?;
 
-    Ok(())
+    log_outcome(ctx, data, outcome, lots, buyer.id, trade_ctx.trade_id).await
+}
+
+pub async fn log_outcome(
+    ctx: &serenity::Context,
+    data: &Data,
+    outcome: TradeResult,
+    lots_bought: u16,
+    buyer: UserId,
+    trade_id: u64,
+) -> Res<()> {
+    let trade_message = |id: u64| {
+        let trade = fetch_trade(data, id, "en-US")?;
+        let trade_display = trade.display_simple("en-US");
+
+        let seller = trade.seller;
+        let link = trade.message_link(data, SupportedLocale::en_US)?;
+
+        Res::<(String, u16)>::Ok((
+            format!(
+                "seller: <@{seller}>, buyer: <@{buyer}>, trade: {trade_display}\n\
+            {link}"
+            ),
+            trade.quantity,
+        ))
+    };
+
+    let message = match outcome {
+        TradeResult::Confirmed => {
+            let (message, quantity) = trade_message(trade_id)?;
+            format!(
+                "Trade confirmed ─ {}\nBought: x{lots_bought} ({})",
+                message,
+                lots_bought * quantity
+            )
+        }
+        TradeResult::BuyerCancelled => {
+            format!("Buyer cancelled a trade ─ {}", trade_message(trade_id)?.0)
+        }
+        TradeResult::SellerCancelled => {
+            format!("Seller cancelled a trade ─ {}", trade_message(trade_id)?.0)
+        }
+        TradeResult::TimedOut => {
+            format!("Trade timed out ─ {}", trade_message(trade_id)?.0)
+        }
+    };
+
+    data.log(ctx, &message).await
 }
 
 // ── Steps ─────────────────────────────────────────────────────────────────────
@@ -60,7 +107,21 @@ async fn resolve_trade(
         .parse()?;
 
     let (seller_id, stock, item, item_quantity, wants, wanted_amount) = {
-        let trade = fetch_trade(data, trade_id, &buyer_locale)?.1;
+        let trade = fetch_trade(data, trade_id, &buyer_locale)?;
+
+        if trade.is_inactive() {
+            interaction
+                .create_response(
+                    ctx,
+                    interaction_response(
+                        &t!("buy.error.inactive", locale = buyer_locale),
+                        true,
+                    ),
+                )
+                .await?;
+            return Ok(None);
+        }
+
         (
             trade.seller,
             trade.stock,
@@ -76,13 +137,9 @@ async fn resolve_trade(
         interaction
             .create_response(
                 ctx,
-                serenity::CreateInteractionResponse::Message(
-                    serenity::CreateInteractionResponseMessage::default()
-                        .ephemeral(true)
-                        .content(t!(
-                            "buy.error.self_buy",
-                            locale = buyer_locale
-                        )),
+                interaction_response(
+                    &t!("buy.error.self_buy", locale = buyer_locale),
+                    true,
                 ),
             )
             .await?;
@@ -428,7 +485,7 @@ async fn await_confirmations(
     data: &Data,
     trade_ctx: &TradeContext,
     pending: &PendingTrade<'_>,
-) -> Res<()> {
+) -> Res<TradeResult> {
     let TradeContext {
         trade_id,
         seller_id,
@@ -441,7 +498,7 @@ async fn await_confirmations(
         buyer, buyer_dm, seller_dm, buyer_msg, seller_msg, ..
     } = pending;
 
-    match await_both_confirmations(
+    let outcome = match await_both_confirmations(
         ctx,
         buyer.id,
         *seller_id,
@@ -463,6 +520,7 @@ async fn await_confirmations(
                 &seller_int,
             )
             .await?;
+            TradeResult::Confirmed
         }
         ConfirmOutcome::BuyerCancelled { buyer_int } => {
             buyer_int
@@ -489,6 +547,7 @@ async fn await_confirmations(
                 )
                 .await?;
             dm_cleanup(ctx, buyer_msg, seller_msg).await;
+            TradeResult::BuyerCancelled
         }
         ConfirmOutcome::SellerCancelled { seller_int } => {
             seller_int
@@ -515,13 +574,15 @@ async fn await_confirmations(
                 )
                 .await?;
             dm_cleanup(ctx, buyer_msg, seller_msg).await;
+            TradeResult::SellerCancelled
         }
         ConfirmOutcome::TimedOut => {
             dm_cleanup(ctx, buyer_msg, seller_msg).await;
+            TradeResult::TimedOut
         }
-    }
+    };
 
-    Ok(())
+    Ok(outcome)
 }
 
 /// Deletes both DM messages.
@@ -630,23 +691,6 @@ async fn finish_trade(
     Ok(())
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-pub fn fetch_trade(
-    data: &Data,
-    trade_id: u64,
-    locale: &str,
-) -> Res<(u64, Trade)> {
-    Ok((
-        trade_id,
-        data.trades
-            .borrow_data()?
-            .get(trade_id)
-            .ok_or(t!("error.trade_not_found", locale = locale))
-            .cloned()?,
-    ))
-}
-
 // ── Data types ────────────────────────────────────────────────────────────────
 
 struct TradeContext {
@@ -669,4 +713,11 @@ struct PendingTrade<'a> {
     seller_msg: serenity::Message,
     buyer: &'a serenity::User,
     lots: u16,
+}
+
+pub enum TradeResult {
+    Confirmed, // Trade ID
+    BuyerCancelled,
+    SellerCancelled,
+    TimedOut,
 }
