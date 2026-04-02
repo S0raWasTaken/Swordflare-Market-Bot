@@ -45,7 +45,7 @@ pub async fn handle_bid(
 // ── Steps ─────────────────────────────────────────────────────────────────────
 
 type AuctionId = u64;
-type MinNextBid = u16;
+type MinNextBid = u64;
 
 async fn resolve_auction(
     bid_ctx: &ButtonContext<'_>,
@@ -86,12 +86,12 @@ async fn resolve_auction(
     Ok(Continue((auction_id, min_next_bid, currency_name)))
 }
 
-type Amount = u16;
+type Amount = u64;
 
 async fn prompt_bid(
     bid_ctx: &ButtonContext<'_>,
     auction_id: u64,
-    min_next_bid: u16,
+    min_next_bid: u64,
     currency_name: &str,
 ) -> Res<ControlFlow<(Amount, ModalInteraction)>> {
     let locale = &bid_ctx.locale();
@@ -145,8 +145,8 @@ async fn prompt_bid(
 async fn place_bid(
     bid_ctx: &ButtonContext<'_>,
     auction_id: u64,
-    amount: u16,
-    min_next_bid: u16,
+    amount: u64,
+    min_next_bid: u64,
     currency_name: &str,
 ) -> Res<ControlFlow<()>> {
     let locale = &bid_ctx.locale();
@@ -192,7 +192,7 @@ async fn finish(
     bid_ctx: &ButtonContext<'_>,
     modal: &ModalInteraction,
     auction_id: u64,
-    amount: u16,
+    amount: u64,
     currency_name: &str,
 ) -> Res<()> {
     let locale = &bid_ctx.locale();

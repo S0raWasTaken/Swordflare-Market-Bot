@@ -44,7 +44,7 @@ pub async fn log_outcome(
     ctx: &serenity::Context,
     data: &Data,
     outcome: TradeResult,
-    lots_bought: u16,
+    lots_bought: u64,
     buyer: UserId,
     trade_id: u64,
 ) -> Res<()> {
@@ -55,7 +55,7 @@ pub async fn log_outcome(
         let seller = trade.seller;
         let link = trade.message_link(data, SupportedLocale::en_US)?;
 
-        Res::<(String, u16)>::Ok((
+        Res::<(String, u64)>::Ok((
             format!(
                 "seller: <@{seller}>, buyer: <@{buyer}>, trade: {trade_display}\n\
             {link}"
@@ -168,7 +168,7 @@ async fn prompt_lots(
     ctx: &serenity::Context,
     interaction: &serenity::ComponentInteraction,
     trade_ctx: &TradeContext,
-) -> Res<Option<(u16, serenity::ModalInteraction)>> {
+) -> Res<Option<(u64, serenity::ModalInteraction)>> {
     let buyer_locale = &trade_ctx.buyer_locale;
     interaction
         .create_response(
@@ -221,7 +221,7 @@ async fn prompt_lots(
         })
         .ok_or(t!("error.missing_lots_input", locale = buyer_locale))
         .and_then(|v| {
-            v.parse::<u16>()
+            v.parse::<u64>()
                 .map_err(|_| t!("error.invalid_number", locale = buyer_locale))
         });
 
@@ -270,7 +270,7 @@ async fn confirm_purchase(
     ctx: &serenity::Context,
     modal: &serenity::ModalInteraction,
     trade_ctx: &TradeContext,
-    lots: u16,
+    lots: u64,
 ) -> Res<bool> {
     let buyer_locale = &trade_ctx.buyer_locale;
     let embed = serenity::CreateEmbed::default()
@@ -286,7 +286,7 @@ async fn confirm_purchase(
             format!(
                 "**{}** x{}",
                 trade_ctx.item.name.display(buyer_locale),
-                u32::from(trade_ctx.item_quantity) * u32::from(lots)
+                trade_ctx.item_quantity * lots
             ),
             true,
         )
@@ -295,7 +295,7 @@ async fn confirm_purchase(
             format!(
                 "**{}** x{}",
                 trade_ctx.wants.name.display(buyer_locale),
-                u32::from(trade_ctx.wanted_amount) * u32::from(lots)
+                trade_ctx.wanted_amount * lots
             ),
             true,
         )
@@ -387,7 +387,7 @@ async fn send_trade_dms<'a>(
     ctx: &serenity::Context,
     trade_ctx: &TradeContext,
     buyer: &'a serenity::User,
-    lots: u16,
+    lots: u64,
 ) -> Res<PendingTrade<'a>> {
     let TradeContext {
         trade_id,
@@ -697,11 +697,11 @@ struct TradeContext {
     trade_id: u64,
     seller_id: serenity::UserId,
     seller_name: String,
-    stock: u16,
+    stock: u64,
     item: crate::items::Item,
-    item_quantity: u16,
+    item_quantity: u64,
     wants: crate::items::Item,
-    wanted_amount: u16,
+    wanted_amount: u64,
     buyer_locale: String,
     seller_locale: String,
 }
@@ -712,7 +712,7 @@ struct PendingTrade<'a> {
     buyer_msg: serenity::Message,
     seller_msg: serenity::Message,
     buyer: &'a serenity::User,
-    lots: u16,
+    lots: u64,
 }
 
 pub enum TradeResult {

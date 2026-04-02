@@ -36,7 +36,7 @@ pub async fn handle_edit(
 
 // ── Steps ─────────────────────────────────────────────────────────────────────
 
-type Lots = u16;
+type Lots = u64;
 async fn prompt_edit(
     edit_ctx: &ButtonContext<'_>,
     trade: &Trade,
@@ -88,7 +88,7 @@ async fn prompt_edit(
 async fn update_trade(
     edit_ctx: &ButtonContext<'_>,
     trade_id: u64,
-    lots: u16,
+    lots: u64,
 ) -> Res<()> {
     let data = edit_ctx.data;
 

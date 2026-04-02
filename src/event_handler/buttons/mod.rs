@@ -88,7 +88,7 @@ pub fn parse_input_modal(
     modal: &ModalInteraction,
     locale: &str,
     error_msg: String,
-) -> Res<u16> {
+) -> Res<u64> {
     Ok(modal
         .data
         .components
@@ -104,7 +104,7 @@ pub fn parse_input_modal(
         .ok_or(error_msg)
         .and_then(|value| {
             Ok(value
-                .parse::<u16>()
+                .parse::<u64>()
                 .map_err(|_| t!("error.invalid_number", locale = locale))?)
         })?)
 }

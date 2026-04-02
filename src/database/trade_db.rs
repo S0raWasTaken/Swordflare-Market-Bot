@@ -160,10 +160,10 @@ pub struct Trade {
     // Basic stuff
     pub seller: UserId,
     pub item: Item,    // Seller will give this item
-    pub quantity: u16, // Seller will give this amount
+    pub quantity: u64, // Seller will give this amount
     pub wants: Item,
-    pub wanted_amount: u16, // Seller wants this amount
-    pub stock: u16,         // How many times this trade can be done
+    pub wanted_amount: u64, // Seller wants this amount
+    pub stock: u64,         // How many times this trade can be done
 
     // Technical stuff
     pub kind: TradeKind,
@@ -225,10 +225,10 @@ impl Trade {
     pub fn new(
         user: UserId,
         trade_item: Item,
-        trade_quantity: u16,
+        trade_quantity: u64,
         wants: Item,
-        amount: u16,
-        stock: u16,
+        amount: u64,
+        stock: u64,
         trade_kind: TradeKind,
         locale: SupportedLocale,
     ) -> Self {

@@ -34,10 +34,10 @@ async fn autocomplete_item<'a>(
 fn validate_input(
     trading_item: &str,
     for_item: &str,
-    trade_quantity: u16,
-    stock: u16,
+    trade_quantity: u64,
+    stock: u64,
     locale: &str,
-) -> Res<(ItemName, ItemName, u16)> {
+) -> Res<(ItemName, ItemName, u64)> {
     let item = ItemName::from_str(trading_item).map_err(|_| {
         t!("error.invalid_trading_item", name = trading_item, locale = locale)
     })?;
@@ -69,9 +69,9 @@ fn build_confirm_embed(
     wants: ItemName,
     item_rarity: &str,
     wants_rarity: &str,
-    trade_quantity: u16,
-    wants_amount: u16,
-    lots: u16,
+    trade_quantity: u64,
+    wants_amount: u64,
+    lots: u64,
     avatar_url: String,
     locale: &str,
 ) -> serenity::CreateEmbed {
@@ -118,9 +118,9 @@ async fn show_confirmation(
     ctx: Context<'_>,
     item: ItemName,
     wants: ItemName,
-    trade_quantity: u16,
-    wants_amount: u16,
-    lots: u16,
+    trade_quantity: u64,
+    wants_amount: u64,
+    lots: u64,
     locale: &str,
 ) -> Res<Option<serenity::ComponentInteraction>> {
     let seller = ctx.author();
@@ -262,9 +262,9 @@ async fn post_trade(
     component: serenity::ComponentInteraction,
     item: ItemName,
     wants: ItemName,
-    trade_quantity: u16,
-    wants_amount: u16,
-    lots: u16,
+    trade_quantity: u64,
+    wants_amount: u64,
+    lots: u64,
     locale: &str,
 ) -> Res<Trade> {
     let supported_locale = SupportedLocale::from_locale_fallback(locale);
@@ -346,10 +346,10 @@ fn check_dupe(
     data: &Data,
     seller: UserId,
     wants: ItemName,
-    wants_amount: u16,
+    wants_amount: u64,
     item: ItemName,
-    item_quantity: u16,
-    lots: u16,
+    item_quantity: u64,
+    lots: u64,
 ) -> Res<Option<Trade>> {
     let test_trade = Trade::new(
         seller,
@@ -378,7 +378,7 @@ pub async fn new_trade(
 
     #[description = "How many of the item you are offering per lot"]
     #[description_localized("ko", "개당 당 제시할 아이템 수량")]
-    trade_quantity: u16,
+    trade_quantity: u64,
 
     #[autocomplete = "autocomplete_item"]
     #[description = "The item you want in return"]
@@ -387,11 +387,11 @@ pub async fn new_trade(
 
     #[description = "How many of the wanted item you expect per lot"]
     #[description_localized("ko", "원하는 아이템의 예상하는 갯수")]
-    wants_amount: u16,
+    wants_amount: u64,
 
     #[description = "Total amount of the offered item you have in stock"]
     #[description_localized("ko", "보유 중인 총 재고량")]
-    stock: u16,
+    stock: u64,
 ) -> Res<()> {
     let locale = &get_user_locale(ctx.data(), ctx.author().id);
     check_if_blacklisted(ctx, locale).await?;

@@ -90,7 +90,7 @@ pub async fn resolve_auction(
         .ok();
 
     // Sort bidders highest to lowest
-    let mut ranked_bidders: Vec<(serenity::UserId, u16)> =
+    let mut ranked_bidders: Vec<(serenity::UserId, u64)> =
         auction.bids.iter().map(|(&id, &amt)| (id, amt)).collect();
     ranked_bidders.sort_by_key(|(_, amt)| std::cmp::Reverse(*amt));
 

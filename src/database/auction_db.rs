@@ -59,13 +59,13 @@ pub struct RunningAuction {
     pub seller: UserId,
 
     pub item: Item,
-    pub quantity: u16,
+    pub quantity: u64,
 
     pub currency_item: Item,
-    pub min_price: u16,
+    pub min_price: u64,
 
     /// `UserId` -> their current bid amount
-    pub bids: HashMap<UserId, u16>,
+    pub bids: HashMap<UserId, u64>,
 
     pub start_time: SystemTime,
     pub end_time: SystemTime,
@@ -82,9 +82,9 @@ impl RunningAuction {
     pub fn new(
         seller: UserId,
         item: Item,
-        quantity: u16,
+        quantity: u64,
         currency_item: Item,
-        min_price: u16,
+        min_price: u64,
         duration: Duration,
         locale: SupportedLocale,
     ) -> Self {
@@ -107,7 +107,7 @@ impl RunningAuction {
 
     /// Returns the current highest bid, or `None` if no bids yet.
     #[must_use]
-    pub fn highest_bid(&self) -> Option<(UserId, u16)> {
+    pub fn highest_bid(&self) -> Option<(UserId, u64)> {
         self.bids
             .iter()
             .max_by_key(|(_, amount)| **amount)
@@ -123,14 +123,14 @@ impl RunningAuction {
     /// Returns the minimum valid next bid — either `min_price` if no bids,
     /// or highest bid + 1.
     #[must_use]
-    pub fn min_next_bid(&self) -> Option<u16> {
+    pub fn min_next_bid(&self) -> Option<u64> {
         self.highest_bid()
             .map_or(Some(self.min_price), |(_, amount)| amount.checked_add(1))
     }
 
     /// Returns true if `amount` is a valid new bid for `user`.
     #[must_use]
-    pub fn is_valid_bid(&self, user: UserId, amount: u16) -> bool {
+    pub fn is_valid_bid(&self, user: UserId, amount: u64) -> bool {
         let Some(min_next_bid) = self.min_next_bid() else {
             return false;
         };

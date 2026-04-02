@@ -42,9 +42,9 @@ const MIN_AUCTION_DURATION: Duration = Duration::from_mins(1);
 
 fn validate_input(
     item: &str,
-    quantity: u16,
+    quantity: u64,
     currency_item: &str,
-    min_price: u16,
+    min_price: u64,
     duration_str: &str,
     locale: &str,
 ) -> Res<(ItemName, ItemName, Duration)> {
@@ -90,9 +90,9 @@ fn validate_input(
 async fn show_confirmation(
     ctx: Context<'_>,
     item: ItemName,
-    quantity: u16,
+    quantity: u64,
     currency: ItemName,
-    min_price: u16,
+    min_price: u64,
     duration: Duration,
     locale: &str,
 ) -> Res<Option<serenity::ComponentInteraction>> {
@@ -241,9 +241,9 @@ async fn post_auction(
     ctx: Context<'_>,
     component: serenity::ComponentInteraction,
     item: ItemName,
-    quantity: u16,
+    quantity: u64,
     currency: ItemName,
-    min_price: u16,
+    min_price: u64,
     duration: Duration,
     locale: &str,
 ) -> Res<RunningAuction> {
@@ -370,7 +370,7 @@ pub async fn new_auction(
 
     #[description = "How many of the item you are auctioning"]
     #[description_localized("ko", "경매할 아이템 수량")]
-    quantity: u16,
+    quantity: u64,
 
     #[autocomplete = "autocomplete_item"]
     #[description = "The item used as currency for bids"]
@@ -379,7 +379,7 @@ pub async fn new_auction(
 
     #[description = "Minimum starting bid"]
     #[description_localized("ko", "최소 시작 입찰가")]
-    min_price: u16,
+    min_price: u64,
 
     #[description = "Duration e.g. 1h30m (max 48h)"]
     #[description_localized("ko", "경매 기간 예: 1h30m (최대 48h)")]
