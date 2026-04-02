@@ -4,8 +4,7 @@ use std::time::Duration;
 
 /// Duration until a trade expires (2 days)
 /// `trade.last_update.elapsed() > TRADE_EXPIRATION_TIME;`
-// pub const TRADE_EXPIRATION_TIME: Duration = Duration::from_hours(2 * 24);
-pub const TRADE_EXPIRATION_TIME: Duration = Duration::from_mins(5); // TEMPORARY
+pub const TRADE_EXPIRATION_TIME: Duration = Duration::from_hours(2 * 24);
 
 /// Grace period for a [`TradeStatus::Timeout`] trade
 /// to get either moderated, refreshed or set as

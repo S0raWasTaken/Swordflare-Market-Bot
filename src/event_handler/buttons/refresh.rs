@@ -1,7 +1,5 @@
 use poise::serenity_prelude::{self as serenity, ComponentInteraction};
 
-use std::ops::ControlFlow::Continue;
-
 use crate::{
     Error, Res, break_or,
     database::Data,
@@ -24,7 +22,9 @@ pub async fn handle_refresh(
         break_or!(resolve_trade(&button_context, &not_seller).await?);
 
     data.trades.write(|db| {
-        db.get_mut(trade_id).ok_or("trade_not_found")?.refresh();
+        db.get_mut(trade_id)
+            .ok_or(t!("error.trade_not_found", locale = locale))?
+            .refresh();
         Ok::<(), Error>(())
     })??;
 

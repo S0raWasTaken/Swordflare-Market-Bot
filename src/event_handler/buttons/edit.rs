@@ -36,11 +36,17 @@ pub async fn handle_edit(
 
 // ── Steps ─────────────────────────────────────────────────────────────────────
 
-type Lots = u64;
+type Lots = u64; // Just so I'm not left wondering what the return type below is.
 async fn prompt_edit(
     edit_ctx: &ButtonContext<'_>,
     trade: &Trade,
 ) -> Res<ControlFlow<(Lots, ModalInteraction)>> {
+    if trade.quantity == 0 {
+        return Err(
+            "Trade quantity is zero somehow. This shouldn't happen.".into()
+        );
+    }
+
     let locale = &edit_ctx.locale();
     let custom_id = format!("quantity_{}", edit_ctx.trade_id()?);
 

@@ -467,5 +467,10 @@ pub async fn new_trade(
     )
     .await?;
 
-    ctx.data().log(ctx.http(), &trade.display_log(ctx.data())?).await
+    ctx.data()
+        .log(ctx.http(), &trade.display_log(ctx.data())?)
+        .await
+        .inspect_err(print_err)
+        .ok();
+    Ok(())
 }

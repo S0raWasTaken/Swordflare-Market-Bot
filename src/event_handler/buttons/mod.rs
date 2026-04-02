@@ -44,32 +44,23 @@ async fn update_posts(
     button_ctx: &ButtonContext<'_>,
     trade_id: u64,
 ) -> Res<()> {
-    let en_result = update_post(
-        button_ctx.ctx,
-        button_ctx.data,
-        trade_id,
-        SupportedLocale::en_US,
-    )
-    .await;
-    let ko_result = update_post(
-        button_ctx.ctx,
-        button_ctx.data,
-        trade_id,
-        SupportedLocale::ko_KR,
-    )
-    .await;
+    let (en_result, ko_result) = tokio::join! {
+        update_post(button_ctx.ctx, button_ctx.data, trade_id, SupportedLocale::en_US),
+        update_post(button_ctx.ctx, button_ctx.data, trade_id, SupportedLocale::ko_KR)
+    };
+
     en_result?;
     ko_result?;
     Ok(())
 }
 
 pub fn fetch_trade(data: &Data, trade_id: u64, locale: &str) -> Res<Trade> {
-    Ok(data
-        .trades
+    data.trades
         .borrow_data()?
         .get(trade_id)
         .ok_or(t!("error.trade_not_found", locale = locale))
-        .cloned()?)
+        .cloned()
+        .map_err(Into::into)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -78,7 +69,7 @@ pub fn fetch_trade(data: &Data, trade_id: u64, locale: &str) -> Res<Trade> {
 macro_rules! break_or {
     ($expr:expr) => {
         match $expr {
-            Continue(v) => v,
+            std::ops::ControlFlow::Continue(v) => v,
             _ => return Ok(()),
         }
     };

@@ -1,15 +1,16 @@
 # ── Errors (via on_error handler) ─────────────────────────────────────────────
-error.invalid_trading_item: "Invalid trading item: '%{name}'"
-error.invalid_wanted_item: "Invalid wanted item: '%{name}'"
+error.invalid_trading_item: "Invalid trading item: '%{name}'."
+error.invalid_wanted_item: "Invalid wanted item: '%{name}'."
 error.trade_quantity_zero: "Trade quantity must be greater than zero."
 error.stock_too_low: "Stock (%{stock}) must be at least equal to trade quantity (%{quantity})."
-error.invalid_custom_id: "Invalid custom_id"
-error.trade_not_found: "Trade not found"
-error.missing_lots_input: "Missing lots input"
-error.invalid_number: "Invalid number"
+error.invalid_custom_id: "Invalid custom_id."
+error.trade_not_found: "Trade not found."
+error.missing_lots_input: "Missing lots input."
+error.invalid_number: "Invalid number."
 error.duplicate_post: "❌ Duplicate post!"
-error.blacklisted: "❌ You've been blacklisted and cannot use the market bot"
-error.bot_paused: "❌ Bot was paused by an administrator"
+error.blacklisted: "❌ You've been blacklisted and cannot use the market bot."
+error.bot_paused: "❌ Bot was paused by an administrator."
+error.insufficient_stock: "Insufficient Stock."
 
 # ── new_trade: confirmation embed ──────────────────────────────────────────────
 new_trade.confirm.title: "Confirm Trade Post"
@@ -109,10 +110,11 @@ post.button_report: "Report"
 # ── auction: errors ────────────────────────────────────────────────────────────
 auction.error.min_price_zero: "❌ Minimum price must be greater than zero."
 auction.error.duration_too_long: "❌ Duration cannot exceed %{max} hour(s)."
-auction.error.duration_too_short: "❌ Duration cannot be less than %{min} minute(s)"
+auction.error.duration_too_short: "❌ Duration cannot be less than %{min} minute(s)."
 auction.error.self_bid: "❌ You can't bid on your own auction."
 auction.error.expired: "❌ This auction has already ended."
 auction.error.invalid_bid: "❌ Your bid must be at least **%{min} %{currency}** and higher than the current highest bid."
+auction.error.missing_bid_input: "❌ Missing bid input"
 auction.error.max_value_reached: "❌ Impossible to bid higher. Maximum value reached"
 
 # ── auction: new auction confirmation ─────────────────────────────────────────

@@ -50,7 +50,7 @@ i18n!("locales", fallback = "en-US");
 
 #[tokio::main]
 async fn main() -> Res<()> {
-    dotenv()?;
+    dotenv().ok();
 
     let (data, token) = Data::new()?;
 

@@ -15,7 +15,6 @@ use crate::{
         interaction_response, modal, modal_collector, parse_input_modal,
     },
     post::update_auction_post,
-    print_err,
 };
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -61,10 +60,7 @@ async fn resolve_auction(
         (
             auction.seller,
             auction.is_expired(),
-            auction.min_next_bid().ok_or(t!(
-                "auction.error.max_value_reached",
-                locale = locale
-            ))?,
+            auction.min_next_bid(),
             auction.currency_item.name.display(locale).into_owned(),
         )
     };
@@ -82,6 +78,9 @@ async fn resolve_auction(
             .await?;
         return Ok(Break(()));
     }
+
+    let min_next_bid = min_next_bid
+        .ok_or(t!("auction.error.max_value_reached", locale = locale))?;
 
     Ok(Continue((auction_id, min_next_bid, currency_name)))
 }
@@ -125,7 +124,7 @@ async fn prompt_bid(
     let amount = match parse_input_modal(
         &modal,
         locale,
-        t!("error.missing_lots_input", locale = locale).to_string(),
+        t!("auction.error.missing_bid_input", locale = locale).to_string(),
     ) {
         Ok(a) => a,
         Err(e) => {
@@ -212,22 +211,13 @@ async fn finish(
         )
         .await?;
 
-    let ko_result = update_auction_post(
-        bid_ctx.ctx,
-        bid_ctx.data,
-        auction_id,
-        SupportedLocale::ko_KR,
-    )
-    .await
-    .inspect_err(print_err);
-    update_auction_post(
-        bid_ctx.ctx,
-        bid_ctx.data,
-        auction_id,
-        SupportedLocale::en_US,
-    )
-    .await
-    .inspect_err(print_err)?;
+    let (en_result, ko_result) = tokio::join! {
+        update_auction_post(bid_ctx.ctx, bid_ctx.data, auction_id, SupportedLocale::en_US),
+        update_auction_post(bid_ctx.ctx, bid_ctx.data, auction_id, SupportedLocale::ko_KR)
+    };
 
-    ko_result
+    en_result?;
+    ko_result?;
+
+    Ok(())
 }

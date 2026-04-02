@@ -135,7 +135,10 @@ impl MessageInfo {
 
         if self.inserted {
             channel
-                .delete_message(&ctx.http, self.id.unwrap())
+                .delete_message(
+                    &ctx.http,
+                    self.id.expect("self.inserted = true but self.id = None; fix your code, dumbass"),
+                )
                 .await
                 .inspect_err(print_err)?;
             self.deleted = true;
@@ -296,7 +299,7 @@ impl Trade {
 
     pub fn add_report(&mut self, user: UserId, report: String) -> bool {
         // Logical error: report should be sanitized prior to calling this function.
-        assert!(!report.is_empty() || report.len() > 128);
+        assert!(!report.is_empty() && report.len() <= 128);
 
         if self.reports.contains_key(&user) {
             return false; // Only allow 1 report per user

@@ -621,13 +621,19 @@ async fn finish_trade(
 
     let is_sold_out = data.trades.write(|db| {
         if let Some(trade) = db.get_mut(*trade_id) {
+            if trade.stock < quantity {
+                return Err(t!(
+                    "error.insufficient_stock",
+                    locale = buyer_locale
+                ));
+            }
             trade.stock = trade.stock.saturating_sub(quantity);
             trade.buyers.insert(buyer.id);
-            trade.is_sold_out()
+            Ok(trade.is_sold_out())
         } else {
-            false
+            Err(t!("error.trade_not_found", locale = buyer_locale))
         }
-    })?;
+    })??;
     data.trades.save()?;
 
     update_post(ctx, data, *trade_id, SupportedLocale::en_US).await?;

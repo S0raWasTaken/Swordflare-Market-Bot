@@ -117,7 +117,7 @@ impl RunningAuction {
     /// Returns true if the auction has expired.
     #[must_use]
     pub fn is_expired(&self) -> bool {
-        self.end_time.elapsed().is_ok_and(|e| e > Duration::ZERO)
+        self.end_time.elapsed().is_ok()
     }
 
     /// Returns the minimum valid next bid — either `min_price` if no bids,
@@ -191,13 +191,13 @@ impl RunningAuction {
     pub async fn delete_messages(self, ctx: Context<'_>) -> Res<()> {
         let channels = ctx.data().auctions_channel;
 
-        let eng_id = self.english_message_id.id();
-        let kor_id = self.korean_message_id.id();
+        let eng_id = self.english_message_id.id()?;
+        let kor_id = self.korean_message_id.id()?;
 
         let eng_result =
-            channels.english.delete_message(ctx.http(), eng_id?).await;
+            channels.english.delete_message(ctx.http(), eng_id).await;
         let kor_result =
-            channels.korean.delete_message(ctx.http(), kor_id?).await;
+            channels.korean.delete_message(ctx.http(), kor_id).await;
 
         eng_result?;
         kor_result?;

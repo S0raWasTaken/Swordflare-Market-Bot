@@ -10,6 +10,7 @@ error.invalid_number: "Invalid number"
 error.duplicate_post: "❌ Duplicate post!"
 error.blacklisted: "❌ You've been blacklisted and cannot use the market bot"
 error.bot_paused: "❌ Bot was paused by an administrator"
+error.insufficient_stock: "Insufficient Stock"
 
 # ── new_trade: confirmation embed ──────────────────────────────────────────────
 new_trade.confirm.title: "Confirm Trade Post"
@@ -98,8 +99,6 @@ post.field_stock: "Stock"
 post.stock_value: "%{lots} lot(s) remaining"
 post.stock_sold_out: "Sold out"
 post.footer_buyers: "%{count} buyer(s)"
-post.footer_bidders: "%{count} bidder(s)"
-post.button_buy: "Buy"
 
 post.button_buy: "Buy"
 post.button_edit: "Edit stock"
@@ -114,6 +113,7 @@ auction.error.duration_too_short: "❌ Duration cannot be less than %{min} minut
 auction.error.self_bid: "❌ You can't bid on your own auction."
 auction.error.expired: "❌ This auction has already ended."
 auction.error.invalid_bid: "❌ Your bid must be at least **%{min} %{currency}** and higher than the current highest bid."
+auction.error.missing_bid_input: "❌ Missing bid input"
 auction.error.max_value_reached: "❌ Impossible to bid higher. Maximum value reached."
 
 # ── auction: new auction confirmation ─────────────────────────────────────────
@@ -135,7 +135,6 @@ auction.post.field_current_bid: "Current highest bid"
 auction.post.current_bid: "**%{amount} %{currency}** — %{bidder}"
 auction.post.current_bid_unknown: "**%{amount} %{currency}**"
 auction.post.no_bids: "No bids yet"
-auction.post.button_bid: "Place Bid"
 
 auction.post.button_bid: "Place Bid"
 auction.post.button_cancel: "Cancel"

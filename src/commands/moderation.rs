@@ -218,10 +218,10 @@ pub async fn pause_bot(ctx: Context<'_>) -> Res<()> {
         return Err("❌ Already paused!".into());
     }
 
-    let guild = ctx.guild_id().expect(
+    let guild = ctx.guild_id().ok_or(
         r#"Cannot find guild. 
-        Which is weird, because interaction_context = "Guild" "#,
-    );
+        Which is weird, because interaction_context = "Guild""#,
+    )?;
 
     guild.edit_nickname(ctx.http(), Some("[PAUSED]")).await?;
 
@@ -242,10 +242,10 @@ pub async fn resume_bot(ctx: Context<'_>) -> Res<()> {
         return Err("❌ Already running!".into());
     }
 
-    let guild = ctx.guild_id().expect(
+    let guild = ctx.guild_id().ok_or(
         r#"Cannot find guild. 
         Which is weird, because interaction_context = "Guild" "#,
-    );
+    )?;
 
     guild.edit_nickname(ctx.http(), None).await?;
 
