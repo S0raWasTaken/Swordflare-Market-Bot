@@ -1,11 +1,8 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    Res,
-    items::{ITEMS, Item},
-};
+use crate::items::{ITEMS, Item};
 
 #[rustfmt::skip]
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -260,20 +257,28 @@ impl ItemName {
     pub fn to_str(self) -> Cow<'static, str> {
         self.display("en-US")
     }
-    
-    pub fn from_str(s: &str) -> Res<Self> {
-        let s_lower = s.to_lowercase();
-        ITEMS
-            .iter()
-            .find(|i| i.name.to_str().to_lowercase() == s_lower)
-            .map(|i| i.name)
-            .ok_or_else(|| format!("Unknown item: '{s}'").into())
-    }
 
     #[inline]
     #[must_use]
     pub fn item(self) -> &'static Item {
-        ITEMS.iter().find(|i| i.name == self).unwrap()
+        ITEMS.iter().find(|i| i.name == self).unwrap_or_else(|| panic!("Missing item in const: {}", self.to_str()))
+    }
+}
+
+impl FromStr for ItemName {
+    type Err = crate::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        ITEMS
+            .iter()
+            .find_map(|i| {
+                if i.name.to_str().eq_ignore_ascii_case(s) {
+                    Some(i.name)
+                } else {
+                    None
+                }
+            })
+            .ok_or_else(|| format!("Unknown item: '{s}'").into())
     }
 }
 

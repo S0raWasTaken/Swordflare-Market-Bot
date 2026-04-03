@@ -4,7 +4,7 @@ use poise::{
         self as serenity, ButtonStyle, CreateActionRow, CreateButton,
     },
 };
-use std::time::Duration;
+use std::{str::FromStr, time::Duration};
 
 use crate::{
     Context, Res,

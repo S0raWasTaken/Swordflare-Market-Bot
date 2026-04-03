@@ -9,6 +9,7 @@ use crate::print_err;
 use crate::{Context, Res, item_name::ItemName, items::ITEMS, t};
 use poise::serenity_prelude::{Message, UserId};
 use poise::{CreateReply, serenity_prelude as serenity};
+use std::str::FromStr;
 use std::time::Duration;
 
 const CONFIRM_TIMEOUT: Duration = Duration::from_mins(1);

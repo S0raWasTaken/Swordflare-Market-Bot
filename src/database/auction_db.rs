@@ -157,6 +157,7 @@ impl RunningAuction {
     #[must_use]
     pub fn is_valid_bid(&self, user: UserId, amount: u64) -> bool {
         amount >= self.min_next_bid(user)
+            && !self.bids.iter().any(|(&id, &bid)| id != user && bid == amount)
     }
 
     pub fn message_link(
