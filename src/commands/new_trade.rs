@@ -272,14 +272,11 @@ async fn post_trade(
     let supported_locale = SupportedLocale::from_locale_fallback(locale);
     let seller = ctx.author();
 
-    let item_obj = ITEMS.iter().find(|i| i.name == item.name).unwrap();
-    let wants_obj = ITEMS.iter().find(|i| i.name == wants.name).unwrap();
-
     let mut trade = Trade::new(
         seller.id,
-        *item_obj,
+        item,
         trade_quantity,
-        *wants_obj,
+        wants,
         wants_amount,
         lots,
         TradeKind::Normal,
