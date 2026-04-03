@@ -108,6 +108,7 @@ post.field_stock: "Stock"
 post.stock_value: "%{lots} lot(s) remaining"
 post.stock_sold_out: "Sold out"
 post.footer_buyers: "%{count} buyer(s)"
+post.footer_bidders: "%{count} bidder(s)"
 
 post.button_buy: "Buy"
 post.button_edit: "Edit stock"
@@ -124,6 +125,15 @@ auction.error.expired: "❌ This auction has already ended."
 auction.error.invalid_bid: "❌ Your bid must be at least **%{min} %{currency}**"
 auction.error.missing_bid_input: "❌ Missing bid input"
 auction.error.max_value_reached: "❌ Impossible to bid higher. Maximum value reached."
+
+# ── auction_cancel ─────────────────────────────────────────────────────────────
+cancel.error.not_found: "❌ Auction not found."
+cancel.error.not_seller: "❌ You can't cancel someone else's auction!"
+
+cancel.embed.title: "Cancel Auction"
+cancel.embed.description: "Are you sure you want to cancel this auction?"
+
+cancel.success: "✅ Auction cancelled!"
 
 # ── auction: new auction confirmation ─────────────────────────────────────────
 auction.confirm.title: "Confirm Auction Post"
@@ -205,6 +215,16 @@ item.sivoka: "시보카"
 item.void_dagger: "공허 단검"
 item.kosa: "코사"
 
+# F2 Update
+
+item.relic_of_winter: "Relic of Winter"
+item.glacier_greatsword: "Glacier Greatsword"
+item.absolute_zero_spear: "Absolute Zero Spear"
+item.titanbreaker_sword: "TitanBreaker Sword"
+item.frostfang_blade: "Frostfang Blade"
+item.cliff_breaker_hammer: "Cliff Breaker Hammer"
+item.ice_blade: "Ice Blade"
+
 # ── armor ──────────────────────────────────────────────────────────────────────
 item.starter_armor: "초보자 방어구"
 item.forest_armor: "숲 방어구"
@@ -215,6 +235,13 @@ item.amethyst_armor: "자수정 방어구"
 item.blood_crystal_armor: "혈석 방어구"
 item.void_platemail: "공허 판금 갑옷"
 item.the_singularity: "특이점"
+
+# F2 Update
+
+item.eternal_frost_armor: "Eternal Frost Armor"
+item.glacier_armor: "Glacier Armor"
+item.frostshade_armor: "Frostshade Armor"
+item.iceplate_armor: "Iceplate Armor"
 
 # ── passive skills ─────────────────────────────────────────────────────────────
 item.rusty_blade: "녹슨 검"
@@ -234,6 +261,11 @@ item.genesis: "창세"
 item.midnight_echo: "한밤의 메아리"
 item.blazing_echo: "불타는 메아리"
 item.void_slice: "공허 베기"
+
+# F2 Update
+
+item.fang_slash: "Fang Slash"
+item.blizzard_echo: "Blizzard Echo"
 
 # ── materials ──────────────────────────────────────────────────────────────────
 item.amethyst: "자수정"
@@ -258,6 +290,16 @@ item.fall_protection: "낙하 보호"
 item.void_core: "공허 코어"
 item.invisible_core: "투명 코어"
 
+# F2 Update
+
+item.ancient_ice_relic: "Ancient Ice Relic"
+item.glacial_fragment: "Glacial Fragment"
+item.frozen_core: "Frozen Core"
+item.ice_crystal: "Ice Crystal"
+item.packed_snow: "Packed Snow"
+item.knockback_core: "Knockback Core"
+item.frost_shard: "Frost Shard"
+
 # ── auras ──────────────────────────────────────────────────────────────────────
 item.darkstar_aura: "암흑성 오라"
 item.crystal_bubble_aura: "수정 거품 오라"
@@ -266,6 +308,10 @@ item.scarlet_pixel_aura: "주홍 픽셀 오라"
 item.sky_pixel_aura: "하늘 픽셀 오라"
 item.grass_pixel_aura: "풀 픽셀 오라"
 item.sakura_aura: "벚꽃 오라"
+
+# F2 Update
+
+item.blizzard_aura: "Blizzard Aura"
 
 # ── shards ─────────────────────────────────────────────────────────────────────
 item.common_shard: "Common Shard"
