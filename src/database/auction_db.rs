@@ -141,8 +141,8 @@ impl RunningAuction {
         self.end_time.elapsed().is_ok()
     }
 
-    /// Returns the minimum valid next bid — either `min_price` if no bids,
-    /// or highest bid + 1.
+    /// Returns the minimum valid next bid for a user — at least `min_price`,
+    /// greater than the user's current bid, and not colliding with any existing bid.
     #[must_use]
     pub fn min_next_bid(&self, user: UserId) -> u64 {
         let current = self.bids.get(&user).copied().unwrap_or(0);
@@ -153,21 +153,10 @@ impl RunningAuction {
         candidate
     }
 
+    #[inline]
     #[must_use]
     pub fn is_valid_bid(&self, user: UserId, amount: u64) -> bool {
-        let min_next_bid = self.min_next_bid(user);
-
-        if amount < min_next_bid {
-            return false;
-        }
-
-        // Can't lower own bid
-        if let Some(&own_bid) = self.bids.get(&user)
-            && amount <= own_bid
-        {
-            return false;
-        }
-        true
+        amount >= self.min_next_bid(user)
     }
 
     pub fn message_link(

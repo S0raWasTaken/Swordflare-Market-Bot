@@ -94,9 +94,9 @@ fn validate_input(
 #[expect(clippy::too_many_lines, reason = "Come on, 101/100")]
 async fn show_confirmation(
     ctx: Context<'_>,
-    item: &Item,
+    item: Item,
     quantity: u64,
-    currency: &Item,
+    currency: Item,
     min_price: u64,
     duration: Duration,
     locale: &str,
@@ -252,9 +252,9 @@ async fn send_auction_embed(
 async fn post_auction(
     ctx: Context<'_>,
     component: serenity::ComponentInteraction,
-    item: &Item,
+    item: Item,
     quantity: u64,
-    currency: &Item,
+    currency: Item,
     min_price: u64,
     duration: Duration,
     locale: &str,
@@ -262,14 +262,11 @@ async fn post_auction(
     let supported_locale = SupportedLocale::from_locale_fallback(locale);
     let seller = ctx.author();
 
-    let item_obj = item;
-    let currency_obj = currency;
-
     let mut auction = RunningAuction::new(
         seller.id,
-        *item_obj,
+        item,
         quantity,
-        *currency_obj,
+        currency,
         min_price,
         duration,
         supported_locale,
@@ -427,7 +424,7 @@ pub async fn new_auction(
     currency.set_upgrade(currency_item_upgrades);
 
     let Some(component) = show_confirmation(
-        ctx, &item, quantity, &currency, min_price, duration, locale,
+        ctx, item, quantity, currency, min_price, duration, locale,
     )
     .await?
     else {
@@ -435,7 +432,7 @@ pub async fn new_auction(
     };
 
     let auction = post_auction(
-        ctx, component, &item, quantity, &currency, min_price, duration, locale,
+        ctx, component, item, quantity, currency, min_price, duration, locale,
     )
     .await?;
 

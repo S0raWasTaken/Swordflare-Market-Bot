@@ -248,27 +248,6 @@ pub fn build_auction_embed(
         t!("auction.post.title", locale = post_locale, seller = seller.name)
     };
 
-    // let current_bid_value = if let Some((_, amount)) = auction.highest_bid() {
-    //     if let Some(name) = highest_bidder_name {
-    //         t!(
-    //             "auction.post.current_bid",
-    //             locale = post_locale,
-    //             amount = amount,
-    //             currency = auction.currency_item.name.display(post_locale),
-    //             bidder = name
-    //         )
-    //     } else {
-    //         t!(
-    //             "auction.post.current_bid_unknown",
-    //             locale = post_locale,
-    //             amount = amount,
-    //             currency = auction.currency_item.name.display(post_locale)
-    //         )
-    //     }
-    // } else {
-    //     t!("auction.post.no_bids", locale = post_locale)
-    // };
-
     let mut current_bids = auction.sorted_bid_list(post_locale);
     if current_bids.is_empty() {
         current_bids =
@@ -310,7 +289,7 @@ pub fn build_auction_embed(
             true,
         )
         .field(
-            t!("auction.post.field_current_bid", locale = post_locale),
+            t!("auction.post.field_current_bids", locale = post_locale),
             current_bids,
             false,
         )

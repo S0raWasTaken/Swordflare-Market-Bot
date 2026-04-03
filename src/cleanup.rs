@@ -95,6 +95,10 @@ pub async fn resolve_auction(
     auction_id: u64,
     auction: RunningAuction,
 ) -> Res<()> {
+    if auction.is_being_handled {
+        return Ok(());
+    }
+
     data.running_auctions.write(|db| {
         let auction = db
             .get_mut(auction_id)
