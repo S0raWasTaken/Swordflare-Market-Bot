@@ -9,10 +9,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum Category {
     Armor,
+    Weapon,
     Aura,
     ActiveSkill,
     PassiveSkill,
-    Weapon,
     Material,
     Shard,
 }
@@ -21,10 +21,10 @@ impl Category {
     pub fn display(self, locale: &str) -> Cow<'static, str> {
         match self {
             Armor => t!("category.armor", locale = locale),
+            Weapon => t!("category.weapon", locale = locale),
             Aura => t!("category.aura", locale = locale),
             ActiveSkill => t!("category.active_skill", locale = locale),
             PassiveSkill => t!("category.passive_skill", locale = locale),
-            Weapon => t!("category.weapon", locale = locale),
             Material => t!("category.material", locale = locale),
             Shard => t!("category.shard", locale = locale),
         }
@@ -44,10 +44,9 @@ pub enum Rarity {
 
 // Just for readability
 impl Rarity {
-    #[must_use]
     #[inline]
-    #[expect(dead_code)]
-    pub fn max_enchant(self) -> u8 {
+    #[must_use]
+    pub const fn max_upgrade(self) -> u8 {
         self as u8
     }
 
@@ -68,7 +67,28 @@ pub struct Item {
     pub name: ItemName,
     pub category: Category,
     pub rarity: Rarity,
+    upgrade: u8,
     //pub emoji: &'static str, TODO: emoji display
+}
+
+impl Item {
+    #[inline]
+    pub const fn max_upgrade(self) -> u8 {
+        self.rarity.max_upgrade()
+    }
+
+    pub fn set_upgrade(&mut self, upgrade: u8) {
+        self.upgrade = upgrade.min(self.max_upgrade());
+    }
+
+    pub fn display(self, locale: &str) -> String {
+        match self.category {
+            Armor | Weapon if self.upgrade > 0 => {
+                self.name.display_upgrade(locale, self.upgrade)
+            }
+            _ => self.name.display(locale).to_string(),
+        }
+    }
 }
 
 #[allow(clippy::enum_glob_use, reason = "Too many items in this enum")]
@@ -79,126 +99,126 @@ pub const ITEMS: [Item; 76] = [
 
     // Weapon
 
-        Item { name: BasicSword,         category: Weapon,       rarity: Common },
-        Item { name: VerdantDagger,      category: Weapon,       rarity: Common },
-        Item { name: RedstoneHammer,     category: Weapon,       rarity: Common },
-        Item { name: BalancedBlade,      category: Weapon,       rarity: Common },
-        Item { name: ObsidianSword,      category: Weapon,       rarity: Common },
-        Item { name: BalancedSpear,      category: Weapon,       rarity: Common },
+        Item { name: BasicSword,         category: Weapon,       rarity: Common, upgrade: 0 },
+        Item { name: VerdantDagger,      category: Weapon,       rarity: Common, upgrade: 0 },
+        Item { name: RedstoneHammer,     category: Weapon,       rarity: Common, upgrade: 0 },
+        Item { name: BalancedBlade,      category: Weapon,       rarity: Common, upgrade: 0 },
+        Item { name: ObsidianSword,      category: Weapon,       rarity: Common, upgrade: 0 },
+        Item { name: BalancedSpear,      category: Weapon,       rarity: Common, upgrade: 0 },
 
-        Item { name: VerdantGreatsword,  category: Weapon,       rarity: Uncommon },
-        Item { name: FireDagger,         category: Weapon,       rarity: Uncommon },
-        Item { name: RefinedBlade,       category: Weapon,       rarity: Uncommon },
-        Item { name: IceSpear,           category: Weapon,       rarity: Uncommon },
-        // Item { name: FrozenStar,         category: Weapon,       rarity: Uncommon },
-        // Item { name: Starfrost,          category: Weapon,       rarity: Uncommon },
+        Item { name: VerdantGreatsword,  category: Weapon,       rarity: Uncommon, upgrade: 0 },
+        Item { name: FireDagger,         category: Weapon,       rarity: Uncommon, upgrade: 0 },
+        Item { name: RefinedBlade,       category: Weapon,       rarity: Uncommon, upgrade: 0 },
+        Item { name: IceSpear,           category: Weapon,       rarity: Uncommon, upgrade: 0 },
+        // Item { name: FrozenStar,         category: Weapon,       rarity: Uncommon, upgrade: 0 },
+        // Item { name: Starfrost,          category: Weapon,       rarity: Uncommon, upgrade: 0 },
 
-        Item { name: Nightfall,          category: Weapon,       rarity: Rare },
-        Item { name: LuminousObsidian,   category: Weapon,       rarity: Rare },
-        Item { name: Wildfire,           category: Weapon,       rarity: Rare },
-        Item { name: SpiritBlade,        category: Weapon,       rarity: Rare },
-        Item { name: RubyBlade,          category: Weapon,       rarity: Rare },
-        Item { name: Lightspear,         category: Weapon,       rarity: Rare },
-        Item { name: Sivoka,             category: Weapon,       rarity: Rare },
-        Item { name: VoidDagger,         category: Weapon,       rarity: Rare },
-        // Item { name: Datafrost,          category: Weapon,       rarity: Rare },
+        Item { name: Nightfall,          category: Weapon,       rarity: Rare, upgrade: 0 },
+        Item { name: LuminousObsidian,   category: Weapon,       rarity: Rare, upgrade: 0 },
+        Item { name: Wildfire,           category: Weapon,       rarity: Rare, upgrade: 0 },
+        Item { name: SpiritBlade,        category: Weapon,       rarity: Rare, upgrade: 0 },
+        Item { name: RubyBlade,          category: Weapon,       rarity: Rare, upgrade: 0 },
+        Item { name: Lightspear,         category: Weapon,       rarity: Rare, upgrade: 0 },
+        Item { name: Sivoka,             category: Weapon,       rarity: Rare, upgrade: 0 },
+        Item { name: VoidDagger,         category: Weapon,       rarity: Rare, upgrade: 0 },
+        // Item { name: Datafrost,          category: Weapon,       rarity: Rare, upgrade: 0 },
 
-        Item { name: Kosa,               category: Weapon,       rarity: Epic },
+        Item { name: Kosa,               category: Weapon,       rarity: Epic, upgrade: 0 },
 
-        // Item { name: GreatKosa,          category: Weapon,       rarity: Legendary },
+        // Item { name: GreatKosa,          category: Weapon,       rarity: Legendary, upgrade: 0 },
 
     // Armor
 
-        Item { name: StarterArmor,       category: Armor,        rarity: Common },
-        Item { name: ForestArmor,        category: Armor,        rarity: Common },
-        Item { name: RedstoneArmor,      category: Armor,        rarity: Common },
+        Item { name: StarterArmor,       category: Armor,        rarity: Common, upgrade: 0 },
+        Item { name: ForestArmor,        category: Armor,        rarity: Common, upgrade: 0 },
+        Item { name: RedstoneArmor,      category: Armor,        rarity: Common, upgrade: 0 },
 
-        Item { name: ObsidianArmor,      category: Armor,        rarity: Uncommon },
-        Item { name: DraconicArmor,      category: Armor,        rarity: Uncommon },
-        Item { name: AmethystArmor,      category: Armor,        rarity: Uncommon },
-        Item { name: BloodCrystalArmor,  category: Armor,        rarity: Uncommon },
+        Item { name: ObsidianArmor,      category: Armor,        rarity: Uncommon, upgrade: 0 },
+        Item { name: DraconicArmor,      category: Armor,        rarity: Uncommon, upgrade: 0 },
+        Item { name: AmethystArmor,      category: Armor,        rarity: Uncommon, upgrade: 0 },
+        Item { name: BloodCrystalArmor,  category: Armor,        rarity: Uncommon, upgrade: 0 },
 
-        Item { name: VoidPlatemail,      category: Armor,        rarity: Rare },
+        Item { name: VoidPlatemail,      category: Armor,        rarity: Rare, upgrade: 0 },
 
-        Item { name: TheSingularity,     category: Armor,        rarity: Epic },
+        Item { name: TheSingularity,     category: Armor,        rarity: Epic, upgrade: 0 },
 
     // PassiveSkill
 
-        Item { name: RustyBlade,         category: PassiveSkill, rarity: Common },
-        Item { name: BattleFocus,        category: PassiveSkill, rarity: Common },
+        Item { name: RustyBlade,         category: PassiveSkill, rarity: Common, upgrade: 0 },
+        Item { name: BattleFocus,        category: PassiveSkill, rarity: Common, upgrade: 0 },
 
-        Item { name: SharpBlade,         category: PassiveSkill, rarity: Uncommon },
-        Item { name: StoneHeart,         category: PassiveSkill, rarity: Uncommon },
+        Item { name: SharpBlade,         category: PassiveSkill, rarity: Uncommon, upgrade: 0 },
+        Item { name: StoneHeart,         category: PassiveSkill, rarity: Uncommon, upgrade: 0 },
 
-        Item { name: BladeArtist,        category: PassiveSkill, rarity: Rare },
-        Item { name: VampiricWeapons,    category: PassiveSkill, rarity: Rare },
-        Item { name: ArcaneVision,       category: PassiveSkill, rarity: Rare },
+        Item { name: BladeArtist,        category: PassiveSkill, rarity: Rare, upgrade: 0 },
+        Item { name: VampiricWeapons,    category: PassiveSkill, rarity: Rare, upgrade: 0 },
+        Item { name: ArcaneVision,       category: PassiveSkill, rarity: Rare, upgrade: 0 },
 
-        // Item { name: Pioneer,            category: PassiveSkill, rarity: Legendary },
+        // Item { name: Pioneer,            category: PassiveSkill, rarity: Legendary, upgrade: 0 },
 
     // ActiveSkill
 
-        Item { name: EmeraldSlash,       category: ActiveSkill,  rarity: Common },
-        Item { name: WindyEdge,          category: ActiveSkill,  rarity: Common },
+        Item { name: EmeraldSlash,       category: ActiveSkill,  rarity: Common, upgrade: 0 },
+        Item { name: WindyEdge,          category: ActiveSkill,  rarity: Common, upgrade: 0 },
 
-        Item { name: LifeSpark,          category: ActiveSkill,  rarity: Uncommon },
-        Item { name: CursedFlames,       category: ActiveSkill,  rarity: Uncommon },
+        Item { name: LifeSpark,          category: ActiveSkill,  rarity: Uncommon, upgrade: 0 },
+        Item { name: CursedFlames,       category: ActiveSkill,  rarity: Uncommon, upgrade: 0 },
 
-        Item { name: Genesis,            category: ActiveSkill,  rarity: Rare },
-        Item { name: MidnightEcho,       category: ActiveSkill,  rarity: Rare },
-        Item { name: BlazingEcho,        category: ActiveSkill,  rarity: Rare },
-        Item { name: VoidSlice,          category: ActiveSkill,  rarity: Rare },
+        Item { name: Genesis,            category: ActiveSkill,  rarity: Rare, upgrade: 0 },
+        Item { name: MidnightEcho,       category: ActiveSkill,  rarity: Rare, upgrade: 0 },
+        Item { name: BlazingEcho,        category: ActiveSkill,  rarity: Rare, upgrade: 0 },
+        Item { name: VoidSlice,          category: ActiveSkill,  rarity: Rare, upgrade: 0 },
 
     // Material
 
-        Item { name: Amethyst,           category: Material,     rarity: Common },
-        Item { name: Obsidian,           category: Material,     rarity: Common },
-        Item { name: Redstone,           category: Material,     rarity: Common },
-        Item { name: Wood,               category: Material,     rarity: Common },
-        Item { name: Grass,              category: Material,     rarity: Common },
-        Item { name: CommonCore,         category: Material,     rarity: Common },
+        Item { name: Amethyst,           category: Material,     rarity: Common, upgrade: 0 },
+        Item { name: Obsidian,           category: Material,     rarity: Common, upgrade: 0 },
+        Item { name: Redstone,           category: Material,     rarity: Common, upgrade: 0 },
+        Item { name: Wood,               category: Material,     rarity: Common, upgrade: 0 },
+        Item { name: Grass,              category: Material,     rarity: Common, upgrade: 0 },
+        Item { name: CommonCore,         category: Material,     rarity: Common, upgrade: 0 },
 
-        Item { name: Ruby,               category: Material,     rarity: Uncommon },
-        Item { name: Firestone,          category: Material,     rarity: Uncommon },
-        Item { name: CursedWood,         category: Material,     rarity: Uncommon },
-        Item { name: Leaf,               category: Material,     rarity: Uncommon },
-        Item { name: UncommonCore,       category: Material,     rarity: Uncommon },
+        Item { name: Ruby,               category: Material,     rarity: Uncommon, upgrade: 0 },
+        Item { name: Firestone,          category: Material,     rarity: Uncommon, upgrade: 0 },
+        Item { name: CursedWood,         category: Material,     rarity: Uncommon, upgrade: 0 },
+        Item { name: Leaf,               category: Material,     rarity: Uncommon, upgrade: 0 },
+        Item { name: UncommonCore,       category: Material,     rarity: Uncommon, upgrade: 0 },
 
-        Item { name: VoidDust,           category: Material,     rarity: Rare },
-        Item { name: SingularityFragment,category: Material,     rarity: Rare },
-        Item { name: BloodCrystal,       category: Material,     rarity: Rare },
-        Item { name: EternalFirestone,   category: Material,     rarity: Rare },
-        Item { name: GlowingObsidian,    category: Material,     rarity: Rare },
-        Item { name: PortalCore,         category: Material,     rarity: Rare },
-        Item { name: RareCore,           category: Material,     rarity: Rare },
+        Item { name: VoidDust,           category: Material,     rarity: Rare, upgrade: 0 },
+        Item { name: SingularityFragment,category: Material,     rarity: Rare, upgrade: 0 },
+        Item { name: BloodCrystal,       category: Material,     rarity: Rare, upgrade: 0 },
+        Item { name: EternalFirestone,   category: Material,     rarity: Rare, upgrade: 0 },
+        Item { name: GlowingObsidian,    category: Material,     rarity: Rare, upgrade: 0 },
+        Item { name: PortalCore,         category: Material,     rarity: Rare, upgrade: 0 },
+        Item { name: RareCore,           category: Material,     rarity: Rare, upgrade: 0 },
 
-        Item { name: FallProtection,     category: Material,     rarity: Epic }, // the goat
-        Item { name: VoidCore,           category: Material,     rarity: Epic },
-        Item { name: InvisibleCore,      category: Material,     rarity: Epic },
+        Item { name: FallProtection,     category: Material,     rarity: Epic, upgrade: 0 }, // the goat
+        Item { name: VoidCore,           category: Material,     rarity: Epic, upgrade: 0 },
+        Item { name: InvisibleCore,      category: Material,     rarity: Epic, upgrade: 0 },
 
     // Aura
 
-        Item { name: DarkstarAura,       category: Aura,         rarity: Uncommon },
-        Item { name: CrystalBubbleAura,  category: Aura,         rarity: Uncommon },
+        Item { name: DarkstarAura,       category: Aura,         rarity: Uncommon, upgrade: 0 },
+        Item { name: CrystalBubbleAura,  category: Aura,         rarity: Uncommon, upgrade: 0 },
 
-        Item { name: LightningAura,      category: Aura,         rarity: Rare },
-        Item { name: ScarletPixelAura,   category: Aura,         rarity: Rare },
-        Item { name: SkyPixelAura,       category: Aura,         rarity: Rare },
-        Item { name: GrassPixelAura,     category: Aura,         rarity: Rare },
-        // Item { name: ObsidianFlameAura,  category: Aura,         rarity: Rare },
-        // Item { name: SunsetAura,         category: Aura,         rarity: Rare },
-        // Item { name: FallingLeavesAura,  category: Aura,         rarity: Rare },
-        // Item { name: SakuraFlameAura,    category: Aura,         rarity: Rare },
+        Item { name: LightningAura,      category: Aura,         rarity: Rare, upgrade: 0 },
+        Item { name: ScarletPixelAura,   category: Aura,         rarity: Rare, upgrade: 0 },
+        Item { name: SkyPixelAura,       category: Aura,         rarity: Rare, upgrade: 0 },
+        Item { name: GrassPixelAura,     category: Aura,         rarity: Rare, upgrade: 0 },
+        // Item { name: ObsidianFlameAura,  category: Aura,         rarity: Rare, upgrade: 0 },
+        // Item { name: SunsetAura,         category: Aura,         rarity: Rare, upgrade: 0 },
+        // Item { name: FallingLeavesAura,  category: Aura,         rarity: Rare, upgrade: 0 },
+        // Item { name: SakuraFlameAura,    category: Aura,         rarity: Rare, upgrade: 0 },
 
-        Item { name: SakuraAura,         category: Aura,         rarity: Epic },
+        Item { name: SakuraAura,         category: Aura,         rarity: Epic, upgrade: 0 },
 
-        // Item { name: BetaAura,           category: Aura,         rarity: Legendary },
+        // Item { name: BetaAura,           category: Aura,         rarity: Legendary, upgrade: 0 },
 
     // Shard
 
-        Item { name: CommonShard,        category: Shard,        rarity: Common },
-        Item { name: UncommonShard,      category: Shard,        rarity: Uncommon },
-        Item { name: RareShard,          category: Shard,        rarity: Rare },
-        Item { name: EpicShard,          category: Shard,        rarity: Epic },
-        Item { name: LegendaryShard,     category: Shard,        rarity: Legendary },
+        Item { name: CommonShard,        category: Shard,        rarity: Common, upgrade: 0 },
+        Item { name: UncommonShard,      category: Shard,        rarity: Uncommon, upgrade: 0 },
+        Item { name: RareShard,          category: Shard,        rarity: Rare, upgrade: 0 },
+        Item { name: EpicShard,          category: Shard,        rarity: Epic, upgrade: 0 },
+        Item { name: LegendaryShard,     category: Shard,        rarity: Legendary, upgrade: 0 },
 ];

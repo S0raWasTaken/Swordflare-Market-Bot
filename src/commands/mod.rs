@@ -68,5 +68,3 @@ pub async fn is_bot_admin(ctx: Context<'_>) -> Res<bool> {
         Ok(has_admin_role)
     }
 }
-
-// ─ Helpers ────────────────────────────────────────────────────────────────────

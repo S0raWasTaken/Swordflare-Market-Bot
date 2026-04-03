@@ -1,6 +1,7 @@
 use poise::serenity_prelude::{Context as SerenityContext, UserId};
 use tokio::time::interval;
 
+use crate::Error;
 use crate::database::supported_locale::SupportedLocale;
 use crate::event_handler::buttons::buy::TradeResult;
 use crate::event_handler::buttons::interaction_response;
@@ -21,11 +22,22 @@ use crate::{
 use poise::serenity_prelude as serenity;
 
 pub async fn cleanup(ctx: SerenityContext, data: Data) {
+    startup(&data).inspect_err(print_err).ok();
+
     let mut interval = interval(DATABASE_CLEANUP_INTERVAL);
     loop {
         interval.tick().await;
         clean_database(&ctx, &data).await.inspect_err(print_err).ok();
     }
+}
+
+pub fn startup(data: &Data) -> Res<()> {
+    data.running_auctions.write(|db| {
+        for (_, auction) in db.iter_mut() {
+            auction.is_being_handled = false;
+        }
+    })?;
+    Ok(())
 }
 
 pub async fn clean_database(ctx: &SerenityContext, data: &Data) -> Res<()> {
@@ -57,6 +69,10 @@ pub async fn clean_database(ctx: &SerenityContext, data: &Data) -> Res<()> {
     };
 
     for (id, auction) in auctions {
+        if auction.is_being_handled {
+            continue;
+        }
+
         let ctx = ctx.clone();
         let data = data.clone();
         tokio::spawn(async move {
@@ -79,6 +95,14 @@ pub async fn resolve_auction(
     auction_id: u64,
     auction: RunningAuction,
 ) -> Res<()> {
+    data.running_auctions.write(|db| {
+        let auction = db
+            .get_mut(auction_id)
+            .ok_or("Failed to find auction, and this shouldn't happen")?;
+        auction.is_being_handled = true;
+        Ok::<(), Error>(())
+    })??;
+
     // Update both posts to show expired state before doing anything
     update_auction_post(ctx, data, auction_id, SupportedLocale::en_US)
         .await

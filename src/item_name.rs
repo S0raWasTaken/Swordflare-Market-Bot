@@ -114,6 +114,11 @@ pub enum ItemName {
 #[rustfmt::skip]
 impl ItemName {
     #[must_use]
+    pub fn display_upgrade(self, locale: &str, upgrade: u8) -> String {
+        format!("{} +{upgrade}", self.display(locale))
+    }
+
+    #[must_use]
     pub fn display(self, locale: &str) -> Cow<'_, str> {
         match self {
             Self::BasicSword          => t!("item.basic_sword",          locale = locale),

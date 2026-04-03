@@ -3,6 +3,7 @@ use crate::database::Data;
 use crate::database::supported_locale::{SupportedLocale, get_user_locale};
 use crate::database::trade_db::{Trade, TradeKind};
 use crate::event_handler::buttons::interaction_response;
+use crate::items::Item;
 use crate::post::build_trade_embed;
 use crate::print_err;
 use crate::{Context, Res, item_name::ItemName, items::ITEMS, t};
@@ -37,7 +38,7 @@ fn validate_input(
     trade_quantity: u64,
     stock: u64,
     locale: &str,
-) -> Res<(ItemName, ItemName, u64)> {
+) -> Res<(&'static Item, &'static Item, u64)> {
     let item = ItemName::from_str(trading_item).map_err(|_| {
         t!("error.invalid_trading_item", name = trading_item, locale = locale)
     })?;
@@ -60,13 +61,13 @@ fn validate_input(
         .into());
     }
 
-    Ok((item, wants, lots))
+    Ok((item.item(), wants.item(), lots))
 }
 
 #[expect(clippy::too_many_arguments)]
 fn build_confirm_embed(
-    item: ItemName,
-    wants: ItemName,
+    item: Item,
+    wants: Item,
     item_rarity: &str,
     wants_rarity: &str,
     trade_quantity: u64,
@@ -116,8 +117,8 @@ fn build_confirm_embed(
 
 async fn show_confirmation(
     ctx: Context<'_>,
-    item: ItemName,
-    wants: ItemName,
+    item: Item,
+    wants: Item,
     trade_quantity: u64,
     wants_amount: u64,
     lots: u64,
@@ -127,8 +128,8 @@ async fn show_confirmation(
     let avatar_url =
         seller.avatar_url().unwrap_or_else(|| seller.default_avatar_url());
 
-    let item_rarity = item.item().rarity.display(locale).into_owned();
-    let wants_rarity = wants.item().rarity.display(locale).into_owned();
+    let item_rarity = item.rarity.display(locale).into_owned();
+    let wants_rarity = wants.rarity.display(locale).into_owned();
 
     let embed = build_confirm_embed(
         item,
@@ -260,8 +261,8 @@ async fn send_post_embed(
 async fn post_trade(
     ctx: Context<'_>,
     component: serenity::ComponentInteraction,
-    item: ItemName,
-    wants: ItemName,
+    item: Item,
+    wants: Item,
     trade_quantity: u64,
     wants_amount: u64,
     lots: u64,
@@ -270,8 +271,8 @@ async fn post_trade(
     let supported_locale = SupportedLocale::from_locale_fallback(locale);
     let seller = ctx.author();
 
-    let item_obj = ITEMS.iter().find(|i| i.name == item).unwrap();
-    let wants_obj = ITEMS.iter().find(|i| i.name == wants).unwrap();
+    let item_obj = ITEMS.iter().find(|i| i.name == item.name).unwrap();
+    let wants_obj = ITEMS.iter().find(|i| i.name == wants.name).unwrap();
 
     let mut trade = Trade::new(
         seller.id,
@@ -345,17 +346,17 @@ async fn post_trade(
 fn check_dupe(
     data: &Data,
     seller: UserId,
-    wants: ItemName,
+    wants: Item,
     wants_amount: u64,
-    item: ItemName,
+    item: Item,
     item_quantity: u64,
     lots: u64,
 ) -> Res<Option<Trade>> {
     let test_trade = Trade::new(
         seller,
-        *item.item(),
+        item,
         item_quantity,
-        *wants.item(),
+        wants,
         wants_amount,
         lots,
         TradeKind::Normal,
@@ -368,6 +369,7 @@ fn check_dupe(
 /// Make a new trade request
 /// 새로운 거래 요청을 만듭니다
 #[poise::command(slash_command, interaction_context = "Guild")]
+#[expect(clippy::too_many_arguments)]
 pub async fn new_trade(
     ctx: Context<'_>,
 
@@ -375,6 +377,9 @@ pub async fn new_trade(
     #[description = "The item you are offering"]
     #[description_localized("ko", "제공할 아이템")]
     trading_item: String,
+
+    #[description = "Your offered item's number of upgrades"]
+    trading_item_upgrade: Option<u8>,
 
     #[description = "How many of the item you are offering per lot"]
     #[description_localized("ko", "개당 당 제시할 아이템 수량")]
@@ -384,6 +389,9 @@ pub async fn new_trade(
     #[description = "The item you want in return"]
     #[description_localized("ko", "받고 싶은 아이템")]
     for_item: String,
+
+    #[description = "Your wanted item's number of upgrades"]
+    wanted_item_upgrade: Option<u8>,
 
     #[description = "How many of the wanted item you expect per lot"]
     #[description_localized("ko", "원하는 아이템의 예상하는 갯수")]
@@ -397,6 +405,9 @@ pub async fn new_trade(
     check_if_blacklisted(ctx, locale).await?;
     check_if_paused(ctx, locale)?;
 
+    let trading_item_upgrade = trading_item_upgrade.unwrap_or_default();
+    let wanted_item_upgrade = wanted_item_upgrade.unwrap_or_default();
+
     let (item, wants, lots) = validate_input(
         &trading_item,
         &for_item,
@@ -404,6 +415,12 @@ pub async fn new_trade(
         stock,
         locale,
     )?;
+
+    let mut item = *item;
+    let mut wants = *wants;
+
+    item.set_upgrade(trading_item_upgrade);
+    wants.set_upgrade(wanted_item_upgrade);
 
     if let Some(trade) = check_dupe(
         ctx.data(),
