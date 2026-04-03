@@ -91,7 +91,6 @@ fn validate_input(
     Ok((item.item(), currency.item(), duration))
 }
 
-#[expect(clippy::too_many_lines, reason = "Come on, 101/100")]
 async fn show_confirmation(
     ctx: Context<'_>,
     item: Item,
@@ -118,21 +117,12 @@ async fn show_confirmation(
         .thumbnail(avatar_url)
         .field(
             t!("auction.confirm.field_item", locale = locale),
-            format!(
-                "**{}** x{} ({})",
-                item.display(locale),
-                quantity,
-                item.rarity.display(locale)
-            ),
+            format!("**{}** x{}", item.display(locale), quantity,),
             true,
         )
         .field(
             t!("auction.confirm.field_currency", locale = locale),
-            format!(
-                "**{}** ({})",
-                currency.display(locale),
-                currency.rarity.display(locale)
-            ),
+            format!("**{}**", currency.display(locale),),
             true,
         )
         .field(

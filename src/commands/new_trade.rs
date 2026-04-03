@@ -65,12 +65,9 @@ fn validate_input(
     Ok((item.item(), wants.item(), lots))
 }
 
-#[expect(clippy::too_many_arguments)]
 fn build_confirm_embed(
     item: Item,
     wants: Item,
-    item_rarity: &str,
-    wants_rarity: &str,
     trade_quantity: u64,
     wants_amount: u64,
     lots: u64,
@@ -90,22 +87,12 @@ fn build_confirm_embed(
         .thumbnail(avatar_url)
         .field(
             t!("new_trade.confirm.field_offering", locale = locale),
-            format!(
-                "**{}** x{} ({})",
-                item.display(locale),
-                trade_quantity,
-                item_rarity
-            ),
+            format!("**{}** x{}", item.display(locale), trade_quantity),
             true,
         )
         .field(
             t!("new_trade.confirm.field_wants", locale = locale),
-            format!(
-                "**{}** x{} ({})",
-                wants.display(locale),
-                wants_amount,
-                wants_rarity
-            ),
+            format!("**{}** x{}", wants.display(locale), wants_amount),
             true,
         )
         .field(
@@ -129,14 +116,9 @@ async fn show_confirmation(
     let avatar_url =
         seller.avatar_url().unwrap_or_else(|| seller.default_avatar_url());
 
-    let item_rarity = item.rarity.display(locale).into_owned();
-    let wants_rarity = wants.rarity.display(locale).into_owned();
-
     let embed = build_confirm_embed(
         item,
         wants,
-        &item_rarity,
-        &wants_rarity,
         trade_quantity,
         wants_amount,
         lots,

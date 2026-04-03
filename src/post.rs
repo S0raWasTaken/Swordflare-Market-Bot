@@ -81,20 +81,18 @@ fn build_normal_embed(
         .field(
             t!("post.field_offering", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
+                "**{}** x{}",
                 trade.item.display(post_locale),
                 trade.quantity,
-                trade.item.rarity.display(post_locale)
             ),
             true,
         )
         .field(
             t!("post.field_wants", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
+                "**{}** x{}",
                 trade.wants.display(post_locale),
                 trade.wanted_amount,
-                trade.wants.rarity.display(post_locale)
             ),
             true,
         )
@@ -153,20 +151,18 @@ fn build_completed_auction_embed(
         .field(
             t!("auction.post.field_item", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
+                "**{}** x{}",
                 trade.item.display(post_locale),
                 trade.quantity,
-                trade.item.rarity.display(post_locale)
             ),
             true,
         )
         .field(
             t!("auction.post.field_min_price", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
+                "**{}** x{}",
                 trade.wants.display(post_locale),
                 trade.wanted_amount,
-                trade.wants.rarity.display(post_locale)
             ),
             true,
         )
@@ -271,20 +267,18 @@ pub fn build_auction_embed(
         .field(
             t!("auction.post.field_item", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
+                "**{}** x{}",
                 auction.item.display(post_locale),
                 auction.quantity,
-                auction.item.rarity.display(post_locale)
             ),
             true,
         )
         .field(
             t!("auction.post.field_min_price", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
+                "**{}** x{}",
                 auction.currency_item.display(post_locale),
                 auction.min_price,
-                auction.currency_item.rarity.display(post_locale)
             ),
             true,
         )
