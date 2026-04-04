@@ -141,7 +141,7 @@ pub const ITEMS: [Item; 97] = [
         Item { name: BloodCrystalArmor,   category: Armor,        rarity: Uncommon,  upgrade: 0 },
         Item { name: IceplateArmor,       category: Armor,        rarity: Uncommon,  upgrade: 0 },
         Item { name: FrostshadeArmor,     category: Armor,        rarity: Uncommon,  upgrade: 0 },
-        
+
         Item { name: VoidPlatemail,       category: Armor,        rarity: Rare,      upgrade: 0 },
         Item { name: GlacierArmor,        category: Armor,        rarity: Rare,      upgrade: 0 },
 
