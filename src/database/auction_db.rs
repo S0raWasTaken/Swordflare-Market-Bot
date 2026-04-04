@@ -128,7 +128,7 @@ impl RunningAuction {
             self.bids.iter().map(|(&id, &amt)| (id, amt)).collect();
         bids.sort_by_key(|b| std::cmp::Reverse(b.1));
 
-        let currency = self.currency_item.name.display(locale);
+        let currency = self.currency_item.display(locale);
         bids.iter()
             .map(|(id, amt)| format!("**{amt} {currency}** — <@{id}>"))
             .collect::<Vec<_>>()
@@ -193,9 +193,9 @@ impl RunningAuction {
     pub fn display_simple(&self, locale: &str) -> String {
         format!(
             "{} x{} for {} x{} minimum",
-            self.item.name.display(locale),
+            self.item.display(locale),
             self.quantity,
-            self.currency_item.name.display(locale),
+            self.currency_item.display(locale),
             self.min_price
         )
     }

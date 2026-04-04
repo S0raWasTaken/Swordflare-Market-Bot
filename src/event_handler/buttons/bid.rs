@@ -66,7 +66,7 @@ async fn resolve_auction(
             auction.seller,
             auction.is_expired(),
             auction.min_next_bid(bid_ctx.user().id),
-            auction.currency_item.name.display(locale).into_owned(),
+            auction.currency_item.display(locale),
         )
     };
 

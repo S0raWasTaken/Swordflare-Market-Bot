@@ -186,8 +186,8 @@ pub async fn resolve_auction(
                         locale = winner_locale,
                         amount = winning_bid,
                         currency =
-                            auction.currency_item.name.display(&winner_locale),
-                        item = auction.item.name.display(&winner_locale),
+                            auction.currency_item.display(&winner_locale),
+                        item = auction.item.display(&winner_locale),
                         quantity = auction.quantity,
                         server_link = &*crate::TRADING_SERVER_LINK,
                     ))
@@ -231,8 +231,8 @@ pub async fn resolve_auction(
                         winner = winner_user.name,
                         amount = winning_bid,
                         currency =
-                            auction.currency_item.name.display(&seller_locale),
-                        item = auction.item.name.display(&seller_locale),
+                            auction.currency_item.display(&seller_locale),
+                        item = auction.item.display(&seller_locale),
                         quantity = auction.quantity,
                         server_link = &*crate::TRADING_SERVER_LINK,
                     ))
@@ -285,19 +285,19 @@ pub async fn resolve_auction(
                     "buy.done.buyer",
                     locale = winner_locale,
                     wants_total = winning_bid,
-                    wants = auction.currency_item.name.display(&winner_locale),
+                    wants = auction.currency_item.display(&winner_locale),
                     seller = seller_user.name,
                     item_total = auction.quantity,
-                    item = auction.item.name.display(&winner_locale),
+                    item = auction.item.display(&winner_locale),
                 );
                 let seller_content = t!(
                     "buy.done.seller",
                     locale = seller_locale,
                     wants_total = winning_bid,
-                    wants = auction.currency_item.name.display(&seller_locale),
+                    wants = auction.currency_item.display(&seller_locale),
                     buyer = winner_user.name,
                     item_total = auction.quantity,
-                    item = auction.item.name.display(&seller_locale),
+                    item = auction.item.display(&seller_locale),
                 );
 
                 buyer_int

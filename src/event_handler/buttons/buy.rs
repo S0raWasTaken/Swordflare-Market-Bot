@@ -267,7 +267,7 @@ async fn confirm_purchase(
             t!("buy.confirm.field_receive", locale = buyer_locale),
             format!(
                 "**{}** x{}",
-                trade_ctx.item.name.display(buyer_locale),
+                trade_ctx.item.display(buyer_locale),
                 trade_ctx.item_quantity * lots
             ),
             true,
@@ -276,7 +276,7 @@ async fn confirm_purchase(
             t!("buy.confirm.field_give", locale = buyer_locale),
             format!(
                 "**{}** x{}",
-                trade_ctx.wants.name.display(buyer_locale),
+                trade_ctx.wants.display(buyer_locale),
                 trade_ctx.wanted_amount * lots
             ),
             true,
@@ -396,9 +396,9 @@ async fn send_trade_dms<'a>(
                     "buy.dm.buyer",
                     locale = buyer_locale,
                     item_total = item_quantity * lots,
-                    item = item.name.display(buyer_locale),
+                    item = item.display(buyer_locale),
                     wants_total = wanted_amount * lots,
-                    wants = wants.name.display(buyer_locale),
+                    wants = wants.display(buyer_locale),
                     lots = lots,
                     seller = seller_name,
                     server_link = private_server_link
@@ -431,9 +431,9 @@ async fn send_trade_dms<'a>(
         locale = seller_locale,
         buyer = buyer.name,
         item_total = item_quantity * lots,
-        item = item.name.display(seller_locale),
+        item = item.display(seller_locale),
         wants_total = wanted_amount * lots,
-        wants = wants.name.display(seller_locale),
+        wants = wants.display(seller_locale),
         lots = lots,
         server_link = private_server_link
     );
@@ -626,30 +626,30 @@ async fn finish_trade(
         "buy.done.buyer",
         locale = buyer_locale,
         wants_total = wanted_amount * quantity,
-        wants = wants.name.display(buyer_locale),
+        wants = wants.display(buyer_locale),
         seller = seller_name,
         item_total = item_quantity * quantity,
-        item = item.name.display(buyer_locale),
+        item = item.display(buyer_locale),
     );
     let seller_content = if is_sold_out {
         t!(
             "buy.done.seller_sold_out",
             locale = seller_locale,
             wants_total = wanted_amount * quantity,
-            wants = wants.name.display(seller_locale),
+            wants = wants.display(seller_locale),
             buyer = buyer.name,
             item_total = item_quantity * quantity,
-            item = item.name.display(seller_locale),
+            item = item.display(seller_locale),
         )
     } else {
         t!(
             "buy.done.seller",
             locale = seller_locale,
             wants_total = wanted_amount * quantity,
-            wants = wants.name.display(seller_locale),
+            wants = wants.display(seller_locale),
             buyer = buyer.name,
             item_total = item_quantity * quantity,
-            item = item.name.display(seller_locale),
+            item = item.display(seller_locale),
         )
     };
 
