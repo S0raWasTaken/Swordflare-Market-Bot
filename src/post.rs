@@ -2,7 +2,10 @@ use poise::serenity_prelude::{self as serenity, CacheHttp};
 
 use crate::{
     Res,
-    commands::{new_auction::auction_buttons, new_trade::trade_buttons},
+    commands::{
+        new_auction::auction_buttons, new_trade::trade_buttons,
+        trim_multiline_string,
+    },
     database::{
         Data,
         auction_db::RunningAuction,
@@ -245,6 +248,8 @@ pub fn build_auction_embed(
     };
 
     let mut current_bids = auction.sorted_bid_list(post_locale);
+    trim_multiline_string(2000, &mut current_bids);
+
     if current_bids.is_empty() {
         current_bids =
             t!("auction.post.no_bids", locale = post_locale).to_string();
