@@ -92,13 +92,17 @@ pub async fn await_both_confirmations(
             .ok_or::<Error>("Timed out".into())
     });
 
-    let new_buyer_msg = EditMessage::new()
-        .content(buyer_msg.content.clone())
-        .components(disabled_buttons(locales.0));
+    let new_buyer_msg = || {
+        EditMessage::new()
+            .content(buyer_msg.content.clone())
+            .components(disabled_buttons(locales.0))
+    };
 
-    let new_seller_msg = EditMessage::new()
-        .content(seller_msg.content.clone())
-        .components(disabled_buttons(locales.1));
+    let new_seller_msg = || {
+        EditMessage::new()
+            .content(seller_msg.content.clone())
+            .components(disabled_buttons(locales.1))
+    };
 
     tokio::select! {
         result = &mut buyer_confirm => {
@@ -113,7 +117,7 @@ pub async fn await_both_confirmations(
                 return ConfirmOutcome::BuyerCancelled { buyer_int };
             }
 
-            buyer_msg.edit(ctx, new_buyer_msg).await.ok();
+            buyer_msg.edit(ctx, new_buyer_msg()).await.ok();
 
             // Respond immediately so the interaction doesn't hang
             buyer_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
@@ -143,7 +147,7 @@ pub async fn await_both_confirmations(
                 return ConfirmOutcome::SellerCancelled { seller_int };
             }
 
-            seller_msg.edit(ctx, new_seller_msg).await.ok();
+            seller_msg.edit(ctx, new_seller_msg()).await.ok();
 
             // Respond immediately so the interaction doesn't hang
             seller_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
