@@ -95,17 +95,21 @@ pub async fn resolve_auction(
     auction_id: u64,
     auction: RunningAuction,
 ) -> Res<()> {
-    if auction.is_being_handled {
-        return Ok(());
-    }
-
-    data.running_auctions.write(|db| {
+    let should_continue = data.running_auctions.write(|db| {
         let auction = db
             .get_mut(auction_id)
             .ok_or("Failed to find auction, and this shouldn't happen")?;
+        if auction.is_being_handled {
+            return Ok(false);
+        }
+
         auction.is_being_handled = true;
-        Ok::<(), Error>(())
+        Ok::<bool, Error>(true)
     })??;
+
+    if !should_continue {
+        return Ok(());
+    }
 
     // Update both posts to show expired state before doing anything
     update_auction_post(ctx, data, auction_id, SupportedLocale::en_US)
