@@ -41,7 +41,7 @@ pub async fn handle_buy(
 
     let pending = send_trade_dms(ctx, &trade_ctx, buyer, lots).await?;
 
-    let outcome = await_confirmations(ctx, data, &trade_ctx, &pending).await?;
+    let outcome = await_confirmations(ctx, data, &trade_ctx, pending).await?;
 
     log_outcome(ctx, data, outcome, lots, buyer.id, trade_ctx.trade_id).await
 }
@@ -466,7 +466,7 @@ async fn await_confirmations(
     ctx: &serenity::Context,
     data: &Data,
     trade_ctx: &TradeContext,
-    pending: &PendingTrade<'_>,
+    mut pending: PendingTrade<'_>,
 ) -> Res<TradeResult> {
     let TradeContext {
         trade_id,
@@ -477,7 +477,12 @@ async fn await_confirmations(
         ..
     } = trade_ctx;
     let PendingTrade {
-        buyer, buyer_dm, seller_dm, buyer_msg, seller_msg, ..
+        buyer,
+        ref buyer_dm,
+        ref seller_dm,
+        ref mut buyer_msg,
+        ref mut seller_msg,
+        ..
     } = pending;
 
     let outcome = match await_both_confirmations(
@@ -485,9 +490,8 @@ async fn await_confirmations(
         buyer.id,
         *seller_id,
         *trade_id,
-        TRADE_CONFIRMATION_TIMEOUT,
-        t!("buy.await.waiting_for_seller", locale = buyer_locale).into_owned(),
-        t!("buy.await.waiting_for_buyer", locale = seller_locale).into_owned(),
+        (buyer_locale, seller_locale),
+        (buyer_msg, seller_msg),
     )
     .await
     {
@@ -497,7 +501,7 @@ async fn await_confirmations(
                 ctx,
                 data,
                 trade_ctx,
-                pending,
+                &pending,
                 &buyer_int,
                 &seller_int,
             )

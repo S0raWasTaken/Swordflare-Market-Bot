@@ -2,14 +2,15 @@ use std::ops::ControlFlow::{Break, Continue};
 
 use poise::serenity_prelude::{
     self as serenity, ButtonStyle, ComponentInteraction, CreateActionRow,
-    CreateButton, CreateEmbed, CreateInteractionResponse,
-    CreateInteractionResponseMessage,
+    CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage,
 };
 
 use crate::{
     Error, Res, break_or,
     database::{Data, auction_db::RunningAuction},
-    event_handler::buttons::{ButtonContext, ControlFlow},
+    event_handler::buttons::{
+        ButtonContext, ControlFlow, button, button_action_row,
+    },
     magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
 };
 
@@ -172,16 +173,4 @@ fn message(
         .ephemeral(true)
         .embed(embed)
         .components(vec![buttons])
-}
-
-fn button_action_row(buttons: Vec<CreateButton>) -> CreateActionRow {
-    CreateActionRow::Buttons(buttons)
-}
-
-fn button(
-    custom_id: impl Into<String>,
-    label: impl Into<String>,
-    style: ButtonStyle,
-) -> CreateButton {
-    CreateButton::new(custom_id).label(label).style(style)
 }

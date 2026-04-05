@@ -15,7 +15,7 @@ use crate::{
         auction_db::RunningAuction,
         trade_db::{Trade, TradeStatus},
     },
-    magic_numbers::{DATABASE_CLEANUP_INTERVAL, TRADE_CONFIRMATION_TIMEOUT},
+    magic_numbers::DATABASE_CLEANUP_INTERVAL,
     post::{update_auction_post, update_post},
     print_err,
 };
@@ -177,7 +177,7 @@ pub async fn resolve_auction(
             }
         };
 
-        let winner_msg = match winner_dm
+        let mut winner_msg = match winner_dm
             .send_message(
                 ctx,
                 serenity::CreateMessage::default()
@@ -221,7 +221,7 @@ pub async fn resolve_auction(
             }
         };
 
-        let seller_msg = match seller_dm
+        let mut seller_msg = match seller_dm
             .send_message(
                 ctx,
                 serenity::CreateMessage::default()
@@ -272,11 +272,8 @@ pub async fn resolve_auction(
             *winner_id,
             seller_id,
             auction_id,
-            TRADE_CONFIRMATION_TIMEOUT,
-            t!("buy.await.waiting_for_seller", locale = winner_locale)
-                .into_owned(),
-            t!("buy.await.waiting_for_buyer", locale = seller_locale)
-                .into_owned(),
+            (&winner_locale, &seller_locale),
+            (&mut winner_msg, &mut seller_msg),
         )
         .await
         {
