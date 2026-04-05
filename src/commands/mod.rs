@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use crate::{
     Context, Error, Res,
     commands::{
@@ -67,4 +69,25 @@ pub async fn is_bot_admin(ctx: Context<'_>) -> Res<bool> {
     } else {
         Ok(has_admin_role)
     }
+}
+
+// ─ Helpers ────────────────────────────────────────────────────────────────────
+
+pub fn trim_multiline_string(length: usize, string: &mut String) {
+    if string.len() < length {
+        return;
+    }
+
+    let mut lines = string[..length].lines().collect::<Vec<_>>();
+    let total = string.lines().count();
+
+    lines.truncate(lines.len().saturating_sub(2));
+
+    let skipped = total - lines.len();
+
+    let mut trimmed = lines.join("\n");
+    write!(trimmed, "\n... {skipped} left").ok();
+    trimmed.truncate(length);
+
+    *string = trimmed;
 }
