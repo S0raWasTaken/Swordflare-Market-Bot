@@ -74,7 +74,10 @@ pub struct Item {
 impl Item {
     #[inline]
     pub const fn max_upgrade(self) -> u8 {
-        self.rarity.max_upgrade()
+        match self.category {
+            Armor | Weapon => self.rarity.max_upgrade(),
+            _ => 0,
+        }
     }
 
     pub fn set_upgrade(&mut self, upgrade: u8) {
