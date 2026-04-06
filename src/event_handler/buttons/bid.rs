@@ -158,7 +158,7 @@ async fn place_bid(
         if !auction.is_valid_bid(bidder_id, amount) {
             return false;
         }
-        auction.bids.insert(bidder_id, amount);
+        auction.insert(bidder_id, amount);
         true
     })?;
 

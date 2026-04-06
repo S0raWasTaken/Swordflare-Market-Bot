@@ -16,6 +16,7 @@ quote = "1"
 syn = { version = "2", features = ["full"] }
 
 [lib]
+name = "proc_macro"
 proc-macro = true
 path = "src/proc_macro.rs"
 

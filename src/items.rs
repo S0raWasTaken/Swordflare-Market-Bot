@@ -6,8 +6,8 @@ use Category::{
     ActiveSkill, Armor, Aura, Material, PassiveSkill, Shard, Weapon,
 };
 use Rarity::{Common, Epic, Legendary, Rare, Uncommon};
+use proc_macro::items;
 use serde::{Deserialize, Serialize};
-use swordflare_marketbot::items;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum Category {
@@ -126,7 +126,7 @@ items! {
     { "Lightspear",           Weapon, Rare           },
     { "Sivoka",               Weapon, Rare           },
     { "Void Dagger",          Weapon, Rare           },
-    { "Titanbreaker Sword",   Weapon, Rare           }, // key: item.titanbreaker_sword
+    { "Titanbreaker Sword",   Weapon, Rare           },
     { "Absolute Zero Spear",  Weapon, Rare           },
     { "Glacier Greatsword",   Weapon, Rare           },
 

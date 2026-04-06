@@ -114,6 +114,14 @@ impl RunningAuction {
         }
     }
 
+    pub fn insert(&mut self, bidder_id: UserId, amount: u64) {
+        self.bids.insert(bidder_id, amount);
+
+        // Bump duration to a minimum of 5 mins
+        self.end_time =
+            self.end_time.max(SystemTime::now() + Duration::from_mins(5));
+    }
+
     /// Returns the current highest bid, or `None` if no bids yet.
     #[must_use]
     pub fn highest_bid(&self) -> Option<(UserId, u64)> {
