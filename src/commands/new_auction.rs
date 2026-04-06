@@ -16,7 +16,7 @@ use crate::{
         supported_locale::{SupportedLocale, get_user_locale},
     },
     duration::parse_duration,
-    item_name::ItemName,
+    items::ItemName,
     items::{ITEMS, Item},
     magic_numbers::TRADE_EXPIRATION_TIME,
     post::build_auction_embed,

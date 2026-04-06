@@ -11,6 +11,13 @@ poise = { git = "https://github.com/serenity-rs/poise", rev = "6f29d65a0e7f83879
 rust-i18n = "3.1.5"
 serde = "1.0.228"
 tokio = { version = "1.50.0", features = ["full"] }
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }
+
+[lib]
+proc-macro = true
+path = "src/proc_macro.rs"
 
 [build-dependencies]
 blake3 = "1"

@@ -6,7 +6,7 @@ use crate::event_handler::buttons::interaction_response;
 use crate::items::Item;
 use crate::post::build_trade_embed;
 use crate::print_err;
-use crate::{Context, Res, item_name::ItemName, items::ITEMS, t};
+use crate::{Context, Res, items::ITEMS, items::ItemName, t};
 use poise::serenity_prelude::{Message, UserId};
 use poise::{CreateReply, serenity_prelude as serenity};
 use std::str::FromStr;
