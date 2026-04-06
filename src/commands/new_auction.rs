@@ -371,6 +371,11 @@ async fn auction_resolve_task(
             return;
         }
     };
+
+    if auction.is_being_handled {
+        return;
+    }
+
     resolve_auction(&ctx_clone, &data_clone, auction_id, auction)
         .await
         .inspect_err(print_err)
