@@ -48,8 +48,9 @@ fn disabled_buttons(locale: &str) -> Vec<CreateActionRow> {
 }
 
 /// Waits for both buyer and seller to click confirm or cancel.
-/// `buyer_waiting_msg` and `seller_waiting_msg` are sent as an immediate
-/// ephemeral response to whoever confirms first, while waiting for the other.
+/// When one party confirms first, an ephemeral response is sent while waiting
+/// for the other. The provided messages are edited to show disabled buttons
+/// once each party responds.
 pub async fn await_both_confirmations(
     ctx: &serenity::Context,
     buyer_id: serenity::UserId,
@@ -162,9 +163,13 @@ pub async fn await_both_confirmations(
 
             match buyer_confirm.await {
                 Ok(Ok(buyer_int)) if buyer_int.data.custom_id.starts_with("confirm_buy_") => {
+                    buyer_msg.edit(ctx, new_buyer_msg()).await.ok();
                     ConfirmOutcome::BothConfirmed { buyer_int: Box::new(buyer_int), seller_int }
                 }
-                Ok(Ok(buyer_int)) => ConfirmOutcome::BuyerCancelled { buyer_int: Box::new(buyer_int) },
+                Ok(Ok(buyer_int)) => {
+                    buyer_msg.edit(ctx, new_buyer_msg()).await.ok();
+                    ConfirmOutcome::BuyerCancelled { buyer_int: Box::new(buyer_int) }
+                }
                 _ => ConfirmOutcome::TimedOut,
             }
         }
