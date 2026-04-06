@@ -74,11 +74,11 @@ pub async fn is_bot_admin(ctx: Context<'_>) -> Res<bool> {
 // ─ Helpers ────────────────────────────────────────────────────────────────────
 
 pub fn trim_multiline_string(length: usize, string: &mut String) {
-    if string.len() < length {
+    if string.chars().count() <= length {
         return;
     }
 
-    let mut lines = string[..length].lines().collect::<Vec<_>>();
+    let mut lines = char_prefix(string, length).lines().collect::<Vec<_>>();
     let total = string.lines().count();
 
     lines.truncate(lines.len().saturating_sub(2));
@@ -87,7 +87,17 @@ pub fn trim_multiline_string(length: usize, string: &mut String) {
 
     let mut trimmed = lines.join("\n");
     write!(trimmed, "\n... {skipped} left").ok();
-    trimmed.truncate(length);
+
+    if trimmed.chars().count() > length {
+        trimmed = char_prefix(&trimmed, length).to_string();
+    }
 
     *string = trimmed;
+}
+
+fn char_prefix(s: &str, max_chars: usize) -> &str {
+    match s.char_indices().nth(max_chars) {
+        Some((idx, _)) => &s[..idx],
+        None => s,
+    }
 }
