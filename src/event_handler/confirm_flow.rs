@@ -128,12 +128,15 @@ pub async fn await_both_confirmations(
 
             match seller_confirm.await {
                 Ok(Ok(seller_int)) if seller_int.data.custom_id.starts_with("confirm_sell_") => {
+                    seller_msg.edit(ctx, new_seller_msg()).await.ok();
                     ConfirmOutcome::BothConfirmed { buyer_int, seller_int: Box::new(seller_int) }
                 }
-                Ok(Ok(seller_int)) => ConfirmOutcome::SellerCancelled { seller_int: Box::new(seller_int) },
+                Ok(Ok(seller_int)) => {
+                    seller_msg.edit(ctx, new_seller_msg()).await.ok();
+                    ConfirmOutcome::SellerCancelled { seller_int: Box::new(seller_int) }
+                }
                 _ => ConfirmOutcome::TimedOut,
-            }
-        }
+            }        }
 
         result = &mut seller_confirm => {
             let Ok(Ok(seller_int)) = result else {

@@ -235,7 +235,13 @@ pub async fn list_blacklisted_users(ctx: Context<'_>) -> Res<()> {
                 ctx.serenity_context(),
                 CreateInteractionResponse::UpdateMessage(
                     CreateInteractionResponseMessage::default()
-                        .embed(blacklisted_users[page].clone())
+                        .embed(blacklisted_users[page].clone().footer(
+                            CreateEmbedFooter::new(format!(
+                                "{}/{}",
+                                page + 1,
+                                max_page_number + 1
+                            )),
+                        ))
                         .components(vec![make_buttons(page)]),
                 ),
             )

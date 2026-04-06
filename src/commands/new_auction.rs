@@ -8,7 +8,7 @@ use std::{str::FromStr, time::Duration};
 
 use crate::{
     Context, Res,
-    cleanup::resolve_auction,
+    cleanup::auction::resolve_auction,
     commands::{check_if_blacklisted, check_if_paused},
     database::{
         Data,

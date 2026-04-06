@@ -248,7 +248,7 @@ pub fn build_auction_embed(
     };
 
     let mut current_bids = auction.sorted_bid_list(post_locale);
-    trim_multiline_string(2000, &mut current_bids);
+    trim_multiline_string(1024, &mut current_bids);
 
     if current_bids.is_empty() {
         current_bids =

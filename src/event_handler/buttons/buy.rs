@@ -708,7 +708,7 @@ struct PendingTrade<'a> {
 }
 
 pub enum TradeResult {
-    Confirmed, // Trade ID
+    Confirmed,
     BuyerCancelled,
     SellerCancelled,
     TimedOut,

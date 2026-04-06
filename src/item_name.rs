@@ -272,11 +272,7 @@ impl FromStr for ItemName {
         ITEMS
             .iter()
             .find_map(|i| {
-                if i.name.to_str().eq_ignore_ascii_case(s) {
-                    Some(i.name)
-                } else {
-                    None
-                }
+                i.name.to_str().eq_ignore_ascii_case(s).then_some(i.name)
             })
             .ok_or_else(|| format!("Unknown item: '{s}'").into())
     }

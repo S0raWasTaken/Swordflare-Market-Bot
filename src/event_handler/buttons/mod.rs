@@ -154,10 +154,12 @@ pub fn interaction_response(
     )
 }
 
+#[inline]
 pub fn button_action_row(buttons: Vec<CreateButton>) -> CreateActionRow {
     CreateActionRow::Buttons(buttons)
 }
 
+#[inline]
 pub fn button(
     custom_id: impl Into<String>,
     label: impl Into<String>,
