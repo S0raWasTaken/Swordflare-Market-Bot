@@ -136,7 +136,8 @@ pub async fn await_both_confirmations(
                     ConfirmOutcome::SellerCancelled { seller_int: Box::new(seller_int) }
                 }
                 _ => ConfirmOutcome::TimedOut,
-            }        }
+            }
+        }
 
         result = &mut seller_confirm => {
             let Ok(Ok(seller_int)) = result else {
