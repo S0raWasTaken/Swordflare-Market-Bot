@@ -63,7 +63,9 @@ pub async fn clean_database(ctx: &SerenityContext, data: &Data) -> Res<()> {
     // ── Running auctions ──────────────────────────────────────────────────────
     let auctions = data.running_auctions.read(|db| {
         db.iter()
-            .filter_map(|(id, a)| a.is_expired().then_some(id))
+            .filter_map(|(id, a)| {
+                (a.is_expired() && !a.is_being_handled).then_some(id)
+            })
             .collect::<Vec<u64>>()
     })?;
 
