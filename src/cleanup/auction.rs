@@ -50,15 +50,36 @@ macro_rules! break_log {
     };
 }
 
-/// Resolves an expired auction — offers to winner, falls back through bidders,
-/// then moves it to the trades database regardless of outcome.
-pub async fn resolve_auction(
-    ctx: &SerenityContext,
-    data: &Data,
+#[expect(clippy::type_complexity, reason = "I can't do much about it")]
+fn fetch_auction<'a>(
+    data: &'a Data,
     auction_id: u64,
-    auction: RunningAuction,
-) -> Res<()> {
-    let mut handle_guard = DropGuard::new(data, |data| {
+) -> ControlFlow<(
+    RunningAuction,
+    DropGuard<&'a Data, impl Fn(&mut &'a Data) + 'a>,
+)> {
+    let Ok(auction) = data
+        .running_auctions
+        .write(|db| {
+            let Some(auction) = db.get_mut(auction_id) else {
+                return Break(());
+            };
+
+            if auction.is_being_handled {
+                return Break(());
+            }
+
+            auction.is_being_handled = true;
+            Continue(auction.clone())
+        })
+        .inspect_err(print_err)
+    else {
+        return Break(());
+    };
+
+    let auction = auction?;
+
+    let handle_guard = DropGuard::new(data, move |data| {
         data.running_auctions
             .write(|db| {
                 if let Some(auction) = db.get_mut(auction_id) {
@@ -67,6 +88,19 @@ pub async fn resolve_auction(
             })
             .ok();
     });
+
+    Continue((auction, handle_guard))
+}
+
+/// Resolves an expired auction — offers to winner, falls back through bidders,
+/// then moves it to the trades database regardless of outcome.
+pub async fn resolve_auction(
+    ctx: &SerenityContext,
+    data: &Data,
+    auction_id: u64,
+) -> Res<()> {
+    let (auction, mut handle_guard) =
+        break_or!(fetch_auction(data, auction_id));
 
     // Update both posts to show expired state before doing anything
     update_posts(ctx, data, auction_id).await.inspect_err(print_err).ok();

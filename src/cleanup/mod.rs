@@ -1,13 +1,11 @@
 use poise::serenity_prelude::Context as SerenityContext;
 use tokio::time::interval;
 
-use crate::Error;
 use crate::cleanup::auction::resolve_auction;
 use crate::{
     Res,
     database::{
         Data,
-        auction_db::RunningAuction,
         trade_db::{Trade, TradeStatus},
     },
     magic_numbers::DATABASE_CLEANUP_INTERVAL,
@@ -63,35 +61,17 @@ pub async fn clean_database(ctx: &SerenityContext, data: &Data) -> Res<()> {
     }
 
     // ── Running auctions ──────────────────────────────────────────────────────
-    let auctions: Vec<(u64, RunningAuction)> = {
-        let db = data.running_auctions.borrow_data()?;
+    let auctions = data.running_auctions.read(|db| {
         db.iter()
-            .filter(|(_, a)| a.is_expired())
-            .map(|(id, a)| (id, a.clone()))
-            .collect()
-    };
+            .filter_map(|(id, a)| a.is_expired().then_some(id))
+            .collect::<Vec<u64>>()
+    })?;
 
-    for (id, auction) in auctions {
-        if auction.is_being_handled {
-            continue;
-        }
-
-        data.running_auctions.write(|db| {
-            let auction = db
-                .get_mut(id)
-                .ok_or("Failed to find auction, and this shouldn't happen")?;
-
-            auction.is_being_handled = true;
-            Ok::<(), Error>(())
-        })??;
-
+    for id in auctions {
         let ctx = ctx.clone();
         let data = data.clone();
         tokio::spawn(async move {
-            resolve_auction(&ctx, &data, id, auction)
-                .await
-                .inspect_err(print_err)
-                .ok();
+            resolve_auction(&ctx, &data, id).await.inspect_err(print_err).ok();
         });
     }
 

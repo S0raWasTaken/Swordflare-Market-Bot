@@ -347,45 +347,25 @@ async fn auction_resolve_task(
             .ok()
             .flatten()
     };
-    let mut last_end_time = SystemTime::UNIX_EPOCH;
+
     while let Some(end_time) = fetch_end_time() {
-        if end_time == last_end_time {
-            tokio::time::sleep(Duration::from_mins(1)).await;
-            if let Some(last_check) = fetch_end_time()
-                && last_check == last_end_time
-            {
-                break;
-            }
-        } else {
-            last_end_time = end_time;
-            tokio::time::sleep(
-                end_time
-                    .duration_since(SystemTime::now())
-                    .unwrap_or(FALLBACK_DURATION),
-            )
-            .await;
+        sleep_until(end_time).await;
+
+        if fetch_end_time().is_none_or(|t| t <= SystemTime::now()) {
+            break;
         }
     }
-    // Re-fetch from DB to get all bids placed since creation
-    let auction = match data_clone.running_auctions.borrow_data() {
-        Ok(db) => match db.get(auction_id) {
-            Some(a) => a.clone(),
-            None => return, // already resolved by cleanup
-        },
-        Err(e) => {
-            print_err(&e);
-            return;
-        }
-    };
 
-    if auction.is_being_handled {
-        return;
-    }
-
-    resolve_auction(&ctx_clone, &data_clone, auction_id, auction)
+    resolve_auction(&ctx_clone, &data_clone, auction_id)
         .await
         .inspect_err(print_err)
         .ok();
+}
+
+fn sleep_until(end_time: SystemTime) -> impl Future<Output = ()> {
+    tokio::time::sleep(
+        end_time.duration_since(SystemTime::now()).unwrap_or(FALLBACK_DURATION),
+    )
 }
 
 /// Start a new auction
