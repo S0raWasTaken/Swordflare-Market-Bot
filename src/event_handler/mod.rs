@@ -44,7 +44,7 @@ pub async fn event_handler(
 
         let result = match_prefix! {
             custom_id,
-            "buy_" => handle_buy(ctx, component, data).await,
+            "buy_" => Box::pin(handle_buy(ctx, component, data)).await,
             "bid_" => handle_bid(ctx, component, data).await,
 
             "edit_" => handle_edit(ctx, component, data).await,

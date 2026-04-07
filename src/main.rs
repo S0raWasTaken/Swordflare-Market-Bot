@@ -23,7 +23,6 @@ mod commands;
 mod database;
 mod duration;
 mod event_handler;
-mod item_name;
 mod items;
 mod macros;
 mod magic_numbers;

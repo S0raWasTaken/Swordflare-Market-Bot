@@ -4,11 +4,14 @@ use poise::{
         self as serenity, ButtonStyle, CreateActionRow, CreateButton,
     },
 };
-use std::time::Duration;
+use std::{
+    str::FromStr,
+    time::{Duration, SystemTime},
+};
 
 use crate::{
     Context, Res,
-    cleanup::resolve_auction,
+    cleanup::auction::resolve_auction,
     commands::{check_if_blacklisted, check_if_paused},
     database::{
         Data,
@@ -16,8 +19,8 @@ use crate::{
         supported_locale::{SupportedLocale, get_user_locale},
     },
     duration::parse_duration,
-    item_name::ItemName,
-    items::ITEMS,
+    event_handler::buttons::interaction_response,
+    items::{ITEMS, Item, ItemName},
     magic_numbers::TRADE_EXPIRATION_TIME,
     post::build_auction_embed,
     print_err, t,
@@ -52,7 +55,7 @@ fn validate_input(
     min_price: u64,
     duration_str: &str,
     locale: &str,
-) -> Res<(ItemName, ItemName, Duration)> {
+) -> Res<(&'static Item, &'static Item, Duration)> {
     let item = ItemName::from_str(item).map_err(|_| {
         t!("error.invalid_trading_item", name = item, locale = locale)
     })?;
@@ -88,15 +91,14 @@ fn validate_input(
         .into());
     }
 
-    Ok((item, currency, duration))
+    Ok((item.item(), currency.item(), duration))
 }
 
-#[expect(clippy::too_many_lines, reason = "Come on, 101/100")]
 async fn show_confirmation(
     ctx: Context<'_>,
-    item: ItemName,
+    item: Item,
     quantity: u64,
-    currency: ItemName,
+    currency: Item,
     min_price: u64,
     duration: Duration,
     locale: &str,
@@ -118,21 +120,12 @@ async fn show_confirmation(
         .thumbnail(avatar_url)
         .field(
             t!("auction.confirm.field_item", locale = locale),
-            format!(
-                "**{}** x{} ({})",
-                item.display(locale),
-                quantity,
-                item.item().rarity.display(locale)
-            ),
+            format!("**{}** x{}", item.display(locale), quantity,),
             true,
         )
         .field(
             t!("auction.confirm.field_currency", locale = locale),
-            format!(
-                "**{}** ({})",
-                currency.display(locale),
-                currency.item().rarity.display(locale)
-            ),
+            format!("**{}**", currency.display(locale),),
             true,
         )
         .field(
@@ -234,7 +227,7 @@ async fn send_auction_embed(
         .send_message(
             ctx.http(),
             serenity::CreateMessage::default()
-                .embed(build_auction_embed(auction, seller, None, locale))
+                .embed(build_auction_embed(auction, seller, locale))
                 .components(vec![auction_buttons(auction_id, locale)]),
         )
         .await
@@ -248,13 +241,15 @@ async fn send_auction_embed(
         })?)
 }
 
+const FALLBACK_DURATION: Duration = Duration::from_millis(50);
+
 #[expect(clippy::too_many_arguments)]
 async fn post_auction(
     ctx: Context<'_>,
     component: serenity::ComponentInteraction,
-    item: ItemName,
+    item: Item,
     quantity: u64,
-    currency: ItemName,
+    currency: Item,
     min_price: u64,
     duration: Duration,
     locale: &str,
@@ -262,14 +257,11 @@ async fn post_auction(
     let supported_locale = SupportedLocale::from_locale_fallback(locale);
     let seller = ctx.author();
 
-    let item_obj = item.item();
-    let currency_obj = currency.item();
-
     let mut auction = RunningAuction::new(
         seller.id,
-        *item_obj,
+        item,
         quantity,
-        *currency_obj,
+        currency,
         min_price,
         duration,
         supported_locale,
@@ -331,47 +323,55 @@ async fn post_auction(
     // Spawn a task to resolve the auction when it ends
     let ctx_clone = ctx.serenity_context().clone();
     let data_clone = data.clone();
-    let end_time = auction.end_time;
-    tokio::spawn(async move {
-        if let Ok(remaining) =
-            end_time.duration_since(std::time::SystemTime::now())
-        {
-            tokio::time::sleep(remaining).await;
-        }
-        // Re-fetch from DB to get all bids placed since creation
-        let auction = match data_clone.running_auctions.borrow_data() {
-            Ok(db) => match db.get(auction_id) {
-                Some(a) => a.clone(),
-                None => return, // already resolved by cleanup
-            },
-            Err(e) => {
-                print_err(&e);
-                return;
-            }
-        };
-        resolve_auction(&ctx_clone, &data_clone, auction_id, auction)
-            .await
-            .inspect_err(print_err)
-            .ok();
-    });
+    tokio::spawn(auction_resolve_task(auction_id, ctx_clone, data_clone));
 
     component
         .create_response(
             ctx,
-            serenity::CreateInteractionResponse::Message(
-                serenity::CreateInteractionResponseMessage::default()
-                    .ephemeral(true)
-                    .content(t!("auction.posted", locale = locale)),
-            ),
+            interaction_response(&t!("auction.posted", locale = locale), true),
         )
         .await?;
 
     Ok(auction)
 }
 
+async fn auction_resolve_task(
+    auction_id: u64,
+    ctx_clone: serenity::Context,
+    data_clone: Data,
+) {
+    let fetch_end_time = || {
+        data_clone
+            .running_auctions
+            .read(|db| db.get(auction_id).map(|a| a.end_time))
+            .ok()
+            .flatten()
+    };
+
+    while let Some(end_time) = fetch_end_time() {
+        sleep_until(end_time).await;
+
+        if fetch_end_time().is_none_or(|t| t <= SystemTime::now()) {
+            break;
+        }
+    }
+
+    resolve_auction(&ctx_clone, &data_clone, auction_id)
+        .await
+        .inspect_err(print_err)
+        .ok();
+}
+
+fn sleep_until(end_time: SystemTime) -> impl Future<Output = ()> {
+    tokio::time::sleep(
+        end_time.duration_since(SystemTime::now()).unwrap_or(FALLBACK_DURATION),
+    )
+}
+
 /// Start a new auction
 /// 새로운 경매를 시작합니다
 #[poise::command(slash_command, interaction_context = "Guild")]
+#[expect(clippy::too_many_arguments)]
 pub async fn new_auction(
     ctx: Context<'_>,
 
@@ -379,6 +379,9 @@ pub async fn new_auction(
     #[description = "The item you are auctioning"]
     #[description_localized("ko", "경매할 아이템")]
     item: String,
+
+    #[description = "The auctioned item's number of upgrades"]
+    item_upgrades: Option<u8>,
 
     #[description = "How many of the item you are auctioning"]
     #[description_localized("ko", "경매할 아이템 수량")]
@@ -388,6 +391,9 @@ pub async fn new_auction(
     #[description = "The item used as currency for bids"]
     #[description_localized("ko", "입찰에 사용할 아이템")]
     currency_item: String,
+
+    #[description = "The currency item's number of upgrades"]
+    currency_item_upgrades: Option<u8>,
 
     #[description = "Minimum starting bid"]
     #[description_localized("ko", "최소 시작 입찰가")]
@@ -401,6 +407,9 @@ pub async fn new_auction(
     check_if_blacklisted(ctx, locale).await?;
     check_if_paused(ctx, locale)?;
 
+    let item_upgrades = item_upgrades.unwrap_or_default();
+    let currency_item_upgrades = currency_item_upgrades.unwrap_or_default();
+
     let (item, currency, duration) = validate_input(
         &item,
         quantity,
@@ -409,6 +418,12 @@ pub async fn new_auction(
         &duration,
         locale,
     )?;
+
+    let mut item = *item;
+    let mut currency = *currency;
+
+    item.set_upgrade(item_upgrades);
+    currency.set_upgrade(currency_item_upgrades);
 
     let Some(component) = show_confirmation(
         ctx, item, quantity, currency, min_price, duration, locale,

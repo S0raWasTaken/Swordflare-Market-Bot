@@ -347,9 +347,9 @@ impl Trade {
     pub fn display_simple(&self, locale: &str) -> String {
         format!(
             "{} x{} for {} x{}",
-            self.item.name.display(locale),
+            self.item.display(locale),
             self.quantity,
-            self.wants.name.display(locale),
+            self.wants.display(locale),
             self.wanted_amount
         )
     }

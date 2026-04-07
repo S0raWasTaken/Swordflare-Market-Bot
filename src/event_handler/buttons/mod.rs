@@ -1,8 +1,8 @@
 use std::ops::ControlFlow::{Break, Continue};
 
 use poise::serenity_prelude::{
-    self as serenity, ActionRowComponent, ComponentInteraction,
-    CreateActionRow, CreateInputText, CreateInteractionResponse,
+    self as serenity, ActionRowComponent, ButtonStyle, ComponentInteraction,
+    CreateActionRow, CreateButton, CreateInputText, CreateInteractionResponse,
     CreateInteractionResponseMessage, CreateModal, InputTextStyle,
     ModalInteraction, ModalInteractionCollector, User, UserId,
 };
@@ -152,6 +152,20 @@ pub fn interaction_response(
             .ephemeral(ephemeral)
             .content(content),
     )
+}
+
+#[inline]
+pub fn button_action_row(buttons: Vec<CreateButton>) -> CreateActionRow {
+    CreateActionRow::Buttons(buttons)
+}
+
+#[inline]
+pub fn button(
+    custom_id: impl Into<String>,
+    label: impl Into<String>,
+    style: ButtonStyle,
+) -> CreateButton {
+    CreateButton::new(custom_id).label(label).style(style)
 }
 
 // ── Data types ────────────────────────────────────────────────────────────────

@@ -41,7 +41,7 @@ pub async fn handle_buy(
 
     let pending = send_trade_dms(ctx, &trade_ctx, buyer, lots).await?;
 
-    let outcome = await_confirmations(ctx, data, &trade_ctx, &pending).await?;
+    let outcome = await_confirmations(ctx, data, &trade_ctx, pending).await?;
 
     log_outcome(ctx, data, outcome, lots, buyer.id, trade_ctx.trade_id).await
 }
@@ -267,7 +267,7 @@ async fn confirm_purchase(
             t!("buy.confirm.field_receive", locale = buyer_locale),
             format!(
                 "**{}** x{}",
-                trade_ctx.item.name.display(buyer_locale),
+                trade_ctx.item.display(buyer_locale),
                 trade_ctx.item_quantity * lots
             ),
             true,
@@ -276,7 +276,7 @@ async fn confirm_purchase(
             t!("buy.confirm.field_give", locale = buyer_locale),
             format!(
                 "**{}** x{}",
-                trade_ctx.wants.name.display(buyer_locale),
+                trade_ctx.wants.display(buyer_locale),
                 trade_ctx.wanted_amount * lots
             ),
             true,
@@ -396,9 +396,9 @@ async fn send_trade_dms<'a>(
                     "buy.dm.buyer",
                     locale = buyer_locale,
                     item_total = item_quantity * lots,
-                    item = item.name.display(buyer_locale),
+                    item = item.display(buyer_locale),
                     wants_total = wanted_amount * lots,
-                    wants = wants.name.display(buyer_locale),
+                    wants = wants.display(buyer_locale),
                     lots = lots,
                     seller = seller_name,
                     server_link = private_server_link
@@ -431,9 +431,9 @@ async fn send_trade_dms<'a>(
         locale = seller_locale,
         buyer = buyer.name,
         item_total = item_quantity * lots,
-        item = item.name.display(seller_locale),
+        item = item.display(seller_locale),
         wants_total = wanted_amount * lots,
-        wants = wants.name.display(seller_locale),
+        wants = wants.display(seller_locale),
         lots = lots,
         server_link = private_server_link
     );
@@ -466,7 +466,7 @@ async fn await_confirmations(
     ctx: &serenity::Context,
     data: &Data,
     trade_ctx: &TradeContext,
-    pending: &PendingTrade<'_>,
+    mut pending: PendingTrade<'_>,
 ) -> Res<TradeResult> {
     let TradeContext {
         trade_id,
@@ -477,7 +477,12 @@ async fn await_confirmations(
         ..
     } = trade_ctx;
     let PendingTrade {
-        buyer, buyer_dm, seller_dm, buyer_msg, seller_msg, ..
+        buyer,
+        ref buyer_dm,
+        ref seller_dm,
+        ref mut buyer_msg,
+        ref mut seller_msg,
+        ..
     } = pending;
 
     let outcome = match await_both_confirmations(
@@ -485,9 +490,8 @@ async fn await_confirmations(
         buyer.id,
         *seller_id,
         *trade_id,
-        TRADE_CONFIRMATION_TIMEOUT,
-        t!("buy.await.waiting_for_seller", locale = buyer_locale).into_owned(),
-        t!("buy.await.waiting_for_buyer", locale = seller_locale).into_owned(),
+        (buyer_locale, seller_locale),
+        (buyer_msg, seller_msg),
     )
     .await
     {
@@ -497,7 +501,7 @@ async fn await_confirmations(
                 ctx,
                 data,
                 trade_ctx,
-                pending,
+                &pending,
                 &buyer_int,
                 &seller_int,
             )
@@ -626,30 +630,30 @@ async fn finish_trade(
         "buy.done.buyer",
         locale = buyer_locale,
         wants_total = wanted_amount * quantity,
-        wants = wants.name.display(buyer_locale),
+        wants = wants.display(buyer_locale),
         seller = seller_name,
         item_total = item_quantity * quantity,
-        item = item.name.display(buyer_locale),
+        item = item.display(buyer_locale),
     );
     let seller_content = if is_sold_out {
         t!(
             "buy.done.seller_sold_out",
             locale = seller_locale,
             wants_total = wanted_amount * quantity,
-            wants = wants.name.display(seller_locale),
+            wants = wants.display(seller_locale),
             buyer = buyer.name,
             item_total = item_quantity * quantity,
-            item = item.name.display(seller_locale),
+            item = item.display(seller_locale),
         )
     } else {
         t!(
             "buy.done.seller",
             locale = seller_locale,
             wants_total = wanted_amount * quantity,
-            wants = wants.name.display(seller_locale),
+            wants = wants.display(seller_locale),
             buyer = buyer.name,
             item_total = item_quantity * quantity,
-            item = item.name.display(seller_locale),
+            item = item.display(seller_locale),
         )
     };
 
@@ -704,7 +708,7 @@ struct PendingTrade<'a> {
 }
 
 pub enum TradeResult {
-    Confirmed, // Trade ID
+    Confirmed,
     BuyerCancelled,
     SellerCancelled,
     TimedOut,

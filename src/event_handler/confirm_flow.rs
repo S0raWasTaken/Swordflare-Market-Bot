@@ -1,5 +1,11 @@
-use crate::Error;
-use poise::serenity_prelude as serenity;
+use crate::{
+    Error,
+    event_handler::buttons::{button, button_action_row},
+    magic_numbers::TRADE_CONFIRMATION_TIMEOUT,
+};
+use poise::serenity_prelude::{
+    self as serenity, ButtonStyle, CreateActionRow, EditMessage, Message,
+};
 
 pub async fn dm_cleanup(
     ctx: &serenity::Context,
@@ -24,20 +30,42 @@ pub enum ConfirmOutcome {
     TimedOut,
 }
 
+fn disabled_buttons(locale: &str) -> Vec<CreateActionRow> {
+    vec![button_action_row(vec![
+        button(
+            "empty_",
+            t!("buy.dm.button_confirm", locale = locale),
+            ButtonStyle::Success,
+        )
+        .disabled(true),
+        button(
+            "_empty",
+            t!("buy.dm.button_cancel", locale = locale),
+            ButtonStyle::Danger,
+        )
+        .disabled(true),
+    ])]
+}
+
 /// Waits for both buyer and seller to click confirm or cancel.
-/// `buyer_waiting_msg` and `seller_waiting_msg` are sent as an immediate
-/// ephemeral response to whoever confirms first, while waiting for the other.
+/// When one party confirms first, an ephemeral response is sent while waiting
+/// for the other. The provided messages are edited to show disabled buttons
+/// once each party responds.
 pub async fn await_both_confirmations(
     ctx: &serenity::Context,
     buyer_id: serenity::UserId,
     seller_id: serenity::UserId,
     trade_id: u64,
-    timeout: std::time::Duration,
-    buyer_waiting_msg: String,
-    seller_waiting_msg: String,
+    locales: (&str, &str), // (buyer, seller)
+    (buyer_msg, seller_msg): (&mut Message, &mut Message),
 ) -> ConfirmOutcome {
     let ctx1 = ctx.clone();
     let ctx2 = ctx.clone();
+
+    let buyer_waiting_msg =
+        t!("buy.await.waiting_for_seller", locale = locales.0).into_owned();
+    let seller_waiting_msg =
+        t!("buy.await.waiting_for_buyer", locale = locales.1).into_owned();
 
     let mut buyer_confirm = tokio::spawn(async move {
         serenity::collector::ComponentInteractionCollector::new(&ctx1)
@@ -46,7 +74,7 @@ pub async fn await_both_confirmations(
                 format!("confirm_buy_{trade_id}"),
                 format!("cancel_buy_{trade_id}"),
             ])
-            .timeout(timeout)
+            .timeout(TRADE_CONFIRMATION_TIMEOUT)
             .next()
             .await
             .ok_or::<Error>("Timed out".into())
@@ -59,11 +87,23 @@ pub async fn await_both_confirmations(
                 format!("confirm_sell_{trade_id}"),
                 format!("cancel_sell_{trade_id}"),
             ])
-            .timeout(timeout)
+            .timeout(TRADE_CONFIRMATION_TIMEOUT)
             .next()
             .await
             .ok_or::<Error>("Timed out".into())
     });
+
+    let new_buyer_msg = || {
+        EditMessage::new()
+            .content(buyer_msg.content.clone())
+            .components(disabled_buttons(locales.0))
+    };
+
+    let new_seller_msg = || {
+        EditMessage::new()
+            .content(seller_msg.content.clone())
+            .components(disabled_buttons(locales.1))
+    };
 
     tokio::select! {
         result = &mut buyer_confirm => {
@@ -78,6 +118,8 @@ pub async fn await_both_confirmations(
                 return ConfirmOutcome::BuyerCancelled { buyer_int };
             }
 
+            buyer_msg.edit(ctx, new_buyer_msg()).await.ok();
+
             // Respond immediately so the interaction doesn't hang
             buyer_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
                 serenity::CreateInteractionResponseMessage::default()
@@ -87,9 +129,13 @@ pub async fn await_both_confirmations(
 
             match seller_confirm.await {
                 Ok(Ok(seller_int)) if seller_int.data.custom_id.starts_with("confirm_sell_") => {
+                    seller_msg.edit(ctx, new_seller_msg()).await.ok();
                     ConfirmOutcome::BothConfirmed { buyer_int, seller_int: Box::new(seller_int) }
                 }
-                Ok(Ok(seller_int)) => ConfirmOutcome::SellerCancelled { seller_int: Box::new(seller_int) },
+                Ok(Ok(seller_int)) => {
+                    seller_msg.edit(ctx, new_seller_msg()).await.ok();
+                    ConfirmOutcome::SellerCancelled { seller_int: Box::new(seller_int) }
+                }
                 _ => ConfirmOutcome::TimedOut,
             }
         }
@@ -106,6 +152,8 @@ pub async fn await_both_confirmations(
                 return ConfirmOutcome::SellerCancelled { seller_int };
             }
 
+            seller_msg.edit(ctx, new_seller_msg()).await.ok();
+
             // Respond immediately so the interaction doesn't hang
             seller_int.create_response(ctx, serenity::CreateInteractionResponse::Message(
                 serenity::CreateInteractionResponseMessage::default()
@@ -115,9 +163,13 @@ pub async fn await_both_confirmations(
 
             match buyer_confirm.await {
                 Ok(Ok(buyer_int)) if buyer_int.data.custom_id.starts_with("confirm_buy_") => {
+                    buyer_msg.edit(ctx, new_buyer_msg()).await.ok();
                     ConfirmOutcome::BothConfirmed { buyer_int: Box::new(buyer_int), seller_int }
                 }
-                Ok(Ok(buyer_int)) => ConfirmOutcome::BuyerCancelled { buyer_int: Box::new(buyer_int) },
+                Ok(Ok(buyer_int)) => {
+                    buyer_msg.edit(ctx, new_buyer_msg()).await.ok();
+                    ConfirmOutcome::BuyerCancelled { buyer_int: Box::new(buyer_int) }
+                }
                 _ => ConfirmOutcome::TimedOut,
             }
         }

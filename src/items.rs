@@ -1,18 +1,21 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, str::FromStr};
+
+use poise::{SlashArgError, SlashArgument, serenity_prelude as serenity};
 
 use Category::{
     ActiveSkill, Armor, Aura, Material, PassiveSkill, Shard, Weapon,
 };
 use Rarity::{Common, Epic, Legendary, Rare, Uncommon};
+use proc_macro::items;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum Category {
     Armor,
+    Weapon,
     Aura,
     ActiveSkill,
     PassiveSkill,
-    Weapon,
     Material,
     Shard,
 }
@@ -21,10 +24,10 @@ impl Category {
     pub fn display(self, locale: &str) -> Cow<'static, str> {
         match self {
             Armor => t!("category.armor", locale = locale),
+            Weapon => t!("category.weapon", locale = locale),
             Aura => t!("category.aura", locale = locale),
             ActiveSkill => t!("category.active_skill", locale = locale),
             PassiveSkill => t!("category.passive_skill", locale = locale),
-            Weapon => t!("category.weapon", locale = locale),
             Material => t!("category.material", locale = locale),
             Shard => t!("category.shard", locale = locale),
         }
@@ -44,10 +47,9 @@ pub enum Rarity {
 
 // Just for readability
 impl Rarity {
-    #[must_use]
     #[inline]
-    #[expect(dead_code)]
-    pub fn max_enchant(self) -> u8 {
+    #[must_use]
+    pub const fn max_upgrade(self) -> u8 {
         self as u8
     }
 
@@ -68,137 +70,257 @@ pub struct Item {
     pub name: ItemName,
     pub category: Category,
     pub rarity: Rarity,
+    upgrade: u8,
     //pub emoji: &'static str, TODO: emoji display
 }
 
-#[allow(clippy::enum_glob_use, reason = "Too many items in this enum")]
-use crate::item_name::ItemName::{self, *};
+impl Item {
+    #[inline]
+    pub const fn max_upgrade(self) -> u8 {
+        match self.category {
+            Armor | Weapon => self.rarity.max_upgrade(),
+            _ => 0,
+        }
+    }
 
-#[rustfmt::skip]
-pub const ITEMS: [Item; 76] = [
+    pub fn set_upgrade(&mut self, upgrade: u8) {
+        self.upgrade = upgrade.min(self.max_upgrade());
+    }
 
-    // Weapon
+    pub fn display(self, locale: &str) -> String {
+        match self.category {
+            Armor | Weapon if self.upgrade > 0 => {
+                self.name.display_upgrade(locale, self.upgrade)
+            }
+            _ => self.name.display(locale).to_string(),
+        }
+    }
+}
 
-        Item { name: BasicSword,         category: Weapon,       rarity: Common },
-        Item { name: VerdantDagger,      category: Weapon,       rarity: Common },
-        Item { name: RedstoneHammer,     category: Weapon,       rarity: Common },
-        Item { name: BalancedBlade,      category: Weapon,       rarity: Common },
-        Item { name: ObsidianSword,      category: Weapon,       rarity: Common },
-        Item { name: BalancedSpear,      category: Weapon,       rarity: Common },
+items! {
+    // ── Weapon ────────────────────────────────────────────────────────────────
 
-        Item { name: VerdantGreatsword,  category: Weapon,       rarity: Uncommon },
-        Item { name: FireDagger,         category: Weapon,       rarity: Uncommon },
-        Item { name: RefinedBlade,       category: Weapon,       rarity: Uncommon },
-        Item { name: IceSpear,           category: Weapon,       rarity: Uncommon },
-        // Item { name: FrozenStar,         category: Weapon,       rarity: Uncommon },
-        // Item { name: Starfrost,          category: Weapon,       rarity: Uncommon },
+    // Common
+    { "Basic Sword",          Weapon, Common         },
+    { "Verdant Dagger",       Weapon, Common         },
+    { "Redstone Hammer",      Weapon, Common         },
+    { "Balanced Blade",       Weapon, Common         },
+    { "Obsidian Sword",       Weapon, Common         },
+    { "Balanced Spear",       Weapon, Common         },
+    { "Ice Blade",            Weapon, Common         },
+    { "Cliff Breaker Hammer", Weapon, Common         },
 
-        Item { name: Nightfall,          category: Weapon,       rarity: Rare },
-        Item { name: LuminousObsidian,   category: Weapon,       rarity: Rare },
-        Item { name: Wildfire,           category: Weapon,       rarity: Rare },
-        Item { name: SpiritBlade,        category: Weapon,       rarity: Rare },
-        Item { name: RubyBlade,          category: Weapon,       rarity: Rare },
-        Item { name: Lightspear,         category: Weapon,       rarity: Rare },
-        Item { name: Sivoka,             category: Weapon,       rarity: Rare },
-        Item { name: VoidDagger,         category: Weapon,       rarity: Rare },
-        // Item { name: Datafrost,          category: Weapon,       rarity: Rare },
+    // Uncommon
+    { "Verdant Greatsword",   Weapon, Uncommon       },
+    { "Fire Dagger",          Weapon, Uncommon       },
+    { "Refined Blade",        Weapon, Uncommon       },
+    { "Ice Spear",            Weapon, Uncommon       },
+    { "Frostfang Blade",      Weapon, Uncommon       },
 
-        Item { name: Kosa,               category: Weapon,       rarity: Epic },
+    // Rare
+    { "Nightfall",            Weapon, Rare           },
+    { "Luminous Obsidian",    Weapon, Rare           },
+    { "Wildfire",             Weapon, Rare           },
+    { "Spirit Blade",         Weapon, Rare           },
+    { "Ruby Blade",           Weapon, Rare           },
+    { "Lightspear",           Weapon, Rare           },
+    { "Sivoka",               Weapon, Rare           },
+    { "Void Dagger",          Weapon, Rare           },
+    { "Titanbreaker Sword",   Weapon, Rare           },
+    { "Absolute Zero Spear",  Weapon, Rare           },
+    { "Glacier Greatsword",   Weapon, Rare           },
 
-        // Item { name: GreatKosa,          category: Weapon,       rarity: Legendary },
+    // Epic
+    { "Kosa",                 Weapon, Epic           },
+    { "Relic of Winter",      Weapon, Epic           },
 
-    // Armor
+    // ── Armor ─────────────────────────────────────────────────────────────────
 
-        Item { name: StarterArmor,       category: Armor,        rarity: Common },
-        Item { name: ForestArmor,        category: Armor,        rarity: Common },
-        Item { name: RedstoneArmor,      category: Armor,        rarity: Common },
+    // Common
+    { "Starter Armor",        Armor, Common          },
+    { "Forest Armor",         Armor, Common          },
+    { "Redstone Armor",       Armor, Common          },
 
-        Item { name: ObsidianArmor,      category: Armor,        rarity: Uncommon },
-        Item { name: DraconicArmor,      category: Armor,        rarity: Uncommon },
-        Item { name: AmethystArmor,      category: Armor,        rarity: Uncommon },
-        Item { name: BloodCrystalArmor,  category: Armor,        rarity: Uncommon },
+    // Uncommon
+    { "Obsidian Armor",       Armor, Uncommon        },
+    { "Draconic Armor",       Armor, Uncommon        },
+    { "Amethyst Armor",       Armor, Uncommon        },
+    { "Blood Crystal Armor",  Armor, Uncommon        },
+    { "Iceplate Armor",       Armor, Uncommon        },
+    { "Frostshade Armor",     Armor, Uncommon        },
 
-        Item { name: VoidPlatemail,      category: Armor,        rarity: Rare },
+    // Rare
+    { "Void Platemail",       Armor, Rare            },
+    { "Glacier Armor",        Armor, Rare            },
 
-        Item { name: TheSingularity,     category: Armor,        rarity: Epic },
+    // Epic
+    { "The Singularity",      Armor, Epic            },
+    { "Eternal Frost Armor",  Armor, Epic            },
 
-    // PassiveSkill
+    // ── Passive Skill ─────────────────────────────────────────────────────────
 
-        Item { name: RustyBlade,         category: PassiveSkill, rarity: Common },
-        Item { name: BattleFocus,        category: PassiveSkill, rarity: Common },
+    // Common
+    { "Rusty Blade",          PassiveSkill, Common   },
+    { "Battle Focus",         PassiveSkill, Common   },
 
-        Item { name: SharpBlade,         category: PassiveSkill, rarity: Uncommon },
-        Item { name: StoneHeart,         category: PassiveSkill, rarity: Uncommon },
+    // Uncommon
+    { "Sharp Blade",          PassiveSkill, Uncommon },
+    { "Stone Heart",          PassiveSkill, Uncommon },
 
-        Item { name: BladeArtist,        category: PassiveSkill, rarity: Rare },
-        Item { name: VampiricWeapons,    category: PassiveSkill, rarity: Rare },
-        Item { name: ArcaneVision,       category: PassiveSkill, rarity: Rare },
+    // Rare
+    { "Blade Artist",         PassiveSkill, Rare     },
+    { "Vampiric Weapons",     PassiveSkill, Rare     },
+    { "Arcane Vision",        PassiveSkill, Rare     },
 
-        // Item { name: Pioneer,            category: PassiveSkill, rarity: Legendary },
+    // ── Active Skill ──────────────────────────────────────────────────────────
 
-    // ActiveSkill
+    // Common
+    { "Emerald Slash",        ActiveSkill, Common    },
+    { "Windy Edge",           ActiveSkill, Common    },
 
-        Item { name: EmeraldSlash,       category: ActiveSkill,  rarity: Common },
-        Item { name: WindyEdge,          category: ActiveSkill,  rarity: Common },
+    // Uncommon
+    { "Life Spark",           ActiveSkill, Uncommon  },
+    { "Cursed Flames",        ActiveSkill, Uncommon  },
 
-        Item { name: LifeSpark,          category: ActiveSkill,  rarity: Uncommon },
-        Item { name: CursedFlames,       category: ActiveSkill,  rarity: Uncommon },
+    // Rare
+    { "Genesis",              ActiveSkill, Rare      },
+    { "Midnight Echo",        ActiveSkill, Rare      },
+    { "Blazing Echo",         ActiveSkill, Rare      },
+    { "Void Slice",           ActiveSkill, Rare      },
+    { "Blizzard Echo",        ActiveSkill, Rare      },
+    { "Fang Slash",           ActiveSkill, Rare      },
 
-        Item { name: Genesis,            category: ActiveSkill,  rarity: Rare },
-        Item { name: MidnightEcho,       category: ActiveSkill,  rarity: Rare },
-        Item { name: BlazingEcho,        category: ActiveSkill,  rarity: Rare },
-        Item { name: VoidSlice,          category: ActiveSkill,  rarity: Rare },
+    // ── Material ──────────────────────────────────────────────────────────────
 
-    // Material
+    // Common
+    { "Amethyst",             Material, Common       },
+    { "Obsidian",             Material, Common       },
+    { "Redstone",             Material, Common       },
+    { "Wood",                 Material, Common       },
+    { "Grass",                Material, Common       },
+    { "Common Core",          Material, Common       },
+    { "Frost Shard",          Material, Common       },
+    { "Knockback Core",       Material, Common       },
+    { "Packed Snow",          Material, Common       },
 
-        Item { name: Amethyst,           category: Material,     rarity: Common },
-        Item { name: Obsidian,           category: Material,     rarity: Common },
-        Item { name: Redstone,           category: Material,     rarity: Common },
-        Item { name: Wood,               category: Material,     rarity: Common },
-        Item { name: Grass,              category: Material,     rarity: Common },
-        Item { name: CommonCore,         category: Material,     rarity: Common },
+    // Uncommon
+    { "Ruby",                 Material, Uncommon     },
+    { "Firestone",            Material, Uncommon     },
+    { "Cursed Wood",          Material, Uncommon     },
+    { "Leaf",                 Material, Uncommon     },
+    { "Uncommon Core",        Material, Uncommon     },
+    { "Ice Crystal",          Material, Uncommon     },
 
-        Item { name: Ruby,               category: Material,     rarity: Uncommon },
-        Item { name: Firestone,          category: Material,     rarity: Uncommon },
-        Item { name: CursedWood,         category: Material,     rarity: Uncommon },
-        Item { name: Leaf,               category: Material,     rarity: Uncommon },
-        Item { name: UncommonCore,       category: Material,     rarity: Uncommon },
+    // Rare
+    { "Void Dust",            Material, Rare         },
+    { "Singularity Fragment", Material, Rare         },
+    { "Blood Crystal",        Material, Rare         },
+    { "Eternal Firestone",    Material, Rare         },
+    { "Glowing Obsidian",     Material, Rare         },
+    { "Portal Core",          Material, Rare         },
+    { "Rare Core",            Material, Rare         },
+    { "Frozen Core",          Material, Rare         },
+    { "Glacial Fragment",     Material, Rare         },
 
-        Item { name: VoidDust,           category: Material,     rarity: Rare },
-        Item { name: SingularityFragment,category: Material,     rarity: Rare },
-        Item { name: BloodCrystal,       category: Material,     rarity: Rare },
-        Item { name: EternalFirestone,   category: Material,     rarity: Rare },
-        Item { name: GlowingObsidian,    category: Material,     rarity: Rare },
-        Item { name: PortalCore,         category: Material,     rarity: Rare },
-        Item { name: RareCore,           category: Material,     rarity: Rare },
+    // Epic
+    { "Fall Protection",      Material, Epic         }, // the goat
+    { "Void Core",            Material, Epic         },
+    { "Invisible Core",       Material, Epic         },
+    { "Ancient Ice Relic",    Material, Epic         },
 
-        Item { name: FallProtection,     category: Material,     rarity: Epic }, // the goat
-        Item { name: VoidCore,           category: Material,     rarity: Epic },
-        Item { name: InvisibleCore,      category: Material,     rarity: Epic },
+    // ── Aura ──────────────────────────────────────────────────────────────────
 
-    // Aura
+    // Uncommon
+    { "Darkstar Aura",        Aura, Uncommon         },
+    { "Crystal Bubble Aura",  Aura, Uncommon         },
+    { "Blizzard Aura",        Aura, Uncommon         },
 
-        Item { name: DarkstarAura,       category: Aura,         rarity: Uncommon },
-        Item { name: CrystalBubbleAura,  category: Aura,         rarity: Uncommon },
+    // Rare
+    { "Lightning Aura",       Aura, Rare             },
+    { "Scarlet Pixel Aura",   Aura, Rare             },
+    { "Sky Pixel Aura",       Aura, Rare             },
+    { "Grass Pixel Aura",     Aura, Rare             },
 
-        Item { name: LightningAura,      category: Aura,         rarity: Rare },
-        Item { name: ScarletPixelAura,   category: Aura,         rarity: Rare },
-        Item { name: SkyPixelAura,       category: Aura,         rarity: Rare },
-        Item { name: GrassPixelAura,     category: Aura,         rarity: Rare },
-        // Item { name: ObsidianFlameAura,  category: Aura,         rarity: Rare },
-        // Item { name: SunsetAura,         category: Aura,         rarity: Rare },
-        // Item { name: FallingLeavesAura,  category: Aura,         rarity: Rare },
-        // Item { name: SakuraFlameAura,    category: Aura,         rarity: Rare },
+    // Epic
+    { "Sakura Aura",          Aura, Epic             },
 
-        Item { name: SakuraAura,         category: Aura,         rarity: Epic },
+    // ── Shard ─────────────────────────────────────────────────────────────────
 
-        // Item { name: BetaAura,           category: Aura,         rarity: Legendary },
+    { "Common Shard",         Shard, Common          },
+    { "Uncommon Shard",       Shard, Uncommon        },
+    { "Rare Shard",           Shard, Rare            },
+    { "Epic Shard",           Shard, Epic            },
+    { "Legendary Shard",      Shard, Legendary       },
+}
 
-    // Shard
+impl ItemName {
+    #[must_use]
+    pub fn display_upgrade(self, locale: &str, upgrade: u8) -> String {
+        format!("{} +{upgrade}", self.display(locale))
+    }
 
-        Item { name: CommonShard,        category: Shard,        rarity: Common },
-        Item { name: UncommonShard,      category: Shard,        rarity: Uncommon },
-        Item { name: RareShard,          category: Shard,        rarity: Rare },
-        Item { name: EpicShard,          category: Shard,        rarity: Epic },
-        Item { name: LegendaryShard,     category: Shard,        rarity: Legendary },
-];
+    #[inline]
+    #[must_use]
+    pub fn to_str(self) -> Cow<'static, str> {
+        self.display("en-US")
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn item(self) -> &'static Item {
+        ITEMS.iter().find(|i| i.name == self).unwrap_or_else(|| {
+            panic!("Missing item in const: {}", self.to_str())
+        })
+    }
+}
+
+impl FromStr for ItemName {
+    type Err = crate::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        ITEMS
+            .iter()
+            .find_map(|i| {
+                i.name.to_str().eq_ignore_ascii_case(s).then_some(i.name)
+            })
+            .ok_or_else(|| format!("Unknown item: '{s}'").into())
+    }
+}
+
+impl SlashArgument for ItemName {
+    fn create(
+        builder: serenity::CreateCommandOption,
+    ) -> serenity::CreateCommandOption {
+        builder.kind(serenity::CommandOptionType::String)
+    }
+
+    fn extract<'life0, 'life1, 'life2, 'life3, 'async_trait>(
+        _: &'life0 serenity::Context,
+        _: &'life1 serenity::CommandInteraction,
+        value: &'life2 serenity::ResolvedValue<'life3>,
+    ) -> ::core::pin::Pin<
+        Box<
+            dyn ::core::future::Future<Output = Result<Self, SlashArgError>>
+                + ::core::marker::Send
+                + 'async_trait,
+        >,
+    >
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        'life2: 'async_trait,
+        'life3: 'async_trait,
+        Self: 'async_trait,
+    {
+        Box::pin(async move {
+            let serenity::ResolvedValue::String(s) = value else {
+                return Err(SlashArgError::new_command_structure_mismatch(
+                    "expected string",
+                ));
+            };
+            ItemName::from_str(s).map_err(|_| {
+                SlashArgError::new_command_structure_mismatch("unknown item")
+            })
+        })
+    }
+}

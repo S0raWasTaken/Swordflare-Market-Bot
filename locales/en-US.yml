@@ -122,7 +122,7 @@ auction.error.duration_too_long: "❌ Duration cannot exceed %{max} hour(s)."
 auction.error.duration_too_short: "❌ Duration cannot be less than %{min} minute(s)."
 auction.error.self_bid: "❌ You can't bid on your own auction."
 auction.error.expired: "❌ This auction has already ended."
-auction.error.invalid_bid: "❌ Your bid must be at least **%{min} %{currency}** and higher than the current highest bid."
+auction.error.invalid_bid: "❌ Your bid must be at least **%{min} %{currency}**."
 auction.error.missing_bid_input: "❌ Missing bid input."
 auction.error.max_value_reached: "❌ Impossible to bid higher. Maximum value reached."
 
@@ -150,9 +150,7 @@ auction.post.ends_at: "Ends <t:%{unix}:R>"
 auction.post.ended_at: "Ended <t:%{unix}:R>"
 auction.post.field_item: "Item"
 auction.post.field_min_price: "Starting bid"
-auction.post.field_current_bid: "Current highest bid"
-auction.post.current_bid: "**%{amount} %{currency}** — %{bidder}"
-auction.post.current_bid_unknown: "**%{amount} %{currency}**"
+auction.post.field_current_bids: "Current bids"
 auction.post.no_bids: "No bids yet"
 
 auction.post.button_bid: "Place Bid"
@@ -217,6 +215,16 @@ item.sivoka: "Sivoka"
 item.void_dagger: "Void Dagger"
 item.kosa: "Kosa"
 
+# F2 Update
+
+item.relic_of_winter: "Relic of Winter"
+item.glacier_greatsword: "Glacier Greatsword"
+item.absolute_zero_spear: "Absolute Zero Spear"
+item.titanbreaker_sword: "TitanBreaker Sword"
+item.frostfang_blade: "Frostfang Blade"
+item.cliff_breaker_hammer: "Cliff Breaker Hammer"
+item.ice_blade: "Ice Blade"
+
 # ── armor ──────────────────────────────────────────────────────────────────────
 item.starter_armor: "Starter Armor"
 item.forest_armor: "Forest Armor"
@@ -227,6 +235,13 @@ item.amethyst_armor: "Amethyst Armor"
 item.blood_crystal_armor: "Blood Crystal Armor"
 item.void_platemail: "Void Platemail"
 item.the_singularity: "The Singularity"
+
+# F2 Update
+
+item.eternal_frost_armor: "Eternal Frost Armor"
+item.glacier_armor: "Glacier Armor"
+item.frostshade_armor: "Frostshade Armor"
+item.iceplate_armor: "Iceplate Armor"
 
 # ── passive skills ─────────────────────────────────────────────────────────────
 item.rusty_blade: "Rusty Blade"
@@ -246,6 +261,11 @@ item.genesis: "Genesis"
 item.midnight_echo: "Midnight Echo"
 item.blazing_echo: "Blazing Echo"
 item.void_slice: "Void Slice"
+
+# F2 Update
+
+item.fang_slash: "Fang Slash"
+item.blizzard_echo: "Blizzard Echo"
 
 # ── materials ──────────────────────────────────────────────────────────────────
 item.amethyst: "Amethyst"
@@ -270,6 +290,16 @@ item.fall_protection: "Fall Protection"
 item.void_core: "Void Core"
 item.invisible_core: "Invisible Core"
 
+# F2 Update
+
+item.ancient_ice_relic: "Ancient Ice Relic"
+item.glacial_fragment: "Glacial Fragment"
+item.frozen_core: "Frozen Core"
+item.ice_crystal: "Ice Crystal"
+item.packed_snow: "Packed Snow"
+item.knockback_core: "Knockback Core"
+item.frost_shard: "Frost Shard"
+
 # ── auras ──────────────────────────────────────────────────────────────────────
 item.darkstar_aura: "Darkstar Aura"
 item.crystal_bubble_aura: "Crystal Bubble Aura"
@@ -278,6 +308,10 @@ item.scarlet_pixel_aura: "Scarlet Pixel Aura"
 item.sky_pixel_aura: "Sky Pixel Aura"
 item.grass_pixel_aura: "Grass Pixel Aura"
 item.sakura_aura: "Sakura Aura"
+
+# F2 Update
+
+item.blizzard_aura: "Blizzard Aura"
 
 # ── shards ─────────────────────────────────────────────────────────────────────
 item.common_shard: "Common Shard"

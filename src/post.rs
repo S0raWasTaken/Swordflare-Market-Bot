@@ -2,7 +2,10 @@ use poise::serenity_prelude::{self as serenity, CacheHttp};
 
 use crate::{
     Res,
-    commands::{new_auction::auction_buttons, new_trade::trade_buttons},
+    commands::{
+        new_auction::auction_buttons, new_trade::trade_buttons,
+        trim_multiline_string,
+    },
     database::{
         Data,
         auction_db::RunningAuction,
@@ -81,20 +84,18 @@ fn build_normal_embed(
         .field(
             t!("post.field_offering", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
-                trade.item.name.display(post_locale),
+                "**{}** x{}",
+                trade.item.display(post_locale),
                 trade.quantity,
-                trade.item.rarity.display(post_locale)
             ),
             true,
         )
         .field(
             t!("post.field_wants", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
-                trade.wants.name.display(post_locale),
+                "**{}** x{}",
+                trade.wants.display(post_locale),
                 trade.wanted_amount,
-                trade.wants.rarity.display(post_locale)
             ),
             true,
         )
@@ -153,20 +154,18 @@ fn build_completed_auction_embed(
         .field(
             t!("auction.post.field_item", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
-                trade.item.name.display(post_locale),
+                "**{}** x{}",
+                trade.item.display(post_locale),
                 trade.quantity,
-                trade.item.rarity.display(post_locale)
             ),
             true,
         )
         .field(
             t!("auction.post.field_min_price", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
-                trade.wants.name.display(post_locale),
+                "**{}** x{}",
+                trade.wants.display(post_locale),
                 trade.wanted_amount,
-                trade.wants.rarity.display(post_locale)
             ),
             true,
         )
@@ -225,7 +224,6 @@ pub async fn update_post(
 pub fn build_auction_embed(
     auction: &RunningAuction,
     seller: &serenity::User,
-    highest_bidder_name: Option<&str>,
     post_locale: &str,
 ) -> serenity::CreateEmbed {
     let avatar_url =
@@ -249,26 +247,13 @@ pub fn build_auction_embed(
         t!("auction.post.title", locale = post_locale, seller = seller.name)
     };
 
-    let current_bid_value = if let Some((_, amount)) = auction.highest_bid() {
-        if let Some(name) = highest_bidder_name {
-            t!(
-                "auction.post.current_bid",
-                locale = post_locale,
-                amount = amount,
-                currency = auction.currency_item.name.display(post_locale),
-                bidder = name
-            )
-        } else {
-            t!(
-                "auction.post.current_bid_unknown",
-                locale = post_locale,
-                amount = amount,
-                currency = auction.currency_item.name.display(post_locale)
-            )
-        }
-    } else {
-        t!("auction.post.no_bids", locale = post_locale)
-    };
+    let mut current_bids = auction.sorted_bid_list(post_locale);
+    trim_multiline_string(1024, &mut current_bids);
+
+    if current_bids.is_empty() {
+        current_bids =
+            t!("auction.post.no_bids", locale = post_locale).to_string();
+    }
 
     let footer = serenity::CreateEmbedFooter::new(t!(
         "post.footer_bidders",
@@ -287,26 +272,24 @@ pub fn build_auction_embed(
         .field(
             t!("auction.post.field_item", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
-                auction.item.name.display(post_locale),
+                "**{}** x{}",
+                auction.item.display(post_locale),
                 auction.quantity,
-                auction.item.rarity.display(post_locale)
             ),
             true,
         )
         .field(
             t!("auction.post.field_min_price", locale = post_locale),
             format!(
-                "**{}** x{} ({})",
-                auction.currency_item.name.display(post_locale),
+                "**{}** x{}",
+                auction.currency_item.display(post_locale),
                 auction.min_price,
-                auction.currency_item.rarity.display(post_locale)
             ),
             true,
         )
         .field(
-            t!("auction.post.field_current_bid", locale = post_locale),
-            current_bid_value,
+            t!("auction.post.field_current_bids", locale = post_locale),
+            current_bids,
             false,
         )
         .footer(footer)
@@ -346,20 +329,8 @@ pub async fn update_auction_post(
     let message_id = message_info.id()?;
     let seller = auction.seller.to_user(ctx).await?;
 
-    let highest_bidder_name =
-        if let Some((bidder_id, _)) = auction.highest_bid() {
-            bidder_id.to_user(ctx).await.ok().map(|u| u.name)
-        } else {
-            None
-        };
-
     let expired = auction.is_expired();
-    let embed = build_auction_embed(
-        &auction,
-        &seller,
-        highest_bidder_name.as_deref(),
-        post_locale,
-    );
+    let embed = build_auction_embed(&auction, &seller, post_locale);
 
     data.auctions_channel
         .get_channel(locale)

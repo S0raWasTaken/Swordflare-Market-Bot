@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, hash_map::IterMut},
     time::{Duration, SystemTime},
 };
 
@@ -50,6 +50,11 @@ impl AuctionData {
     pub fn iter(&self) -> impl Iterator<Item = (u64, &RunningAuction)> {
         self.inner.iter().map(|(&id, a)| (id, a))
     }
+
+    #[inline]
+    pub fn iter_mut(&mut self) -> IterMut<'_, u64, RunningAuction> {
+        self.inner.iter_mut()
+    }
 }
 
 /// A currently running auction. Once it expires and is resolved,
@@ -76,6 +81,8 @@ pub struct RunningAuction {
 
     pub english_message_id: MessageInfo,
     pub korean_message_id: MessageInfo,
+
+    pub is_being_handled: bool,
 }
 
 impl RunningAuction {
@@ -103,7 +110,16 @@ impl RunningAuction {
             locale,
             english_message_id: MessageInfo::default(),
             korean_message_id: MessageInfo::default(),
+            is_being_handled: false,
         }
+    }
+
+    pub fn insert(&mut self, bidder_id: UserId, amount: u64) {
+        self.bids.insert(bidder_id, amount);
+
+        // Bump duration to a minimum of 5 mins
+        self.end_time =
+            self.end_time.max(SystemTime::now() + Duration::from_mins(5));
     }
 
     /// Returns the current highest bid, or `None` if no bids yet.
@@ -115,38 +131,41 @@ impl RunningAuction {
             .map(|(&id, &amount)| (id, amount))
     }
 
+    pub fn sorted_bid_list(&self, locale: &str) -> String {
+        let mut bids: Vec<(UserId, u64)> =
+            self.bids.iter().map(|(&id, &amt)| (id, amt)).collect();
+        bids.sort_by_key(|b| std::cmp::Reverse(b.1));
+
+        let currency = self.currency_item.display(locale);
+        bids.iter()
+            .map(|(id, amt)| format!("**{amt} {currency}** — <@{id}>"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
     /// Returns true if the auction has expired.
     #[must_use]
     pub fn is_expired(&self) -> bool {
         self.end_time.elapsed().is_ok()
     }
 
-    /// Returns the minimum valid next bid — either `min_price` if no bids,
-    /// or highest bid + 1.
+    /// Returns the minimum valid next bid for a user — at least `min_price`,
+    /// greater than the user's current bid, and not colliding with any existing bid.
     #[must_use]
-    pub fn min_next_bid(&self) -> Option<u64> {
-        self.highest_bid()
-            .map_or(Some(self.min_price), |(_, amount)| amount.checked_add(1))
+    pub fn min_next_bid(&self, user: UserId) -> u64 {
+        let current = self.bids.get(&user).copied().unwrap_or(0);
+        let mut candidate = self.min_price.max(current + 1);
+        while self.bids.values().any(|&b| b == candidate) {
+            candidate += 1;
+        }
+        candidate
     }
 
-    /// Returns true if `amount` is a valid new bid for `user`.
+    #[inline]
     #[must_use]
     pub fn is_valid_bid(&self, user: UserId, amount: u64) -> bool {
-        let Some(min_next_bid) = self.min_next_bid() else {
-            return false;
-        };
-
-        if amount < min_next_bid {
-            return false;
-        }
-
-        // Can't lower own bid
-        if let Some(&own_bid) = self.bids.get(&user)
-            && amount <= own_bid
-        {
-            return false;
-        }
-        true
+        amount >= self.min_next_bid(user)
+            && !self.bids.iter().any(|(&id, &bid)| id != user && bid == amount)
     }
 
     pub fn message_link(
@@ -182,9 +201,9 @@ impl RunningAuction {
     pub fn display_simple(&self, locale: &str) -> String {
         format!(
             "{} x{} for {} x{} minimum",
-            self.item.name.display(locale),
+            self.item.display(locale),
             self.quantity,
-            self.currency_item.name.display(locale),
+            self.currency_item.display(locale),
             self.min_price
         )
     }

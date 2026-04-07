@@ -7,9 +7,7 @@ use poise::serenity_prelude::{
 
 use crate::{
     Res, break_or,
-    database::{
-        Data, auction_db::RunningAuction, supported_locale::SupportedLocale,
-    },
+    database::{Data, supported_locale::SupportedLocale},
     event_handler::buttons::{
         ButtonContext, ControlFlow, input_action_row, input_text,
         interaction_response, modal, modal_collector, parse_number_in_modal,
@@ -34,8 +32,15 @@ pub async fn handle_bid(
     );
 
     break_or!(
-        place_bid(&bid_ctx, auction_id, amount, min_next_bid, &currency_name)
-            .await?
+        place_bid(
+            &bid_ctx,
+            &modal,
+            auction_id,
+            amount,
+            min_next_bid,
+            &currency_name
+        )
+        .await?
     );
 
     finish(&bid_ctx, &modal, auction_id, amount, &currency_name).await
@@ -60,8 +65,8 @@ async fn resolve_auction(
         (
             auction.seller,
             auction.is_expired(),
-            auction.min_next_bid(),
-            auction.currency_item.name.display(locale).into_owned(),
+            auction.min_next_bid(bid_ctx.user().id),
+            auction.currency_item.display(locale),
         )
     };
 
@@ -78,9 +83,6 @@ async fn resolve_auction(
             .await?;
         return Ok(Break(()));
     }
-
-    let min_next_bid = min_next_bid
-        .ok_or(t!("auction.error.max_value_reached", locale = locale))?;
 
     Ok(Continue((auction_id, min_next_bid, currency_name)))
 }
@@ -140,6 +142,7 @@ async fn prompt_bid(
 
 async fn place_bid(
     bid_ctx: &ButtonContext<'_>,
+    modal: &ModalInteraction,
     auction_id: u64,
     amount: u64,
     min_next_bid: u64,
@@ -155,7 +158,7 @@ async fn place_bid(
         if !auction.is_valid_bid(bidder_id, amount) {
             return false;
         }
-        auction.bids.insert(bidder_id, amount);
+        auction.insert(bidder_id, amount);
         true
     })?;
 
@@ -165,16 +168,21 @@ async fn place_bid(
             .running_auctions
             .borrow_data()?
             .get(auction_id)
-            .and_then(RunningAuction::min_next_bid)
-            .unwrap_or(min_next_bid);
+            .map_or(min_next_bid, |au| au.min_next_bid(bidder_id));
 
-        bid_ctx
-            .reply_ephemeral(&t!(
-                "auction.error.invalid_bid",
-                locale = locale,
-                min = current_min,
-                currency = currency_name
-            ))
+        modal
+            .create_response(
+                bid_ctx.ctx,
+                interaction_response(
+                    &t!(
+                        "auction.error.invalid_bid",
+                        locale = locale,
+                        min = current_min,
+                        currency = currency_name
+                    ),
+                    true,
+                ),
+            )
             .await?;
         return Ok(Break(()));
     }

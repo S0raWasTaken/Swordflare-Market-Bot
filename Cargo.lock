@@ -1883,8 +1883,11 @@ dependencies = [
  "daybreak",
  "dotenv",
  "poise",
+ "proc-macro2",
+ "quote",
  "rust-i18n",
  "serde",
+ "syn 2.0.117",
  "tokio",
 ]
 

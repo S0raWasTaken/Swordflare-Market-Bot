@@ -12,7 +12,7 @@ use poise::{
 use crate::{
     Context, Res,
     cleanup::clean_database,
-    commands::is_bot_admin,
+    commands::{is_bot_admin, trim_multiline_string},
     database::{
         auction_db::{AuctionData, RunningAuction},
         trade_db::TradeData,
@@ -156,24 +156,7 @@ pub async fn list_reports(ctx: Context<'_>, msg: Message) -> Res<()> {
         writeln!(full_list, "<@{user}>: `{report_message}`")?;
     }
 
-    if full_list.len() > 2000 {
-        let mut lines: Vec<_> = full_list[..2000].lines().collect();
-
-        let total = full_list.lines().count();
-
-        lines.truncate(lines.len().saturating_sub(2));
-
-        let skipped = total - lines.len();
-
-        let mut trimmed = lines.join("\n");
-        write!(trimmed, "\n... {skipped} left")?;
-
-        full_list = trimmed;
-    }
-
-    // It can still go over 2000 given the right circumstances, so let's
-    // slice it again for good measure.
-    full_list.truncate(2000);
+    trim_multiline_string(2000, &mut full_list);
 
     ctx.say(full_list).await?;
 
@@ -252,7 +235,13 @@ pub async fn list_blacklisted_users(ctx: Context<'_>) -> Res<()> {
                 ctx.serenity_context(),
                 CreateInteractionResponse::UpdateMessage(
                     CreateInteractionResponseMessage::default()
-                        .embed(blacklisted_users[page].clone())
+                        .embed(blacklisted_users[page].clone().footer(
+                            CreateEmbedFooter::new(format!(
+                                "{}/{}",
+                                page + 1,
+                                max_page_number + 1
+                            )),
+                        ))
                         .components(vec![make_buttons(page)]),
                 ),
             )
