@@ -348,17 +348,23 @@ async fn auction_resolve_task(
             .flatten()
     };
     let mut last_end_time = SystemTime::UNIX_EPOCH;
-    while let Some(end_time) = fetch_end_time()
-        && end_time != last_end_time
-    {
-        last_end_time = end_time;
-
-        tokio::time::sleep(
-            end_time
-                .duration_since(SystemTime::now())
-                .unwrap_or(FALLBACK_DURATION),
-        )
-        .await;
+    while let Some(end_time) = fetch_end_time() {
+        if end_time == last_end_time {
+            tokio::time::sleep(Duration::from_mins(1)).await;
+            if let Some(last_check) = fetch_end_time()
+                && last_check == last_end_time
+            {
+                break;
+            }
+        } else {
+            last_end_time = end_time;
+            tokio::time::sleep(
+                end_time
+                    .duration_since(SystemTime::now())
+                    .unwrap_or(FALLBACK_DURATION),
+            )
+            .await;
+        }
     }
     // Re-fetch from DB to get all bids placed since creation
     let auction = match data_clone.running_auctions.borrow_data() {
