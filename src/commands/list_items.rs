@@ -8,12 +8,7 @@ use crate::commands::check_if_paused;
 use crate::{Context, Res};
 use crate::{
     database::supported_locale::get_user_locale,
-    items::{
-        Category::{
-            ActiveSkill, Armor, Aura, Material, PassiveSkill, Shard, Weapon,
-        },
-        ITEMS,
-    },
+    items::{Category, ITEMS},
 };
 
 /// List all items in game
@@ -23,8 +18,7 @@ pub async fn list_items(ctx: Context<'_>) -> Res<()> {
     let locale = get_user_locale(ctx, ctx.data(), ctx.author().id).await;
     check_if_paused(ctx, locale)?;
 
-    let categories =
-        [Weapon, Armor, PassiveSkill, ActiveSkill, Material, Aura, Shard];
+    let categories = Category::all();
 
     let embeds: Vec<CreateEmbed> = categories
         .iter()
@@ -64,7 +58,7 @@ pub async fn list_items(ctx: Context<'_>) -> Res<()> {
     let make_reply = |page: usize| {
         poise::CreateReply::default()
             .embed(embeds[page].clone().footer(CreateEmbedFooter::new(
-                format!("{page}/{max_page_number}"),
+                format!("{}/{}", page + 1, max_page_number + 1),
             )))
             .components(vec![make_buttons(page)])
     };
@@ -91,7 +85,9 @@ pub async fn list_items(ctx: Context<'_>) -> Res<()> {
                     CreateInteractionResponseMessage::default()
                         .embed(embeds[page].clone().footer(
                             CreateEmbedFooter::new(format!(
-                                "{page}/{max_page_number}"
+                                "{}/{}",
+                                page + 1,
+                                max_page_number + 1
                             )),
                         ))
                         .components(vec![make_buttons(page)]),

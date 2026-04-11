@@ -186,7 +186,8 @@ rarity.legendary: "Legendary"
 
 # ── categories ─────────────────────────────────────────────────────────────────
 category.armor: "Armor"
-category.aura: "Aura"
+category.aura: "Weapon Aura"
+category.body_aura: "Body Aura"
 category.active_skill: "Active Skill"
 category.passive_skill: "Passive Skill"
 category.weapon: "Weapon"
@@ -303,7 +304,17 @@ item.packed_snow: "Packed Snow"
 item.knockback_core: "Knockback Core"
 item.frost_shard: "Frost Shard"
 
-# ── auras ──────────────────────────────────────────────────────────────────────
+# ── body auras ─────────────────────────────────────────────────────────────────
+
+item.shadow_pool_aura: "Shadow Pool Aura"
+item.purple_fog_aura: "Purple Fog Aura"
+item.lavender_aura: "Lavender Aura"
+item.purple_haze_aura: "Purple Haze Aura"
+item.chaos_aura: "Chaos Aura"
+item.wraith_aura: "Wraith Aura"
+item.fallen_angel_aura: "Fallen Angel Aura"
+
+# ── weapon auras ───────────────────────────────────────────────────────────────
 item.darkstar_aura: "Darkstar Aura"
 item.crystal_bubble_aura: "Crystal Bubble Aura"
 item.lightning_aura: "Lightning Aura"
@@ -315,6 +326,11 @@ item.sakura_aura: "Sakura Aura"
 # F2 Update
 
 item.blizzard_aura: "Blizzard Aura"
+
+# Cosmetic Update
+
+item.void_aura: "Void Aura"
+item.ash_aura: "Ash Aura"
 
 # ── shards ─────────────────────────────────────────────────────────────────────
 item.common_shard: "Common Shard"

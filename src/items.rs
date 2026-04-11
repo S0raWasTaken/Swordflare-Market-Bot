@@ -3,7 +3,8 @@ use std::{borrow::Cow, str::FromStr};
 use poise::{SlashArgError, SlashArgument, serenity_prelude as serenity};
 
 use Category::{
-    ActiveSkill, Armor, Aura, Material, PassiveSkill, Shard, Weapon,
+    ActiveSkill, Armor, BodyAura, Material, PassiveSkill, Shard, Weapon,
+    WeaponAura,
 };
 use Rarity::{Common, Epic, Legendary, Rare, Uncommon};
 use proc_macro::items;
@@ -13,7 +14,8 @@ use serde::{Deserialize, Serialize};
 pub enum Category {
     Armor,
     Weapon,
-    Aura,
+    WeaponAura,
+    BodyAura,
     ActiveSkill,
     PassiveSkill,
     Material,
@@ -21,11 +23,25 @@ pub enum Category {
 }
 
 impl Category {
+    pub const fn all() -> [Self; 8] {
+        [
+            Armor,
+            Weapon,
+            WeaponAura,
+            BodyAura,
+            ActiveSkill,
+            PassiveSkill,
+            Material,
+            Shard,
+        ]
+    }
+
     pub fn display(self, locale: &str) -> Cow<'static, str> {
         match self {
             Armor => t!("category.armor", locale = locale),
             Weapon => t!("category.weapon", locale = locale),
-            Aura => t!("category.aura", locale = locale),
+            WeaponAura => t!("category.aura", locale = locale),
+            BodyAura => t!("category.body_aura", locale = locale),
             ActiveSkill => t!("category.active_skill", locale = locale),
             PassiveSkill => t!("category.passive_skill", locale = locale),
             Material => t!("category.material", locale = locale),
@@ -228,21 +244,40 @@ items! {
     { "Invisible Core",       Material, Epic         },
     { "Ancient Ice Relic",    Material, Epic         },
 
-    // ── Aura ──────────────────────────────────────────────────────────────────
+    // ── Weapon Aura ───────────────────────────────────────────────────────────
 
     // Uncommon
-    { "Darkstar Aura",        Aura, Uncommon         },
-    { "Crystal Bubble Aura",  Aura, Uncommon         },
-    { "Blizzard Aura",        Aura, Uncommon         },
+    { "Darkstar Aura",        WeaponAura, Uncommon   },
+    { "Crystal Bubble Aura",  WeaponAura, Uncommon   },
+    { "Blizzard Aura",        WeaponAura, Uncommon   },
 
     // Rare
-    { "Lightning Aura",       Aura, Rare             },
-    { "Scarlet Pixel Aura",   Aura, Rare             },
-    { "Sky Pixel Aura",       Aura, Rare             },
-    { "Grass Pixel Aura",     Aura, Rare             },
+    { "Lightning Aura",       WeaponAura, Rare       },
+    { "Scarlet Pixel Aura",   WeaponAura, Rare       },
+    { "Sky Pixel Aura",       WeaponAura, Rare       },
+    { "Grass Pixel Aura",     WeaponAura, Rare       },
+    { "Void Aura",            WeaponAura, Rare       },
+    { "Ash Aura",             WeaponAura, Rare       },
 
     // Epic
-    { "Sakura Aura",          Aura, Epic             },
+    { "Sakura Aura",          WeaponAura, Epic       },
+
+    // ── Body Aura ─────────────────────────────────────────────────────────────
+
+    // Uncommon
+    { "Shadow Pool Aura",     BodyAura, Uncommon     },
+
+    // Rare
+    { "Purple Fog Aura",      BodyAura, Rare         },
+    { "Lavender Aura",        BodyAura, Rare         },
+
+    // Epic
+    { "Purple Haze Aura",     BodyAura, Epic         },
+    { "Wraith Aura",          BodyAura, Epic         },
+
+    // Legendary
+    { "Chaos Aura",           BodyAura, Legendary    },
+    { "Fallen Angel Aura",    BodyAura, Legendary    },
 
     // ── Shard ─────────────────────────────────────────────────────────────────
 
