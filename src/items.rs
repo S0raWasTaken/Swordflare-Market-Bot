@@ -246,10 +246,15 @@ items! {
 
     // ── Weapon Aura ───────────────────────────────────────────────────────────
 
+    // Common
+    { "Green Glow Aura",      WeaponAura, Common     },
+    { "Frost Aura",           WeaponAura, Common     },
+
     // Uncommon
     { "Darkstar Aura",        WeaponAura, Uncommon   },
     { "Crystal Bubble Aura",  WeaponAura, Uncommon   },
     { "Blizzard Aura",        WeaponAura, Uncommon   },
+    { "Cherry Aura",          WeaponAura, Uncommon   },
 
     // Rare
     { "Lightning Aura",       WeaponAura, Rare       },
@@ -258,6 +263,7 @@ items! {
     { "Grass Pixel Aura",     WeaponAura, Rare       },
     { "Void Aura",            WeaponAura, Rare       },
     { "Ash Aura",             WeaponAura, Rare       },
+    { "Radiance Aura",        WeaponAura, Rare       },
 
     // Epic
     { "Sakura Aura",          WeaponAura, Epic       },
@@ -266,18 +272,25 @@ items! {
 
     // Uncommon
     { "Shadow Pool Aura",     BodyAura, Uncommon     },
+    { "Aqua Aura",            BodyAura, Uncommon     },
 
     // Rare
     { "Purple Fog Aura",      BodyAura, Rare         },
     { "Lavender Aura",        BodyAura, Rare         },
+    { "Green Mist Aura",      BodyAura, Rare         }, // Stinky aura
+    { "Nature Aura",          BodyAura, Rare         },
 
     // Epic
     { "Purple Haze Aura",     BodyAura, Epic         },
     { "Wraith Aura",          BodyAura, Epic         },
+    { "Blossom Aura",         BodyAura, Epic         },
 
     // Legendary
     { "Chaos Aura",           BodyAura, Legendary    },
     { "Fallen Angel Aura",    BodyAura, Legendary    },
+    { "Venom Aura",           BodyAura, Legendary    },
+    { "Mother Nature Aura",   BodyAura, Legendary    }, // Stinkier aura
+    { "Tsunami Aura",         BodyAura, Legendary    },
 
     // ── Shard ─────────────────────────────────────────────────────────────────
 

@@ -313,6 +313,13 @@ item.purple_haze_aura: "Purple Haze Aura"
 item.chaos_aura: "Chaos Aura"
 item.wraith_aura: "Wraith Aura"
 item.fallen_angel_aura: "Fallen Angel Aura"
+item.nature_aura: "Nature Aura"
+item.green_mist_aura: "Green Mist Aura"
+item.blossom_aura: "Blossom Aura"
+item.venom_aura: "Venom Aura"
+item.mother_nature_aura: "Mother Nature Aura"
+item.aqua_aura: "Aqua Aura"
+item.tsunami_aura: "Tsunami Aura"
 
 # ── weapon auras ───────────────────────────────────────────────────────────────
 item.darkstar_aura: "암흑성 오라"
@@ -331,6 +338,10 @@ item.blizzard_aura: "Blizzard Aura"
 
 item.void_aura: "Void Aura"
 item.ash_aura: "Ash Aura"
+item.green_glow_aura: "Green Glow Aura"
+item.cherry_aura: "Cherry Aura"
+item.radiance_aura: "Radiance Aura"
+item.frost_aura: "Frost Aura"
 
 # ── shards ─────────────────────────────────────────────────────────────────────
 item.common_shard: "Common Shard"
