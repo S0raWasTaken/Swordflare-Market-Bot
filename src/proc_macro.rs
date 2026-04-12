@@ -1,3 +1,5 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
@@ -66,8 +68,6 @@ fn to_pascal_case(s: &str) -> String {
 fn to_snake_case(s: &str) -> String {
     s.split_whitespace().map(|w| w.to_lowercase()).collect::<Vec<_>>().join("_")
 }
-
-// ── The macro ────────────────────────────────────────────────────────────────
 
 /// Declares all game items in one place and generates:
 ///
@@ -145,6 +145,54 @@ pub fn items(input: TokenStream) -> TokenStream {
                 }
             }
         }
+    }
+    .into()
+}
+
+fn git_branch() -> String {
+    std::process::Command::new("git")
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
+fn git_commit_short() -> String {
+    std::process::Command::new("git")
+        .args(["rev-parse", "--short", "HEAD"])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
+fn build_timestamp() -> String {
+    // Seconds since Unix epoch, then hand-format to UTC ISO 8601
+    // (avoids pulling in chrono just for compile-time formatting)
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+
+    format!("<t:{secs}:f>")
+}
+
+/// Returns `(version, branch, commit, timestamp)` baked in at compile time.
+#[proc_macro]
+pub fn build_info(_input: TokenStream) -> TokenStream {
+    let version = std::env::var("CARGO_PKG_VERSION")
+        .unwrap_or_else(|_| "unknown".to_string());
+    let branch = git_branch();
+    let commit = git_commit_short();
+    let timestamp = build_timestamp();
+
+    quote! {
+        (#version, #branch, #commit, #timestamp)
     }
     .into()
 }

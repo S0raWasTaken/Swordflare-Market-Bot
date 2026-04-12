@@ -11,6 +11,7 @@ use crate::{
         },
         new_auction::new_auction,
         new_trade::new_trade,
+        version::version,
     },
     database::Data,
 };
@@ -20,9 +21,11 @@ mod list_items;
 mod moderation;
 pub mod new_auction;
 pub mod new_trade;
+mod version;
 
 pub fn commands() -> Vec<poise::Command<Data, Error>> {
     vec![
+        version(),
         list_items(),
         new_trade(),
         set_language(),

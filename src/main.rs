@@ -4,7 +4,11 @@
 extern crate rust_i18n;
 
 pub use rust_i18n::t;
-use std::{fmt::Display, sync::LazyLock};
+use std::{
+    fmt::Display,
+    sync::LazyLock,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use dotenv::dotenv;
 use poise::{
@@ -43,6 +47,10 @@ pub static ACTIVE_GUILD_ID: LazyLock<u64> = LazyLock::new(|| {
         .expect("ACTIVE_GUILD_ID must be set")
         .parse()
         .expect("ACTIVE_GUILD_ID must be a number")
+});
+
+pub static START_TIME: LazyLock<u64> = LazyLock::new(|| {
+    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs())
 });
 
 i18n!("locales", fallback = "en-US");
@@ -96,6 +104,9 @@ fn framework(data: Data) -> Framework<Data, Error> {
         .options(options)
         .setup(|ctx, ready, framework| {
             Box::pin(async move {
+                // Initialize the start time now, since it's a lazylock
+                let _ = *START_TIME;
+
                 println!("{} is on!", ready.user.name);
                 register_globally(ctx, &framework.options().commands).await?;
 
