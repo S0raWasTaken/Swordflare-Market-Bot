@@ -14,12 +14,11 @@ use std::time::Duration;
 
 const CONFIRM_TIMEOUT: Duration = Duration::from_mins(1);
 
-#[expect(clippy::unused_async)]
 async fn autocomplete_item<'a>(
     ctx: Context<'_>,
     partial: &'a str,
 ) -> impl Iterator<Item = serenity::AutocompleteChoice> + 'a {
-    let locale = get_user_locale(ctx.data(), ctx.author().id);
+    let locale = get_user_locale(ctx, ctx.data(), ctx.author().id).await;
 
     ITEMS.iter().filter_map(move |i| {
         let display = i.name.display(&locale);
@@ -381,7 +380,7 @@ pub async fn new_trade(
     #[description_localized("ko", "보유 중인 총 재고량")]
     stock: u64,
 ) -> Res<()> {
-    let locale = &get_user_locale(ctx.data(), ctx.author().id);
+    let locale = &get_user_locale(ctx, ctx.data(), ctx.author().id).await;
     check_if_blacklisted(ctx, locale).await?;
     check_if_paused(ctx, locale)?;
 

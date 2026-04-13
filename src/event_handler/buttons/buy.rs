@@ -104,7 +104,7 @@ async fn resolve_trade(
     data: &Data,
     buyer: &serenity::User,
 ) -> Res<Option<TradeContext>> {
-    let buyer_locale = get_user_locale(data, buyer.id);
+    let buyer_locale = get_user_locale(ctx, data, buyer.id).await;
     let trade_id: u64 = interaction
         .data
         .custom_id
@@ -137,7 +137,7 @@ async fn resolve_trade(
             trade.wanted_amount,
         )
     };
-    let seller_locale = get_user_locale(data, seller_id);
+    let seller_locale = get_user_locale(ctx, data, seller_id).await;
 
     if buyer.id == seller_id {
         interaction

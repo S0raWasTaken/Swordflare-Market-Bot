@@ -21,7 +21,8 @@ pub async fn handle_report(
     interaction: &ComponentInteraction,
     data: &Data,
 ) -> Res<()> {
-    let report_ctx = ButtonContext::new(interaction, ctx, data, "report_");
+    let report_ctx =
+        ButtonContext::new(interaction, ctx, data, "report_").await;
     let locale = &interaction.locale;
     let is_seller = t!("report.error.is_seller", locale = locale);
 

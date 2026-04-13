@@ -404,7 +404,7 @@ impl<'a> ResolveContext<'a> {
         ranked_bidders.sort_by_key(|(_, amt)| std::cmp::Reverse(*amt));
 
         let seller_id = auction.seller;
-        let seller_locale = get_user_locale(data, seller_id);
+        let seller_locale = get_user_locale(ctx, data, seller_id).await;
 
         let seller_user = match seller_id.to_user(ctx).await {
             Ok(u) => u,
@@ -459,7 +459,8 @@ impl AttemptContext {
         winner_id: UserId,
         winning_bid: u64,
     ) -> ControlFlow<Self> {
-        let winner_locale = get_user_locale(resolve_ctx.data, winner_id);
+        let winner_locale =
+            get_user_locale(resolve_ctx, resolve_ctx.data, winner_id).await;
         let seller_locale = &resolve_ctx.seller_locale;
         let auction = &resolve_ctx.auction;
 

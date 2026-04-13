@@ -22,7 +22,7 @@ pub async fn handle_auction_cancel(
     data: &Data,
 ) -> Res<()> {
     let mut cancel_ctx =
-        ButtonContext::new(interaction, ctx, data, "au_cancel_");
+        ButtonContext::new(interaction, ctx, data, "au_cancel_").await;
     let locale = &interaction.locale;
 
     let auction =
