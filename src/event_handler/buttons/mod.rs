@@ -30,7 +30,7 @@ pub async fn resolve_trade(
     button_ctx: &ButtonContext<'_>,
     error_condition: impl Fn(UserId) -> Option<String>,
 ) -> Res<ControlFlow<(u64, Trade)>> {
-    let locale = &button_ctx.locale();
+    let locale = button_ctx.locale();
     let trade_id = button_ctx.trade_id()?;
     let trade = fetch_trade(button_ctx.data, trade_id, locale)?;
 
@@ -224,7 +224,7 @@ impl<'a> ButtonContext<'a> {
     }
 
     #[inline]
-    pub fn locale(&'a self) -> &'a str {
+    pub fn locale(&self) -> &str {
         &self.locale
     }
 }

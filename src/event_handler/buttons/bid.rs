@@ -293,7 +293,6 @@ impl OutbidContext {
         cache_http: impl CacheHttp,
         msg: impl Into<String>,
     ) -> serenity::Result<Message> {
-        // Fire and forget, we don't really care if the DM got through or not.
         self.outbid_bidder
             .direct_message(cache_http, CreateMessage::default().content(msg))
             .await

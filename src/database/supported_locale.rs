@@ -25,7 +25,7 @@ impl SupportedLocale {
 
     pub fn from_locale(locale: &str) -> Res<Self> {
         match locale {
-            "en-US" => Ok(Self::en_US),
+            "en-US" | "en" => Ok(Self::en_US),
             "ko-KR" | "ko" => Ok(Self::ko_KR),
             _ => Err("Invalid or unsupported locale".into()),
         }
@@ -101,5 +101,9 @@ pub async fn get_user_locale(
         .await
         .ok()
         .and_then(|user| user.locale)
-        .unwrap_or_else(|| "en-US".to_string())
+        .map_or_else(
+            || "en-US",
+            |l| SupportedLocale::from_locale_fallback(&l).to_locale(),
+        )
+        .to_string()
 }
