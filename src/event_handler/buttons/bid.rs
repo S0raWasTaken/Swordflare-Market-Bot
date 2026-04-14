@@ -62,7 +62,7 @@ type MinNextBid = u64;
 async fn resolve_auction(
     bid_ctx: &ButtonContext<'_>,
 ) -> Res<ControlFlow<(AuctionId, MinNextBid, String)>> {
-    let locale = &bid_ctx.locale();
+    let locale = bid_ctx.locale();
     let auction_id = bid_ctx.trade_id()?;
 
     let (seller_id, is_expired, min_next_bid, currency_name) = {
@@ -103,7 +103,7 @@ async fn prompt_bid(
     min_next_bid: u64,
     currency_name: &str,
 ) -> Res<ControlFlow<(Amount, ModalInteraction)>> {
-    let locale = &bid_ctx.locale();
+    let locale = bid_ctx.locale();
     let custom_id = format!("bid_amount_{auction_id}");
 
     bid_ctx
@@ -156,7 +156,7 @@ async fn place_bid(
     min_next_bid: u64,
     currency_name: &str,
 ) -> Res<ControlFlow<Option<OutbidContext>>> {
-    let locale = &bid_ctx.locale();
+    let locale = bid_ctx.locale();
     let bidder_id = bid_ctx.user().id;
 
     let (bid_accepted, outbid_ctx) =
@@ -230,7 +230,7 @@ async fn dm_old_highest(
                 "auction.outbid",
                 user = outbid_ctx.new_highest_bidder,
                 old_bid = outbid_ctx.outbid_bid,
-                currency_name = outbid_ctx.currency_name.display(&locale),
+                currency_name = outbid_ctx.currency_name.display(locale),
                 new_bid_diff = outbid_ctx.bid_diff(),
                 locale = locale
             ),
@@ -245,7 +245,7 @@ async fn finish(
     amount: u64,
     currency_name: &str,
 ) -> Res<()> {
-    let locale = &bid_ctx.locale();
+    let locale = bid_ctx.locale();
 
     modal
         .create_response(

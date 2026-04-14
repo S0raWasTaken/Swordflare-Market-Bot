@@ -175,7 +175,7 @@ pub struct ButtonContext<'a> {
     pub ctx: &'a serenity::Context,
     pub data: &'a Data,
     pub prefix: &'a str,
-    locale: String,
+    locale: &'static str,
 }
 
 impl<'a> ButtonContext<'a> {
@@ -224,7 +224,7 @@ impl<'a> ButtonContext<'a> {
     }
 
     #[inline]
-    pub fn locale(&self) -> &str {
-        &self.locale
+    pub fn locale(&self) -> &'static str {
+        self.locale
     }
 }

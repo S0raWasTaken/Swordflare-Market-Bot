@@ -23,7 +23,8 @@ pub async fn handle_report(
 ) -> Res<()> {
     let report_ctx =
         ButtonContext::new(interaction, ctx, data, "report_").await;
-    let locale = &interaction.locale;
+    let locale = report_ctx.locale();
+
     let is_seller = t!("report.error.is_seller", locale = locale);
 
     let error_condition = |seller| {

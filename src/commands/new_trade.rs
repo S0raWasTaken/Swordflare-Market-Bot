@@ -21,7 +21,7 @@ async fn autocomplete_item<'a>(
     let locale = get_user_locale(ctx, ctx.data(), ctx.author().id).await;
 
     ITEMS.iter().filter_map(move |i| {
-        let display = i.name.display(&locale);
+        let display = i.name.display(locale);
         if display.to_lowercase().contains(&partial.to_lowercase())
             || i.name.to_str().to_lowercase().contains(&partial.to_lowercase())
         {
@@ -380,7 +380,7 @@ pub async fn new_trade(
     #[description_localized("ko", "보유 중인 총 재고량")]
     stock: u64,
 ) -> Res<()> {
-    let locale = &get_user_locale(ctx, ctx.data(), ctx.author().id).await;
+    let locale = get_user_locale(ctx, ctx.data(), ctx.author().id).await;
     check_if_blacklisted(ctx, locale).await?;
     check_if_paused(ctx, locale)?;
 

@@ -88,22 +88,26 @@ pub async fn get_user_locale(
     http: impl CacheHttp,
     data: &Data,
     id: UserId,
-) -> String {
-    if let Some(locale) =
-        data.languages.borrow_data().ok().and_then(|languages| {
-            languages.get(&id).map(|l| l.to_locale().to_string())
-        })
+) -> &'static str {
+    if let Some(locale) = data
+        .languages
+        .borrow_data()
+        .ok()
+        .and_then(|languages| languages.get(&id).map(|l| l.to_locale()))
     {
         return locale;
     }
 
-    id.to_user(http)
-        .await
-        .ok()
-        .and_then(|user| user.locale)
-        .map_or_else(
-            || "en-US",
-            |l| SupportedLocale::from_locale_fallback(&l).to_locale(),
-        )
-        .to_string()
+    let supported_locale =
+        id.to_user(http).await.ok().and_then(|user| user.locale).map_or_else(
+            || SupportedLocale::en_US,
+            |l| SupportedLocale::from_locale_fallback(&l),
+        );
+    data.languages
+        .write(|db| {
+            db.insert(id, supported_locale);
+        })
+        .ok();
+
+    supported_locale.to_locale()
 }

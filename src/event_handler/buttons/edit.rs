@@ -55,7 +55,7 @@ async fn prompt_edit(
         );
     }
 
-    let locale = &edit_ctx.locale();
+    let locale = edit_ctx.locale();
     let custom_id = format!("quantity_{}", edit_ctx.trade_id()?);
 
     edit_ctx
