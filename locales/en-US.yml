@@ -162,6 +162,9 @@ auction.modal.title: "Place a Bid"
 auction.modal.input_label: "Amount (min: %{min} %{currency})"
 auction.bid.accepted: "✅ Bid of **%{amount} %{currency}** placed successfully!"
 
+# ── auction: outbid ────────────────────────────────────────────────────────────
+auction.outbid: "⚠️ <@%{user}> has outbid your **%{old_bid} %{currency_name}** offer by **%{new_bid_diff} %{currency_name}**."
+
 # ── auction: resolve (DMs sent when auction ends) ──────────────────────────────
 auction.resolve.winner_dm: |
   🏆 You won the auction! You bid **%{amount} %{currency}** for **x%{quantity} %{item}**.

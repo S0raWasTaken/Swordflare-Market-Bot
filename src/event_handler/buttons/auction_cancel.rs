@@ -22,8 +22,9 @@ pub async fn handle_auction_cancel(
     data: &Data,
 ) -> Res<()> {
     let mut cancel_ctx =
-        ButtonContext::new(interaction, ctx, data, "au_cancel_");
-    let locale = &interaction.locale;
+        ButtonContext::new(interaction, ctx, data, "au_cancel_").await;
+
+    let locale = cancel_ctx.locale();
 
     let auction =
         break_or!(check_auction_ownership(&cancel_ctx, locale).await?);

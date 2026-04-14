@@ -22,7 +22,7 @@ pub async fn handle_edit(
     interaction: &ComponentInteraction,
     data: &Data,
 ) -> Res<()> {
-    let edit_ctx = ButtonContext::new(interaction, ctx, data, "edit_");
+    let edit_ctx = ButtonContext::new(interaction, ctx, data, "edit_").await;
     let not_seller = t!("edit.error.not_seller", locale = &edit_ctx.locale());
 
     let error_condition = |seller| {
@@ -55,7 +55,7 @@ async fn prompt_edit(
         );
     }
 
-    let locale = &edit_ctx.locale();
+    let locale = edit_ctx.locale();
     let custom_id = format!("quantity_{}", edit_ctx.trade_id()?);
 
     edit_ctx

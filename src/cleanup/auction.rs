@@ -142,7 +142,7 @@ async fn try_resolve(
             *winner_id,
             resolve_ctx.seller_id,
             resolve_ctx.auction_id,
-            (&attempt_context.winner_locale, &resolve_ctx.seller_locale),
+            (attempt_context.winner_locale, resolve_ctx.seller_locale),
             (&mut attempt_context.winner_msg, &mut attempt_context.seller_msg),
         )
         .await;
@@ -176,7 +176,7 @@ async fn handle_outcome(
     let winner_locale = attempt_ctx.winner_locale;
     let winning_bid = attempt_ctx.winning_bid;
     let auction = &resolve_ctx.auction;
-    let seller_locale = &resolve_ctx.seller_locale;
+    let seller_locale = resolve_ctx.seller_locale;
 
     let fail = match outcome {
         ConfirmOutcome::BothConfirmed { buyer_int, seller_int } => {
@@ -184,10 +184,10 @@ async fn handle_outcome(
                 "buy.done.buyer",
                 locale = winner_locale,
                 wants_total = winning_bid,
-                wants = auction.currency_item.display(&winner_locale),
+                wants = auction.currency_item.display(winner_locale),
                 seller = resolve_ctx.seller_user.name,
                 item_total = auction.quantity,
-                item = auction.item.display(&winner_locale),
+                item = auction.item.display(winner_locale),
             );
             let seller_content = t!(
                 "buy.done.seller",
@@ -386,7 +386,7 @@ struct ResolveContext<'a> {
     auction: RunningAuction,
     ranked_bidders: Vec<(UserId, u64)>,
     seller_id: UserId,
-    seller_locale: String,
+    seller_locale: &'static str,
     seller_user: User,
     seller_dm: PrivateChannel,
 }
@@ -404,7 +404,7 @@ impl<'a> ResolveContext<'a> {
         ranked_bidders.sort_by_key(|(_, amt)| std::cmp::Reverse(*amt));
 
         let seller_id = auction.seller;
-        let seller_locale = get_user_locale(data, seller_id);
+        let seller_locale = get_user_locale(ctx, data, seller_id).await;
 
         let seller_user = match seller_id.to_user(ctx).await {
             Ok(u) => u,
@@ -445,7 +445,7 @@ impl CacheHttp for ResolveContext<'_> {
 }
 
 struct AttemptContext {
-    winner_locale: String,
+    winner_locale: &'static str,
     winner_user: User,
     winner_dm: PrivateChannel,
     winner_msg: Message,
@@ -459,8 +459,9 @@ impl AttemptContext {
         winner_id: UserId,
         winning_bid: u64,
     ) -> ControlFlow<Self> {
-        let winner_locale = get_user_locale(resolve_ctx.data, winner_id);
-        let seller_locale = &resolve_ctx.seller_locale;
+        let winner_locale =
+            get_user_locale(resolve_ctx, resolve_ctx.data, winner_id).await;
+        let seller_locale = resolve_ctx.seller_locale;
         let auction = &resolve_ctx.auction;
 
         let winner_user = break_log!(winner_id.to_user(resolve_ctx).await);
@@ -479,8 +480,8 @@ impl AttemptContext {
                         currency = resolve_ctx
                             .auction
                             .currency_item
-                            .display(&winner_locale),
-                        item = resolve_ctx.auction.item.display(&winner_locale),
+                            .display(winner_locale),
+                        item = resolve_ctx.auction.item.display(winner_locale),
                         quantity = resolve_ctx.auction.quantity,
                         server_link = &*crate::TRADING_SERVER_LINK,
                     ))

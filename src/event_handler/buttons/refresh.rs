@@ -13,8 +13,9 @@ pub async fn handle_refresh(
     interaction: &ComponentInteraction,
     data: &Data,
 ) -> Res<()> {
-    let refresh_ctx = ButtonContext::new(interaction, ctx, data, "refresh_");
-    let locale = &refresh_ctx.locale();
+    let refresh_ctx =
+        ButtonContext::new(interaction, ctx, data, "refresh_").await;
+    let locale = refresh_ctx.locale();
     let not_seller = t!("refresh.error.not_seller", locale = locale);
 
     let error_condition = |seller| {

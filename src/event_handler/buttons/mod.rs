@@ -30,7 +30,7 @@ pub async fn resolve_trade(
     button_ctx: &ButtonContext<'_>,
     error_condition: impl Fn(UserId) -> Option<String>,
 ) -> Res<ControlFlow<(u64, Trade)>> {
-    let locale = &button_ctx.locale();
+    let locale = button_ctx.locale();
     let trade_id = button_ctx.trade_id()?;
     let trade = fetch_trade(button_ctx.data, trade_id, locale)?;
 
@@ -175,16 +175,18 @@ pub struct ButtonContext<'a> {
     pub ctx: &'a serenity::Context,
     pub data: &'a Data,
     pub prefix: &'a str,
+    locale: &'static str,
 }
 
 impl<'a> ButtonContext<'a> {
-    pub fn new(
+    pub async fn new(
         interaction: &'a ComponentInteraction,
         ctx: &'a serenity::Context,
         data: &'a Data,
         prefix: &'a str,
     ) -> Self {
-        Self { interaction, ctx, data, prefix }
+        let locale = get_user_locale(ctx, data, interaction.user.id).await;
+        Self { interaction, ctx, data, prefix, locale }
     }
 
     pub fn user(&self) -> &'a User {
@@ -198,7 +200,7 @@ impl<'a> ButtonContext<'a> {
             .data
             .custom_id
             .strip_prefix(self.prefix)
-            .ok_or(t!("error.invalid_custom_id", locale = &self.locale()))?
+            .ok_or(t!("error.invalid_custom_id", locale = self.locale()))?
             .parse()?)
     }
 
@@ -221,7 +223,8 @@ impl<'a> ButtonContext<'a> {
         self.interaction.create_response(self.ctx, response)
     }
 
-    pub fn locale(&self) -> String {
-        get_user_locale(self.data, self.user().id)
+    #[inline]
+    pub fn locale(&self) -> &'static str {
+        self.locale
     }
 }

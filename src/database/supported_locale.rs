@@ -1,6 +1,6 @@
 use poise::{
     SlashArgError, SlashArgument,
-    serenity_prelude::{self as serenity, UserId},
+    serenity_prelude::{self as serenity, CacheHttp, UserId},
 };
 use serde::{Deserialize, Serialize};
 
@@ -25,8 +25,8 @@ impl SupportedLocale {
 
     pub fn from_locale(locale: &str) -> Res<Self> {
         match locale {
-            "en-US" => Ok(Self::en_US),
-            "ko-KR" => Ok(Self::ko_KR),
+            "en-US" | "en" => Ok(Self::en_US),
+            "ko-KR" | "ko" => Ok(Self::ko_KR),
             _ => Err("Invalid or unsupported locale".into()),
         }
     }
@@ -84,12 +84,30 @@ impl SlashArgument for SupportedLocale {
     }
 }
 
-pub fn get_user_locale(data: &Data, id: UserId) -> String {
-    data.languages
+pub async fn get_user_locale(
+    http: impl CacheHttp,
+    data: &Data,
+    id: UserId,
+) -> &'static str {
+    if let Some(locale) = data
+        .languages
         .borrow_data()
         .ok()
-        .and_then(|languages| {
-            languages.get(&id).map(|l| l.to_locale().to_string())
+        .and_then(|languages| languages.get(&id).map(|l| l.to_locale()))
+    {
+        return locale;
+    }
+
+    let supported_locale =
+        id.to_user(http).await.ok().and_then(|user| user.locale).map_or_else(
+            || SupportedLocale::en_US,
+            |l| SupportedLocale::from_locale_fallback(&l),
+        );
+    data.languages
+        .write(|db| {
+            db.insert(id, supported_locale);
         })
-        .unwrap_or_else(|| "en-US".to_string())
+        .ok();
+
+    supported_locale.to_locale()
 }

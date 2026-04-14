@@ -89,7 +89,7 @@ async fn is_blacklisted(
     }
 
     if data.blacklist.borrow_data()?.contains(&user_id) {
-        let locale = get_user_locale(data, user_id);
+        let locale = get_user_locale(ctx, data, user_id).await;
         interaction
             .create_response(
                 ctx,

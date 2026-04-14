@@ -20,7 +20,7 @@ use crate::{
 /// 게임 내 모든 아이템 나열
 #[poise::command(slash_command, interaction_context = "Guild")]
 pub async fn list_items(ctx: Context<'_>) -> Res<()> {
-    let locale = &get_user_locale(ctx.data(), ctx.author().id);
+    let locale = get_user_locale(ctx, ctx.data(), ctx.author().id).await;
     check_if_paused(ctx, locale)?;
 
     let categories =

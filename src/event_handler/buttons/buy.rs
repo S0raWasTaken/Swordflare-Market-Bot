@@ -104,7 +104,7 @@ async fn resolve_trade(
     data: &Data,
     buyer: &serenity::User,
 ) -> Res<Option<TradeContext>> {
-    let buyer_locale = get_user_locale(data, buyer.id);
+    let buyer_locale = get_user_locale(ctx, data, buyer.id).await;
     let trade_id: u64 = interaction
         .data
         .custom_id
@@ -113,7 +113,7 @@ async fn resolve_trade(
         .parse()?;
 
     let (seller_id, stock, item, item_quantity, wants, wanted_amount) = {
-        let trade = fetch_trade(data, trade_id, &buyer_locale)?;
+        let trade = fetch_trade(data, trade_id, buyer_locale)?;
 
         if trade.is_inactive() {
             interaction
@@ -137,7 +137,7 @@ async fn resolve_trade(
             trade.wanted_amount,
         )
     };
-    let seller_locale = get_user_locale(data, seller_id);
+    let seller_locale = get_user_locale(ctx, data, seller_id).await;
 
     if buyer.id == seller_id {
         interaction
@@ -175,7 +175,7 @@ async fn prompt_lots(
     interaction: &ComponentInteraction,
     trade_ctx: &TradeContext,
 ) -> Res<Option<(u64, serenity::ModalInteraction)>> {
-    let buyer_locale = &trade_ctx.buyer_locale;
+    let buyer_locale = trade_ctx.buyer_locale;
     let custom_id = format!("quantity_{}", trade_ctx.trade_id);
 
     interaction
@@ -254,7 +254,7 @@ async fn confirm_purchase(
     trade_ctx: &TradeContext,
     lots: u64,
 ) -> Res<bool> {
-    let buyer_locale = &trade_ctx.buyer_locale;
+    let buyer_locale = trade_ctx.buyer_locale;
     let embed = serenity::CreateEmbed::default()
         .title(t!("buy.confirm.title", locale = buyer_locale))
         .description(t!(
@@ -694,8 +694,8 @@ struct TradeContext {
     item_quantity: u64,
     wants: crate::items::Item,
     wanted_amount: u64,
-    buyer_locale: String,
-    seller_locale: String,
+    buyer_locale: &'static str,
+    seller_locale: &'static str,
 }
 
 struct PendingTrade<'a> {
