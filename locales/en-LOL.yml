@@ -1,0 +1,326 @@
+# fur teh kittehs in teh chat!!!
+
+# ── Errors (via on_error handler) ─────────────────────────────────────────────
+error.invalid_trading_item: "INVLID tradin item: '%{name}'."
+error.invalid_wanted_item: "INVLID wanted item: '%{name}'."
+error.trade_quantity_zero: "Traed quantity must be greater than zero."
+error.stock_too_low: "Stok (%{stock}) must be at least equal to traed quantity (%{quantity})."
+error.invalid_custom_id: "INVLID custom_id."
+error.trade_not_found: "Traed not found."
+error.missing_lots_input: "Missin lots input."
+error.invalid_number: "INVLID numbur."
+error.duplicate_post: "❌ Duplicate postz!"
+error.blacklisted: "❌ U haz been blacklisted and cannot use teh market kittehbot."
+error.bot_paused: "❌ Kittehbot was paused by an administrator."
+error.insufficient_stock: "Insufficient Stok."
+
+# ── new_trade: confirmation embed ──────────────────────────────────────────────
+new_trade.confirm.title: "Konfirm Traed Postz"
+new_trade.confirm.description: "Ur about to sell a total of **x%{total} %{item}** across **%{lots}** lot(s) of x%{quantity} each."
+new_trade.confirm.field_offering: "Offerin (per lot)"
+new_trade.confirm.field_wants: "Wantz (per lot)"
+new_trade.confirm.field_lots: "Lots available"
+new_trade.confirm.button_post: "Postz Traed"
+new_trade.confirm.button_cancel: "Kansel"
+new_trade.confirm.timed_out: "⏰ Traed confirmation timed out."
+new_trade.confirm.cancelled: "❌ Traed kansld."
+new_trade.posted: "✅ Traed postd!"
+
+# ── trade_edit ─────────────────────────────────────────────────────────────────
+edit.error.not_seller: "❌ U can haz't editz someone else's postz!"
+edit.error.missing_stock_input: "❌ Missin stok input."
+
+edit.modal.title: "What's ur new stok?"
+edit.modal.input_label: "Stok"
+edit.modal.placeholder: "Enter new stok"
+
+edit.success: "✅ Stok updatd!"
+
+# ── trade_refresh ──────────────────────────────────────────────────────────────
+refresh.error.not_seller: "❌ U can haz't refrehsh someone else's postz!"
+
+refresh.success: "✅ Postz refreshed!"
+
+# ── trade_report ───────────────────────────────────────────────────────────────
+report.error.is_seller: "❌ U can haz't repawt ur own postz!"
+report.error.missing_input: "❌ Missin repawt input."
+report.error.empty: "❌ Repawt text cannot be empty."
+report.error.already_reported: "❌ U already repawtd dis postz!"
+
+report.modal.title: "What's rong wif dis postz?"
+report.modal.label: "Repawt"
+report.modal.placeholder: "Breefly describ what happened"
+
+report.success: "✅ Postz repawtd!"
+
+# ── set_language ───────────────────────────────────────────────────────────────
+set_language.success: "✅ Langwidge set!"
+
+# ── buy interaction: lots modal ────────────────────────────────────────────────
+buy.modal.title: "How many lots do u wantz?"
+buy.modal.input_label: "Lots"
+buy.modal.input_placeholder: "Enter numbur of lots"
+buy.error.self_buy: "❌ U can haz't bai ur own traed."
+buy.error.invalid_amount: "❌ INVLID amownt. There r only %{stock} lot(s) remainin."
+buy.error.inactive: "❌ Dis traed iz inactive."
+
+# ── buy interaction: purchase confirmation ─────────────────────────────────────
+buy.confirm.title: "Konfirm Purrchase"
+buy.confirm.description: "Ur buyin **%{lots}** lot(s) from **%{seller}**."
+buy.confirm.field_receive: "U will getz"
+buy.confirm.field_give: "U will giev"
+buy.confirm.button_confirm: "Konfirm"
+buy.confirm.button_cancel: "Kansel"
+buy.confirm.check_dms: "Chekk ur secrit mesajez!"
+buy.confirm.cancelled: "❌ Purrchase kansld."
+
+# ── buy interaction: DMs ───────────────────────────────────────────────────────
+buy.dm.buyer: |
+  Ur about to bai **x%{item_total} %{item}** in exchange 4 **x%{wants_total} %{wants}** (%{lots} lot(s)) from **%{seller}**.
+  Goes findz them in-gaem and konfirm onze teh traed iz dun.
+  %{server_link}
+buy.dm.seller: |
+  **%{buyer}** wantz to bai **x%{item_total} %{item}** from u in exchange 4 **x%{wants_total} %{wants}** (%{lots} lot(s)).
+  Goes findz them in-gaem and konfirm onze dun.
+  %{server_link}
+buy.dm.button_confirm: "Konfirm Traed Dun"
+buy.dm.button_cancel: "Kansel"
+
+# ── buy interaction: awaiting confirmations ────────────────────────────────────
+buy.await.you_cancelled: "⚠️ U kansld teh traed."
+buy.await.buyer_cancelled: "⚠️ **%{name}** kansld teh traed."
+buy.await.seller_cancelled: "⚠️ **%{name}** kansld teh traed."
+buy.await.waiting_for_seller: "✅ Got it k! Waitin 4 teh sellercat to konfirm..."
+buy.await.waiting_for_buyer: "✅ Got it k! Waitin 4 teh buyurz to konfirm..."
+
+# ── buy interaction: trade finalised ──────────────────────────────────────────
+buy.done.buyer: "✅ Traed konfirmd! U gaev **x%{wants_total} %{wants}** to **%{seller}** and received **x%{item_total} %{item}**. Thx kthxbai 4 tradin!"
+buy.done.seller: "✅ Traed konfirmd! U gaev **x%{item_total} %{item}** and received **x%{wants_total} %{wants}** from **%{buyer}**. Stok decremented."
+buy.done.seller_sold_out: "✅ Traed konfirmd! U gaev **x%{item_total} %{item}** and received **x%{wants_total} %{wants}** from **%{buyer}** — all stok sold, postz removed."
+
+# ── post embed ─ only used in Korean and English ─ Do not translate for other languages
+post.title: "Traed by %{seller}"
+post.title_sold_out: "[SOLD OUT] Traed by %{seller}"
+post.title_expired: "[EXPIRED] Traed by %{seller}"
+post.expires: "Gon ded <t:%{unix}:R>"
+post.expired: "Ded <t:%{unix}:R>"
+post.field_offering: "Offerin"
+post.field_wants: "Wantz"
+post.field_stock: "Stok"
+post.stock_value: "%{lots} lot(s) remainin"
+post.stock_sold_out: "ALL GONE"
+post.footer_buyers: "%{count} buyurz(s)"
+post.footer_bidders: "%{count} biddurz(s)"
+
+post.button_buy: "Bai"
+post.button_edit: "Editz stok"
+post.button_refresh: "Refrehsh Time"
+post.button_finish: "Finish"
+post.button_report: "Repawt"
+
+# ── auction: errors ────────────────────────────────────────────────────────────
+auction.error.min_price_zero: "❌ Minimum price must be greater than zero."
+auction.error.duration_too_long: "❌ Duration cannot exceed %{max} hour(s)."
+auction.error.duration_too_short: "❌ Duration cannot be less than %{min} minute(s)."
+auction.error.self_bid: "❌ U can haz't bidz on ur own aucshun."
+auction.error.expired: "❌ Dis aucshun haz already ovur."
+auction.error.invalid_bid: "❌ Ur bidz must be at least **%{min} %{currency}**."
+auction.error.missing_bid_input: "❌ Missin bidz input."
+auction.error.max_value_reached: "❌ Impossible to bidz higher. Maximum value reached."
+
+# ── auction_cancel ─────────────────────────────────────────────────────────────
+cancel.error.not_found: "❌ Aucshun not found."
+cancel.error.not_seller: "❌ U can haz't kansel someone else's aucshun!"
+
+cancel.embed.title: "Kansel Aucshun"
+cancel.embed.description: "R u sure u wantz to kansel dis aucshun?"
+
+cancel.success: "✅ Aucshun kansld!"
+
+# ── auction: new auction confirmation ──────────────────────────────────────────
+auction.confirm.title: "Konfirm Aucshun Postz"
+auction.confirm.field_item: "Item bein auctioned"
+auction.confirm.field_currency: "Bidz currency"
+auction.confirm.field_min_price: "Startin bidz"
+auction.confirm.field_duration: "Duration"
+auction.posted: "✅ Aucshun postd!"
+
+# ── auction: post embed ─ only used in Korean and English ──────────────────────
+auction.post.title: "Aucshun by %{seller}"
+auction.post.title_ended: "[ENDED] Aucshun by %{seller}"
+auction.post.ends_at: "Endz <t:%{unix}:R>"
+auction.post.ended_at: "Ovur <t:%{unix}:R>"
+auction.post.field_item: "Item"
+auction.post.field_min_price: "Startin bidz"
+auction.post.field_current_bids: "Current biiidz"
+auction.post.no_bids: "No biiidz yet"
+
+auction.post.button_bid: "Place Bidz"
+auction.post.button_cancel: "Kansel"
+auction.post.button_report: "Repawt"
+
+# ── auction: bid modal ─────────────────────────────────────────────────────────
+auction.modal.title: "Place a Bidz"
+auction.modal.input_label: "Amownt (min: %{min} %{currency})"
+auction.bid.accepted: "✅ Bidz of **%{amount} %{currency}** placed successfully!"
+
+# ── auction: outbid ────────────────────────────────────────────────────────────
+auction.outbid: "⚠️ <@%{user}> haz outbidded ur **%{old_bid} %{currency_name}** offer by **%{new_bid_diff} %{currency_name}**."
+
+# ── auction: resolve (DMs sent when auction ends) ──────────────────────────────
+auction.resolve.winner_dm: |
+  🏆 U wun teh aucshun! U bidz **%{amount} %{currency}** 4 **x%{quantity} %{item}**.
+  Goes findz teh sellercat in-gaem and konfirm onze teh traed iz dun.
+  %{server_link}
+auction.resolve.seller_dm: |
+  🏆 Ur aucshun ovur! **%{winner}** wun wif a bidz of **%{amount} %{currency}** 4 **x%{quantity} %{item}**.
+  Goes findz them in-gaem and konfirm onze teh traed iz dun.
+  %{server_link}
+auction.resolve.winner_declined: "⚠️ **%{winner}** sed no teh traed. Offerin to teh next highest biddurz..."
+auction.resolve.seller_declined: "⚠️ Teh sellercat sed no teh traed. U will not be charged."
+
+# ── rarities ───────────────────────────────────────────────────────────────────
+rarity.common: "Common"
+rarity.uncommon: "Uncommon"
+rarity.rare: "Rare"
+rarity.epic: "Epic"
+rarity.legendary: "Legendary"
+
+# ── categories ─────────────────────────────────────────────────────────────────
+category.armor: "Armor"
+category.aura: "Aura"
+category.active_skill: "Active Skill"
+category.passive_skill: "Passive Skill"
+category.weapon: "Weapon"
+category.material: "Material"
+category.shard: "Shard"
+
+#############################################
+################### ITEMS ###################
+#############################################
+
+# ── weapons ────────────────────────────────────────────────────────────────────
+item.basic_sword: "Basic Sword"
+item.verdant_dagger: "Verdant Dagger"
+item.redstone_hammer: "Redstone Hammer"
+item.balanced_blade: "Balanced Blade"
+item.obsidian_sword: "Obsidian Sword"
+item.balanced_spear: "Balanced Spear"
+item.verdant_greatsword: "Verdant Greatsword"
+item.fire_dagger: "Fire Dagger"
+item.refined_blade: "Refined Blade"
+item.ice_spear: "Ice Spear"
+item.nightfall: "Nightfall"
+item.luminous_obsidian: "Luminous Obsidian"
+item.wildfire: "Wildfire"
+item.spirit_blade: "Spirit Blade"
+item.ruby_blade: "Ruby Blade"
+item.lightspear: "Lightspear"
+item.sivoka: "Sivoka"
+item.void_dagger: "Void Dagger"
+item.kosa: "Kosa"
+
+# F2 Update
+
+item.relic_of_winter: "Relic of Winter"
+item.glacier_greatsword: "Glacier Greatsword"
+item.absolute_zero_spear: "Absolute Zero Spear"
+item.titanbreaker_sword: "TitanBreaker Sword"
+item.frostfang_blade: "Frostfang Blade"
+item.cliff_breaker_hammer: "Cliff Breaker Hammer"
+item.ice_blade: "Ice Blade"
+
+# ── armor ──────────────────────────────────────────────────────────────────────
+item.starter_armor: "Starter Armor"
+item.forest_armor: "Forest Armor"
+item.redstone_armor: "Redstone Armor"
+item.obsidian_armor: "Obsidian Armor"
+item.draconic_armor: "Draconic Armor"
+item.amethyst_armor: "Amethyst Armor"
+item.blood_crystal_armor: "Blood Crystal Armor"
+item.void_platemail: "Void Platemail"
+item.the_singularity: "Teh Singularity"
+
+# F2 Update
+
+item.eternal_frost_armor: "Eternal Frost Armor"
+item.glacier_armor: "Glacier Armor"
+item.frostshade_armor: "Frostshade Armor"
+item.iceplate_armor: "Iceplate Armor"
+
+# ── passive skills ─────────────────────────────────────────────────────────────
+item.rusty_blade: "Rusty Blade"
+item.battle_focus: "Battle Focus"
+item.sharp_blade: "Sharp Blade"
+item.stone_heart: "Stone Heart"
+item.blade_artist: "Blade Artist"
+item.vampiric_weapons: "Vampiric Weapons"
+item.arcane_vision: "Arcane Vision"
+
+# ── active skills ──────────────────────────────────────────────────────────────
+item.emerald_slash: "Emerald Slash"
+item.windy_edge: "Windy Edge"
+item.life_spark: "Life Spark"
+item.cursed_flames: "Cursed Flames"
+item.genesis: "Genesis"
+item.midnight_echo: "Midnight Echo"
+item.blazing_echo: "Blazin Echo"
+item.void_slice: "Void Slice"
+
+# F2 Update
+
+item.fang_slash: "Fang Slash"
+item.blizzard_echo: "Blizzard Echo"
+
+# ── materials ──────────────────────────────────────────────────────────────────
+item.amethyst: "Amethyst"
+item.obsidian: "Obsidian"
+item.redstone: "Redstone"
+item.wood: "Wood"
+item.grass: "Grass"
+item.common_core: "Common Core"
+item.ruby: "Ruby"
+item.firestone: "Firestone"
+item.cursed_wood: "Cursed Wood"
+item.leaf: "Leaf"
+item.uncommon_core: "Uncommon Core"
+item.void_dust: "Void Dust"
+item.singularity_fragment: "Singularity Fragment"
+item.blood_crystal: "Blood Crystal"
+item.eternal_firestone: "Eternal Firestone"
+item.glowing_obsidian: "Glowin Obsidian"
+item.portal_core: "Portal Core"
+item.rare_core: "Rare Core"
+item.fall_protection: "Fall Protection"
+item.void_core: "Void Core"
+item.invisible_core: "Invisible Core"
+
+# F2 Update
+
+item.ancient_ice_relic: "Ancient Ice Relic"
+item.glacial_fragment: "Glacial Fragment"
+item.frozen_core: "Frozen Core"
+item.ice_crystal: "Ice Crystal"
+item.packed_snow: "Packed Snow"
+item.knockback_core: "Knockback Core"
+item.frost_shard: "Frost Shard"
+
+# ── auras ──────────────────────────────────────────────────────────────────────
+item.darkstar_aura: "Darkstar Aura"
+item.crystal_bubble_aura: "Crystal Bubble Aura"
+item.lightning_aura: "Lightnin Aura"
+item.scarlet_pixel_aura: "Scarlet Pixel Aura"
+item.sky_pixel_aura: "Sky Pixel Aura"
+item.grass_pixel_aura: "Grass Pixel Aura"
+item.sakura_aura: "Sakura Aura"
+
+# F2 Update
+
+item.blizzard_aura: "Blizzard Aura"
+
+# ── shards ─────────────────────────────────────────────────────────────────────
+item.common_shard: "Common Shard"
+item.uncommon_shard: "Uncommon Shard"
+item.rare_shard: "Rare Shard"
+item.epic_shard: "Epic Shard"
+item.legendary_shard: "Legendary Shard"

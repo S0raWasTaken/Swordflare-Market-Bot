@@ -1,0 +1,326 @@
+# Fer our brethren o’ the sea!
+
+# ── Errors (via on_error handler) ─────────────────────────────────────────────
+error.invalid_trading_item: "Cursed plunderin' item: '%{name}'."
+error.invalid_wanted_item: "Cursed wanted item: '%{name}'."
+error.trade_quantity_zero: "Plunder quantity must be greater than zero."
+error.stock_too_low: "Booty (%{stock}) must be at least equal t' plunder quantity (%{quantity})."
+error.invalid_custom_id: "Cursed custom_id."
+error.trade_not_found: "Plunder not found."
+error.missing_lots_input: "Lost lots input."
+error.invalid_number: "Cursed count."
+error.duplicate_post: "❌ Duplicate scroll!"
+error.blacklisted: "❌ Ye've been blacklisted and cannot use th' cove vessel."
+error.bot_paused: "❌ Vessel was paused by an administrator."
+error.insufficient_stock: "Insufficient Booty."
+
+# ── new_trade: confirmation embed ──────────────────────────────────────────────
+new_trade.confirm.title: "Swear on it Plunder Scroll"
+new_trade.confirm.description: "Ye be about t' sell a total o' **x%{total} %{item}** across **%{lots}** lot(s) o' x%{quantity} each."
+new_trade.confirm.field_offering: "Offering (per lot)"
+new_trade.confirm.field_wants: "Wants (per lot)"
+new_trade.confirm.field_lots: "Lots available"
+new_trade.confirm.button_post: "Scroll Plunder"
+new_trade.confirm.button_cancel: "Scuttle"
+new_trade.confirm.timed_out: "⏰ Plunder confirmation timed out."
+new_trade.confirm.cancelled: "❌ Plunder scuttled."
+new_trade.posted: "✅ Plunder unfurled!"
+
+# ── trade_edit ─────────────────────────────────────────────────────────────────
+edit.error.not_seller: "❌ Ye can't amend someone else's scroll!"
+edit.error.missing_stock_input: "❌ Lost booty input."
+
+edit.modal.title: "What's yer new booty?"
+edit.modal.input_label: "Booty"
+edit.modal.placeholder: "Enter new booty"
+
+edit.success: "✅ Booty amended!"
+
+# ── trade_refresh ──────────────────────────────────────────────────────────────
+refresh.error.not_seller: "❌ Ye can't hoist anew someone else's scroll!"
+
+refresh.success: "✅ Scroll hoisted anew!"
+
+# ── trade_report ───────────────────────────────────────────────────────────────
+report.error.is_seller: "❌ Ye can't denounce yer own scroll!"
+report.error.missing_input: "❌ Lost denounce input."
+report.error.empty: "❌ Denounce text cannot be empty."
+report.error.already_reported: "❌ Ye already denounced this scroll!"
+
+report.modal.title: "What's wrong wit' this scroll?"
+report.modal.label: "Denounce"
+report.modal.placeholder: "Briefly recount what happened"
+
+report.success: "✅ Scroll denounced!"
+
+# ── set_language ───────────────────────────────────────────────────────────────
+set_language.success: "✅ Tongue set!"
+
+# ── buy interaction: lots modal ────────────────────────────────────────────────
+buy.modal.title: "How many lots do ye want?"
+buy.modal.input_label: "Lots"
+buy.modal.input_placeholder: "Enter count o' lots"
+buy.error.self_buy: "❌ Ye can't pillage yer own plunder."
+buy.error.invalid_amount: "❌ Cursed sum o' doubloons. There be only %{stock} lot(s) remaining."
+buy.error.inactive: "❌ This plunder be inactive."
+
+# ── buy interaction: purchase confirmation ─────────────────────────────────────
+buy.confirm.title: "Swear on it Plunder"
+buy.confirm.description: "Ye be pillagin' **%{lots}** lot(s) from **%{seller}**."
+buy.confirm.field_receive: "Ye will plunder"
+buy.confirm.field_give: "Ye will hand over"
+buy.confirm.button_confirm: "Swear on it"
+buy.confirm.button_cancel: "Scuttle"
+buy.confirm.check_dms: "Look t' yer Crow messenger!"
+buy.confirm.cancelled: "❌ Plunder scuttled."
+
+# ── buy interaction: DMs ───────────────────────────────────────────────────────
+buy.dm.buyer: |
+  Ye be about t' pillage **x%{item_total} %{item}** in exchange fer **x%{wants_total} %{wants}** (%{lots} lot(s)) from **%{seller}**.
+  Go seek out them on th' seas and swear on it once th' plunder be done, arr.
+  %{server_link}
+buy.dm.seller: |
+  **%{buyer}** wants t' pillage **x%{item_total} %{item}** from ye in exchange fer **x%{wants_total} %{wants}** (%{lots} lot(s)).
+  Go seek out them on th' seas and swear on it once done, arr.
+  %{server_link}
+buy.dm.button_confirm: "Swear on it Plunder Done, arr"
+buy.dm.button_cancel: "Scuttle"
+
+# ── buy interaction: awaiting confirmations ────────────────────────────────────
+buy.await.you_cancelled: "⚠️ Ye scuttled th' plunder."
+buy.await.buyer_cancelled: "⚠️ **%{name}** scuttled th' plunder."
+buy.await.seller_cancelled: "⚠️ **%{name}** scuttled th' plunder."
+buy.await.waiting_for_seller: "✅ Aye aye! Waitin' fer th' cap'n t' swear on it..."
+buy.await.waiting_for_buyer: "✅ Aye aye! Waitin' fer th' plunderer t' swear on it..."
+
+# ── buy interaction: trade finalised ──────────────────────────────────────────
+buy.done.buyer: "✅ Plunder sworn! Ye handed over **x%{wants_total} %{wants}** t' **%{seller}** and plundered **x%{item_total} %{item}**. Ye have me thanks fer plunderin'!"
+buy.done.seller: "✅ Plunder sworn! Ye handed over **x%{item_total} %{item}** and plundered **x%{wants_total} %{wants}** from **%{buyer}**. Booty decremented."
+buy.done.seller_sold_out: "✅ Plunder sworn! Ye handed over **x%{item_total} %{item}** and plundered **x%{wants_total} %{wants}** from **%{buyer}** — all booty sold, scroll removed."
+
+# ── post embed ─ only used in Korean and English ─ Do not translate for other languages
+post.title: "Plunder by %{seller}"
+post.title_sold_out: "[SOLD OUT] Plunder by %{seller}"
+post.title_expired: "[EXPIRED] Plunder by %{seller}"
+post.expires: "Vanishes <t:%{unix}:R>"
+post.expired: "Gone wit' th' wind <t:%{unix}:R>"
+post.field_offering: "Offering"
+post.field_wants: "Wants"
+post.field_stock: "Booty"
+post.stock_value: "%{lots} lot(s) remaining"
+post.stock_sold_out: "Plundered clean"
+post.footer_buyers: "%{count} plunderer(s)"
+post.footer_bidders: "%{count} wagerer(s)"
+
+post.button_buy: "Pillage"
+post.button_edit: "Amend booty"
+post.button_refresh: "Hoist anew Time"
+post.button_finish: "Finish"
+post.button_report: "Denounce"
+
+# ── auction: errors ────────────────────────────────────────────────────────────
+auction.error.min_price_zero: "❌ Minimum price must be greater than zero."
+auction.error.duration_too_long: "❌ Duration cannot exceed %{max} hour(s)."
+auction.error.duration_too_short: "❌ Duration cannot be less than %{min} minute(s)."
+auction.error.self_bid: "❌ Ye can't wager on yer own biddin' war."
+auction.error.expired: "❌ This biddin' war hast already come t' port."
+auction.error.invalid_bid: "❌ Yer wager must be at least **%{min} %{currency}**."
+auction.error.missing_bid_input: "❌ Lost wager input."
+auction.error.max_value_reached: "❌ Impossible t' wager higher. Maximum value reached."
+
+# ── auction_cancel ─────────────────────────────────────────────────────────────
+cancel.error.not_found: "❌ Biddin' War not found."
+cancel.error.not_seller: "❌ Ye can't scuttle someone else's biddin' war!"
+
+cancel.embed.title: "Scuttle Biddin' War"
+cancel.embed.description: "Be ye sure ye want t' scuttle this biddin' war?"
+
+cancel.success: "✅ Biddin' War scuttled!"
+
+# ── auction: new auction confirmation ──────────────────────────────────────────
+auction.confirm.title: "Swear on it Biddin' War Scroll"
+auction.confirm.field_item: "Item being auctioned"
+auction.confirm.field_currency: "Wager currency"
+auction.confirm.field_min_price: "Starting wager"
+auction.confirm.field_duration: "Duration"
+auction.posted: "✅ Biddin' War unfurled!"
+
+# ── auction: post embed ─ only used in Korean and English ──────────────────────
+auction.post.title: "Biddin' War by %{seller}"
+auction.post.title_ended: "[ENDED] Biddin' War by %{seller}"
+auction.post.ends_at: "Docks <t:%{unix}:R>"
+auction.post.ended_at: "Come t' port <t:%{unix}:R>"
+auction.post.field_item: "Item"
+auction.post.field_min_price: "Starting wager"
+auction.post.field_current_bids: "Current wagers"
+auction.post.no_bids: "No wagers yet"
+
+auction.post.button_bid: "Place Wager"
+auction.post.button_cancel: "Scuttle"
+auction.post.button_report: "Denounce"
+
+# ── auction: bid modal ─────────────────────────────────────────────────────────
+auction.modal.title: "Place a Wager"
+auction.modal.input_label: "Sum o' doubloons (min: %{min} %{currency})"
+auction.bid.accepted: "✅ Wager o' **%{amount} %{currency}** placed successfully!"
+
+# ── auction: outbid ────────────────────────────────────────────────────────────
+auction.outbid: "⚠️ <@%{user}> hast outbid yer **%{old_bid} %{currency_name}** offer by **%{new_bid_diff} %{currency_name}**."
+
+# ── auction: resolve (DMs sent when auction ends) ──────────────────────────────
+auction.resolve.winner_dm: |
+  🏆 Ye seized th' biddin' war! Ye wager **%{amount} %{currency}** fer **x%{quantity} %{item}**.
+  Go seek out th' cap'n on th' seas and swear on it once th' plunder be done, arr.
+  %{server_link}
+auction.resolve.seller_dm: |
+  🏆 Yer biddin' war come t' port! **%{winner}** seized wit' a wager o' **%{amount} %{currency}** fer **x%{quantity} %{item}**.
+  Go seek out them on th' seas and swear on it once th' plunder be done, arr.
+  %{server_link}
+auction.resolve.winner_declined: "⚠️ **%{winner}** declined th' plunder. Offering t' th' next highest wagerer..."
+auction.resolve.seller_declined: "⚠️ Th' cap'n declined th' plunder. Ye will not be charged."
+
+# ── rarities ───────────────────────────────────────────────────────────────────
+rarity.common: "Common"
+rarity.uncommon: "Uncommon"
+rarity.rare: "Rare"
+rarity.epic: "Epic"
+rarity.legendary: "Legendary"
+
+# ── categories ─────────────────────────────────────────────────────────────────
+category.armor: "Armor"
+category.aura: "Aura"
+category.active_skill: "Active Skill"
+category.passive_skill: "Passive Skill"
+category.weapon: "Weapon"
+category.material: "Material"
+category.shard: "Shard"
+
+#############################################
+################### ITEMS ###################
+#############################################
+
+# ── weapons ────────────────────────────────────────────────────────────────────
+item.basic_sword: "Basic Sword"
+item.verdant_dagger: "Verdant Dagger"
+item.redstone_hammer: "Redstone Hammer"
+item.balanced_blade: "Balanced Blade"
+item.obsidian_sword: "Obsidian Sword"
+item.balanced_spear: "Balanced Spear"
+item.verdant_greatsword: "Verdant Greatsword"
+item.fire_dagger: "Fire Dagger"
+item.refined_blade: "Refined Blade"
+item.ice_spear: "Ice Spear"
+item.nightfall: "Nightfall"
+item.luminous_obsidian: "Luminous Obsidian"
+item.wildfire: "Wildfire"
+item.spirit_blade: "Spirit Blade"
+item.ruby_blade: "Ruby Blade"
+item.lightspear: "Lightspear"
+item.sivoka: "Sivoka"
+item.void_dagger: "Void Dagger"
+item.kosa: "Kosa"
+
+# F2 Update
+
+item.relic_of_winter: "Relic o' Winter"
+item.glacier_greatsword: "Glacier Greatsword"
+item.absolute_zero_spear: "Absolute Zero Spear"
+item.titanbreaker_sword: "TitanBreaker Sword"
+item.frostfang_blade: "Frostfang Blade"
+item.cliff_breaker_hammer: "Cliff Breaker Hammer"
+item.ice_blade: "Ice Blade"
+
+# ── armor ──────────────────────────────────────────────────────────────────────
+item.starter_armor: "Starter Armor"
+item.forest_armor: "Forest Armor"
+item.redstone_armor: "Redstone Armor"
+item.obsidian_armor: "Obsidian Armor"
+item.draconic_armor: "Draconic Armor"
+item.amethyst_armor: "Amethyst Armor"
+item.blood_crystal_armor: "Blood Crystal Armor"
+item.void_platemail: "Void Platemail"
+item.the_singularity: "Th' Singularity"
+
+# F2 Update
+
+item.eternal_frost_armor: "Eternal Frost Armor"
+item.glacier_armor: "Glacier Armor"
+item.frostshade_armor: "Frostshade Armor"
+item.iceplate_armor: "Iceplate Armor"
+
+# ── passive skills ─────────────────────────────────────────────────────────────
+item.rusty_blade: "Rusty Blade"
+item.battle_focus: "Battle Focus"
+item.sharp_blade: "Sharp Blade"
+item.stone_heart: "Stone Heart"
+item.blade_artist: "Blade Artist"
+item.vampiric_weapons: "Vampiric Weapons"
+item.arcane_vision: "Arcane Vision"
+
+# ── active skills ──────────────────────────────────────────────────────────────
+item.emerald_slash: "Emerald Slash"
+item.windy_edge: "Windy Edge"
+item.life_spark: "Life Spark"
+item.cursed_flames: "Cursed Flames"
+item.genesis: "Genesis"
+item.midnight_echo: "Midnight Echo"
+item.blazing_echo: "Blazing Echo"
+item.void_slice: "Void Slice"
+
+# F2 Update
+
+item.fang_slash: "Fang Slash"
+item.blizzard_echo: "Blizzard Echo"
+
+# ── materials ──────────────────────────────────────────────────────────────────
+item.amethyst: "Amethyst"
+item.obsidian: "Obsidian"
+item.redstone: "Redstone"
+item.wood: "Wood"
+item.grass: "Grass"
+item.common_core: "Common Core"
+item.ruby: "Ruby"
+item.firestone: "Firestone"
+item.cursed_wood: "Cursed Wood"
+item.leaf: "Leaf"
+item.uncommon_core: "Uncommon Core"
+item.void_dust: "Void Dust"
+item.singularity_fragment: "Singularity Fragment"
+item.blood_crystal: "Blood Crystal"
+item.eternal_firestone: "Eternal Firestone"
+item.glowing_obsidian: "Glowing Obsidian"
+item.portal_core: "Portal Core"
+item.rare_core: "Rare Core"
+item.fall_protection: "Fall Protection"
+item.void_core: "Void Core"
+item.invisible_core: "Invisible Core"
+
+# F2 Update
+
+item.ancient_ice_relic: "Ancient Ice Relic"
+item.glacial_fragment: "Glacial Fragment"
+item.frozen_core: "Frozen Core"
+item.ice_crystal: "Ice Crystal"
+item.packed_snow: "Packed Snow"
+item.knockback_core: "Knockback Core"
+item.frost_shard: "Frost Shard"
+
+# ── auras ──────────────────────────────────────────────────────────────────────
+item.darkstar_aura: "Darkstar Aura"
+item.crystal_bubble_aura: "Crystal Bubble Aura"
+item.lightning_aura: "Lightning Aura"
+item.scarlet_pixel_aura: "Scarlet Pixel Aura"
+item.sky_pixel_aura: "Sky Pixel Aura"
+item.grass_pixel_aura: "Grass Pixel Aura"
+item.sakura_aura: "Sakura Aura"
+
+# F2 Update
+
+item.blizzard_aura: "Blizzard Aura"
+
+# ── shards ─────────────────────────────────────────────────────────────────────
+item.common_shard: "Common Shard"
+item.uncommon_shard: "Uncommon Shard"
+item.rare_shard: "Rare Shard"
+item.epic_shard: "Epic Shard"
+item.legendary_shard: "Legendary Shard"

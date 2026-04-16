@@ -1,0 +1,326 @@
+# For the Australians.
+
+# ── Errors (via on_error handler) ─────────────────────────────────────────────
+error.invalid_trading_item: "˙`%{name}` :ɯǝʇᴉ ƃuᴉpɐɹʇ pᴉlɐʌuI"
+error.invalid_wanted_item: "˙`%{name}` :ɯǝʇᴉ pǝʇuɐʍ pᴉlɐʌuI"
+error.trade_quantity_zero: "˙oɹǝz uɐɥʇ ɹǝʇɐǝɹƃ ǝq ʇsnɯ ʎʇᴉʇuɐnb ǝpɐɹ⊥"
+error.stock_too_low: "˙(%{quantity}) ʎʇᴉʇuɐnb ǝpɐɹʇ oʇ lɐnbǝ ʇsɐǝl ʇɐ ǝq ʇsnɯ (%{stock}) ʞɔoʇS"
+error.invalid_custom_id: "˙pᴉ‾ɯoʇsnɔ pᴉlɐʌuI"
+error.trade_not_found: "˙punoɟ ʇou ǝpɐɹ⊥"
+error.missing_lots_input: "˙ʇnduᴉ sʇol ƃuᴉssᴉW"
+error.invalid_number: "˙ɹǝqɯnu pᴉlɐʌuI"
+error.duplicate_post: "¡ʇsod ǝʇɐɔᴉldnᗡ ❌"
+error.blacklisted: "˙ʇoq ʇǝʞɹɐɯ ǝɥʇ ǝsn ʇouuɐɔ puɐ pǝʇsᴉlʞɔɐlq uǝǝq ǝʌ`no⅄ ❌"
+error.bot_paused: "˙ɹoʇɐɹʇsᴉuᴉɯpɐ uɐ ʎq pǝsnɐd sɐʍ ʇoᗺ ❌"
+error.insufficient_stock: "˙ʞɔoʇS ʇuǝᴉɔᴉɟɟnsuI"
+
+# ── new_trade: confirmation embed ──────────────────────────────────────────────
+new_trade.confirm.title: "ʇsoԀ ǝpɐɹ⊥ ɯɹᴉɟuoƆ"
+new_trade.confirm.description: "˙ɥɔɐǝ %{quantity}x ɟo (s)ʇol **%{lots}** ssoɹɔɐ **%{item} %{total}x** ɟo lɐʇoʇ ɐ llǝs oʇ ʇnoqɐ ǝɹ`no⅄"
+new_trade.confirm.field_offering: "(ʇol ɹǝd) ƃuᴉɹǝɟɟO"
+new_trade.confirm.field_wants: "(ʇol ɹǝd) sʇuɐM"
+new_trade.confirm.field_lots: "ǝlqɐlᴉɐʌɐ sʇo⅂"
+new_trade.confirm.button_post: "ǝpɐɹ⊥ ʇsoԀ"
+new_trade.confirm.button_cancel: "lǝɔuɐƆ"
+new_trade.confirm.timed_out: "˙ʇno pǝɯᴉʇ uoᴉʇɐɯɹᴉɟuoɔ ǝpɐɹ⊥ ⏰"
+new_trade.confirm.cancelled: "˙pǝllǝɔuɐɔ ǝpɐɹ⊥ ❌"
+new_trade.posted: "¡pǝʇsod ǝpɐɹ⊥ ✅"
+
+# ── trade_edit ─────────────────────────────────────────────────────────────────
+edit.error.not_seller: "¡ʇsod s`ǝslǝ ǝuoǝɯos ʇᴉpǝ ʇ`uɐɔ no⅄ ❌"
+edit.error.missing_stock_input: "˙ʇnduᴉ ʞɔoʇs ƃuᴉssᴉW ❌"
+
+edit.modal.title: "¿ʞɔoʇs ʍǝu ɹnoʎ s`ʇɐɥM"
+edit.modal.input_label: "ʞɔoʇS"
+edit.modal.placeholder: "ʞɔoʇs ʍǝu ɹǝʇuƎ"
+
+edit.success: "¡pǝʇɐpdn ʞɔoʇS ✅"
+
+# ── trade_refresh ──────────────────────────────────────────────────────────────
+refresh.error.not_seller: "¡ʇsod s`ǝslǝ ǝuoǝɯos ɥsǝɹɟǝɹ ʇ`uɐɔ no⅄ ❌"
+
+refresh.success: "¡pǝɥsǝɹɟǝɹ ʇsoԀ ✅"
+
+# ── trade_report ───────────────────────────────────────────────────────────────
+report.error.is_seller: "¡ʇsod uʍo ɹnoʎ ʇɹodǝɹ ʇ`uɐɔ no⅄ ❌"
+report.error.missing_input: "˙ʇnduᴉ ʇɹodǝɹ ƃuᴉssᴉW ❌"
+report.error.empty: "˙ʎʇdɯǝ ǝq ʇouuɐɔ ʇxǝʇ ʇɹodǝᴚ ❌"
+report.error.already_reported: "¡ʇsod sᴉɥʇ pǝʇɹodǝɹ ʎpɐǝɹlɐ no⅄ ❌"
+
+report.modal.title: "¿ʇsod sᴉɥʇ ɥʇᴉʍ ƃuoɹʍ s`ʇɐɥM"
+report.modal.label: "ʇɹodǝᴚ"
+report.modal.placeholder: "pǝuǝddɐɥ ʇɐɥʍ ǝqᴉɹɔsǝp ʎlʇɹoɥS"
+
+report.success: "¡pǝʇɹodǝɹ ʇsoԀ ✅"
+
+# ── set_language ───────────────────────────────────────────────────────────────
+set_language.success: "¡ʇǝs ǝƃɐnƃuɐ⅂ ✅"
+
+# ── buy interaction: lots modal ────────────────────────────────────────────────
+buy.modal.title: "¿ʇuɐʍ noʎ op sʇol ʎuɐɯ ʍoH"
+buy.modal.input_label: "sʇo⅂"
+buy.modal.input_placeholder: "sʇol ɟo ɹǝqɯnu ɹǝʇuƎ"
+buy.error.self_buy: "˙ǝpɐɹʇ uʍo ɹnoʎ ʎnq ʇ`uɐɔ no⅄ ❌"
+buy.error.invalid_amount: "˙ƃuᴉuᴉɐɯǝɹ (s)ʇol %{stock} ʎluo ǝɹɐ ǝɹǝɥ⊥ ˙ʇunoɯɐ pᴉlɐʌuI ❌"
+buy.error.inactive: "˙ǝʌᴉʇɔɐuᴉ sᴉ ǝpɐɹʇ sᴉɥ⊥ ❌"
+
+# ── buy interaction: purchase confirmation ─────────────────────────────────────
+buy.confirm.title: "ǝsɐɥɔɹnԀ ɯɹᴉɟuoƆ"
+buy.confirm.description: "˙**%{seller}** ɯoɹɟ (s)ʇol **%{lots}** ƃuᴉʎnq ǝɹ`no⅄"
+buy.confirm.field_receive: "ǝʌᴉǝɔǝɹ llᴉʍ no⅄"
+buy.confirm.field_give: "ǝʌᴉƃ llᴉʍ no⅄"
+buy.confirm.button_confirm: "ɯɹᴉɟuoƆ"
+buy.confirm.button_cancel: "lǝɔuɐƆ"
+buy.confirm.check_dms: "¡sWᗡ ɹnoʎ ʞɔǝɥƆ"
+buy.confirm.cancelled: "˙pǝllǝɔuɐɔ ǝsɐɥɔɹnԀ ❌"
+
+# ── buy interaction: DMs ───────────────────────────────────────────────────────
+buy.dm.buyer: |
+  ˙**%{seller}** ɯoɹɟ ((s)ʇol %{lots}) **%{wants} %{wants_total}x** ɹoɟ ǝƃuɐɥɔxǝ uᴉ **%{item} %{item_total}x** ʎnq oʇ ʇnoqɐ ǝɹ`no⅄
+  ˙ǝuop sᴉ ǝpɐɹʇ ǝɥʇ ǝɔuo ɯɹᴉɟuoɔ puɐ ǝɯɐƃ-uᴉ ɯǝɥʇ puᴉɟ oפ
+  %{server_link}
+buy.dm.seller: |
+  ˙((s)ʇol %{lots}) **%{wants} %{wants_total}x** ɹoɟ ǝƃuɐɥɔxǝ uᴉ noʎ ɯoɹɟ **%{item} %{item_total}x** ʎnq oʇ sʇuɐʍ **%{buyer}**
+  ˙ǝuop ǝɔuo ɯɹᴉɟuoɔ puɐ ǝɯɐƃ-uᴉ ɯǝɥʇ puᴉɟ oפ
+  %{server_link}
+buy.dm.button_confirm: "ǝuoᗡ ǝpɐɹ⊥ ɯɹᴉɟuoƆ"
+buy.dm.button_cancel: "lǝɔuɐƆ"
+
+# ── buy interaction: awaiting confirmations ────────────────────────────────────
+buy.await.you_cancelled: "˙ǝpɐɹʇ ǝɥʇ pǝllǝɔuɐɔ no⅄ ️⚠"
+buy.await.buyer_cancelled: "˙ǝpɐɹʇ ǝɥʇ pǝllǝɔuɐɔ **%{name}** ️⚠"
+buy.await.seller_cancelled: "˙ǝpɐɹʇ ǝɥʇ pǝllǝɔuɐɔ **%{name}** ️⚠"
+buy.await.waiting_for_seller: "˙˙˙ɯɹᴉɟuoɔ oʇ ɹǝllǝs ǝɥʇ ɹoɟ ƃuᴉʇᴉɐM ¡ʇᴉ ʇoפ ✅"
+buy.await.waiting_for_buyer: "˙˙˙ɯɹᴉɟuoɔ oʇ ɹǝʎnq ǝɥʇ ɹoɟ ƃuᴉʇᴉɐM ¡ʇᴉ ʇoפ ✅"
+
+# ── buy interaction: trade finalised ──────────────────────────────────────────
+buy.done.buyer: "¡ƃuᴉpɐɹʇ ɹoɟ sʞuɐɥ⊥ ˙**%{item} %{item_total}x** pǝʌᴉǝɔǝɹ puɐ **%{seller}** oʇ **%{wants} %{wants_total}x** ǝʌɐƃ no⅄ ¡pǝɯɹᴉɟuoɔ ǝpɐɹ⊥ ✅"
+buy.done.seller: "˙pǝʇuǝɯǝɹɔǝp ʞɔoʇS ˙**%{buyer}** ɯoɹɟ **%{wants} %{wants_total}x** pǝʌᴉǝɔǝɹ puɐ **%{item} %{item_total}x** ǝʌɐƃ no⅄ ¡pǝɯɹᴉɟuoɔ ǝpɐɹ⊥ ✅"
+buy.done.seller_sold_out: "˙pǝʌoɯǝɹ ʇsod ’plos ʞɔoʇs llɐ — **%{buyer}** ɯoɹɟ **%{wants} %{wants_total}x** pǝʌᴉǝɔǝɹ puɐ **%{item} %{item_total}x** ǝʌɐƃ no⅄ ¡pǝɯɹᴉɟuoɔ ǝpɐɹ⊥ ✅"
+
+# ── post embed ─ only used in Korean and English ─ Do not translate for other languages
+post.title: "%{seller} ʎq ǝpɐɹ⊥"
+post.title_sold_out: "%{seller} ʎq ǝpɐɹ⊥ [⊥∩O ᗡ⅂OS]"
+post.title_expired: "%{seller} ʎq ǝpɐɹ⊥ [ᗡƎᴚIԀXƎ]"
+post.expires: "<t:%{unix}:R> sǝɹᴉdxƎ"
+post.expired: "<t:%{unix}:R> pǝɹᴉdxƎ"
+post.field_offering: "ƃuᴉɹǝɟɟO"
+post.field_wants: "sʇuɐM"
+post.field_stock: "ʞɔoʇS"
+post.stock_value: "ƃuᴉuᴉɐɯǝɹ (s)ʇol %{lots}"
+post.stock_sold_out: "ʇno ploS"
+post.footer_buyers: "(s)ɹǝʎnq %{count}"
+post.footer_bidders: "(s)ɹǝppᴉq %{count}"
+
+post.button_buy: "ʎnᗺ"
+post.button_edit: "ʞɔoʇs ʇᴉpƎ"
+post.button_refresh: "ǝɯᴉ⊥ ɥsǝɹɟǝᴚ"
+post.button_finish: "ɥsᴉuᴉℲ"
+post.button_report: "ʇɹodǝᴚ"
+
+# ── auction: errors ────────────────────────────────────────────────────────────
+auction.error.min_price_zero: "˙oɹǝz uɐɥʇ ɹǝʇɐǝɹƃ ǝq ʇsnɯ ǝɔᴉɹd ɯnɯᴉuᴉW ❌"
+auction.error.duration_too_long: "˙(s)ɹnoɥ %{max} pǝǝɔxǝ ʇouuɐɔ uoᴉʇɐɹnᗡ ❌"
+auction.error.duration_too_short: "˙(s)ǝʇnuᴉɯ %{min} uɐɥʇ ssǝl ǝq ʇouuɐɔ uoᴉʇɐɹnᗡ ❌"
+auction.error.self_bid: "˙uoᴉʇɔnɐ uʍo ɹnoʎ uo pᴉq ʇ`uɐɔ no⅄ ❌"
+auction.error.expired: "˙pǝpuǝ ʎpɐǝɹlɐ sɐɥ uoᴉʇɔnɐ sᴉɥ⊥ ❌"
+auction.error.invalid_bid: "˙**%{currency} %{min}** ʇsɐǝl ʇɐ ǝq ʇsnɯ pᴉq ɹno⅄ ❌"
+auction.error.missing_bid_input: "˙ʇnduᴉ pᴉq ƃuᴉssᴉW ❌"
+auction.error.max_value_reached: "˙pǝɥɔɐǝɹ ǝnlɐʌ ɯnɯᴉxɐW ˙ɹǝɥƃᴉɥ pᴉq oʇ ǝlqᴉssodɯI ❌"
+
+# ── auction_cancel ─────────────────────────────────────────────────────────────
+cancel.error.not_found: "˙punoɟ ʇou uoᴉʇɔn∀ ❌"
+cancel.error.not_seller: "¡uoᴉʇɔnɐ s`ǝslǝ ǝuoǝɯos lǝɔuɐɔ ʇ`uɐɔ no⅄ ❌"
+
+cancel.embed.title: "uoᴉʇɔn∀ lǝɔuɐƆ"
+cancel.embed.description: "¿uoᴉʇɔnɐ sᴉɥʇ lǝɔuɐɔ oʇ ʇuɐʍ noʎ ǝɹns noʎ ǝɹ∀"
+
+cancel.success: "¡pǝllǝɔuɐɔ uoᴉʇɔn∀ ✅"
+
+# ── auction: new auction confirmation ──────────────────────────────────────────
+auction.confirm.title: "ʇsoԀ uoᴉʇɔn∀ ɯɹᴉɟuoƆ"
+auction.confirm.field_item: "pǝuoᴉʇɔnɐ ƃuᴉǝq ɯǝʇI"
+auction.confirm.field_currency: "ʎɔuǝɹɹnɔ pᴉᗺ"
+auction.confirm.field_min_price: "pᴉq ƃuᴉʇɹɐʇS"
+auction.confirm.field_duration: "uoᴉʇɐɹnᗡ"
+auction.posted: "¡pǝʇsod uoᴉʇɔn∀ ✅"
+
+# ── auction: post embed ─ only used in Korean and English ──────────────────────
+auction.post.title: "%{seller} ʎq uoᴉʇɔn∀"
+auction.post.title_ended: "%{seller} ʎq uoᴉʇɔn∀ [ᗡƎᗡNƎ]"
+auction.post.ends_at: "<t:%{unix}:R> spuƎ"
+auction.post.ended_at: "<t:%{unix}:R> pǝpuƎ"
+auction.post.field_item: "ɯǝʇI"
+auction.post.field_min_price: "pᴉq ƃuᴉʇɹɐʇS"
+auction.post.field_current_bids: "spᴉq ʇuǝɹɹnƆ"
+auction.post.no_bids: "ʇǝʎ spᴉq oN"
+
+auction.post.button_bid: "pᴉᗺ ǝɔɐlԀ"
+auction.post.button_cancel: "lǝɔuɐƆ"
+auction.post.button_report: "ʇɹodǝᴚ"
+
+# ── auction: bid modal ─────────────────────────────────────────────────────────
+auction.modal.title: "pᴉᗺ ɐ ǝɔɐlԀ"
+auction.modal.input_label: "(%{currency} %{min} :uᴉɯ) ʇunoɯ∀"
+auction.bid.accepted: "¡ʎllnɟssǝɔɔns pǝɔɐld **%{currency} %{amount}** ɟo pᴉᗺ ✅"
+
+# ── auction: outbid ────────────────────────────────────────────────────────────
+auction.outbid: "˙**%{currency_name} %{new_bid_diff}** ʎq ɹǝɟɟo **%{currency_name} %{old_bid}** ɹnoʎ pᴉqʇno sɐɥ <@%{user}> ️⚠"
+
+# ── auction: resolve (DMs sent when auction ends) ──────────────────────────────
+auction.resolve.winner_dm: |
+  ˙**%{item} %{quantity}x** ɹoɟ **%{currency} %{amount}** pᴉq no⅄ ¡uoᴉʇɔnɐ ǝɥʇ uoʍ no⅄ 🏆
+  ˙ǝuop sᴉ ǝpɐɹʇ ǝɥʇ ǝɔuo ɯɹᴉɟuoɔ puɐ ǝɯɐƃ-uᴉ ɹǝllǝs ǝɥʇ puᴉɟ oפ
+  %{server_link}
+auction.resolve.seller_dm: |
+  ˙**%{item} %{quantity}x** ɹoɟ **%{currency} %{amount}** ɟo pᴉq ɐ ɥʇᴉʍ uoʍ **%{winner}** ¡pǝpuǝ uoᴉʇɔnɐ ɹno⅄ 🏆
+  ˙ǝuop sᴉ ǝpɐɹʇ ǝɥʇ ǝɔuo ɯɹᴉɟuoɔ puɐ ǝɯɐƃ-uᴉ ɯǝɥʇ puᴉɟ oפ
+  %{server_link}
+auction.resolve.winner_declined: "˙˙˙ɹǝppᴉq ʇsǝɥƃᴉɥ ʇxǝu ǝɥʇ oʇ ƃuᴉɹǝɟɟO ˙ǝpɐɹʇ ǝɥʇ pǝuᴉlɔǝp **%{winner}** ️⚠"
+auction.resolve.seller_declined: "˙pǝƃɹɐɥɔ ǝq ʇou llᴉʍ no⅄ ˙ǝpɐɹʇ ǝɥʇ pǝuᴉlɔǝp ɹǝllǝs ǝɥ⊥ ️⚠"
+
+# ── rarities ───────────────────────────────────────────────────────────────────
+rarity.common: "uoɯɯoƆ"
+rarity.uncommon: "uoɯɯoɔu∩"
+rarity.rare: "ǝɹɐᴚ"
+rarity.epic: "ɔᴉdƎ"
+rarity.legendary: "ʎɹɐpuǝƃǝ⅂"
+
+# ── categories ─────────────────────────────────────────────────────────────────
+category.armor: "ɹoɯɹ∀"
+category.aura: "ɐɹn∀"
+category.active_skill: "llᴉʞS ǝʌᴉʇɔ∀"
+category.passive_skill: "llᴉʞS ǝʌᴉssɐԀ"
+category.weapon: "uodɐǝM"
+category.material: "lɐᴉɹǝʇɐW"
+category.shard: "pɹɐɥS"
+
+#############################################
+################### ITEMS ###################
+#############################################
+
+# ── weapons ────────────────────────────────────────────────────────────────────
+item.basic_sword: "pɹoʍS ɔᴉsɐᗺ"
+item.verdant_dagger: "ɹǝƃƃɐᗡ ʇuɐpɹǝΛ"
+item.redstone_hammer: "ɹǝɯɯɐH ǝuoʇspǝᴚ"
+item.balanced_blade: "ǝpɐlᗺ pǝɔuɐlɐᗺ"
+item.obsidian_sword: "pɹoʍS uɐᴉpᴉsqO"
+item.balanced_spear: "ɹɐǝdS pǝɔuɐlɐᗺ"
+item.verdant_greatsword: "pɹoʍsʇɐǝɹפ ʇuɐpɹǝΛ"
+item.fire_dagger: "ɹǝƃƃɐᗡ ǝɹᴉℲ"
+item.refined_blade: "ǝpɐlᗺ pǝuᴉɟǝᴚ"
+item.ice_spear: "ɹɐǝdS ǝɔI"
+item.nightfall: "llɐɟʇɥƃᴉN"
+item.luminous_obsidian: "uɐᴉpᴉsqO snouᴉɯn⅂"
+item.wildfire: "ǝɹᴉɟplᴉM"
+item.spirit_blade: "ǝpɐlᗺ ʇᴉɹᴉdS"
+item.ruby_blade: "ǝpɐlᗺ ʎqnᴚ"
+item.lightspear: "ɹɐǝdsʇɥƃᴉ⅂"
+item.sivoka: "ɐʞoʌᴉS"
+item.void_dagger: "ɹǝƃƃɐᗡ pᴉoΛ"
+item.kosa: "ɐsoʞ"
+
+# F2 Update
+
+item.relic_of_winter: "ɹǝʇuᴉM ɟo ɔᴉlǝᴚ"
+item.glacier_greatsword: "pɹoʍsʇɐǝɹפ ɹǝᴉɔɐlפ"
+item.absolute_zero_spear: "ɹɐǝdS oɹǝZ ǝʇnlosq∀"
+item.titanbreaker_sword: "pɹoʍS ɹǝʞɐǝɹᗺuɐʇᴉ⊥"
+item.frostfang_blade: "ǝpɐlᗺ ƃuɐɟʇsoɹℲ"
+item.cliff_breaker_hammer: "ɹǝɯɯɐH ɹǝʞɐǝɹᗺ ɟɟᴉlƆ"
+item.ice_blade: "ǝpɐlᗺ ǝɔI"
+
+# ── armor ──────────────────────────────────────────────────────────────────────
+item.starter_armor: "ɹoɯɹ∀ ɹǝʇɹɐʇS"
+item.forest_armor: "ɹoɯɹ∀ ʇsǝɹoℲ"
+item.redstone_armor: "ɹoɯɹ∀ ǝuoʇspǝᴚ"
+item.obsidian_armor: "ɹoɯɹ∀ uɐᴉpᴉsqO"
+item.draconic_armor: "ɹoɯɹ∀ ɔᴉuoɔɐɹᗡ"
+item.amethyst_armor: "ɹoɯɹ∀ ʇsʎɥʇǝɯ∀"
+item.blood_crystal_armor: "ɹoɯɹ∀ lɐʇsʎɹƆ poolᗺ"
+item.void_platemail: "lᴉɐɯǝʇɐlԀ pᴉoΛ"
+item.the_singularity: "ʎʇᴉɹɐlnƃuᴉS ǝɥ⊥"
+
+# F2 Update
+
+item.eternal_frost_armor: "ɹoɯɹ∀ ʇsoɹℲ lɐuɹǝʇƎ"
+item.glacier_armor: "ɹoɯɹ∀ ɹǝᴉɔɐlפ"
+item.frostshade_armor: "ɹoɯɹ∀ ǝpɐɥsʇsoɹℲ"
+item.iceplate_armor: "ɹoɯɹ∀ ǝʇɐldǝɔI"
+
+# ── passive skills ─────────────────────────────────────────────────────────────
+item.rusty_blade: "ǝpɐlᗺ ʎʇsnᴚ"
+item.battle_focus: "snɔoℲ ǝlʇʇɐᗺ"
+item.sharp_blade: "ǝpɐlᗺ dɹɐɥS"
+item.stone_heart: "ʇɹɐǝH ǝuoʇS"
+item.blade_artist: "ʇsᴉʇɹ∀ ǝpɐlᗺ"
+item.vampiric_weapons: "suodɐǝM ɔᴉɹᴉdɯɐΛ"
+item.arcane_vision: "uoᴉsᴉΛ ǝuɐɔɹ∀"
+
+# ── active skills ──────────────────────────────────────────────────────────────
+item.emerald_slash: "ɥsɐlS plɐɹǝɯƎ"
+item.windy_edge: "ǝƃpƎ ʎpuᴉM"
+item.life_spark: "ʞɹɐdS ǝɟᴉ⅂"
+item.cursed_flames: "sǝɯɐlℲ pǝsɹnƆ"
+item.genesis: "sᴉsǝuǝפ"
+item.midnight_echo: "oɥɔƎ ʇɥƃᴉupᴉW"
+item.blazing_echo: "oɥɔƎ ƃuᴉzɐlᗺ"
+item.void_slice: "ǝɔᴉlS pᴉoΛ"
+
+# F2 Update
+
+item.fang_slash: "ɥsɐlS ƃuɐℲ"
+item.blizzard_echo: "oɥɔƎ pɹɐzzᴉlᗺ"
+
+# ── materials ──────────────────────────────────────────────────────────────────
+item.amethyst: "ʇsʎɥʇǝɯ∀"
+item.obsidian: "uɐᴉpᴉsqO"
+item.redstone: "ǝuoʇspǝᴚ"
+item.wood: "pooM"
+item.grass: "ssɐɹפ"
+item.common_core: "ǝɹoƆ uoɯɯoƆ"
+item.ruby: "ʎqnᴚ"
+item.firestone: "ǝuoʇsǝɹᴉℲ"
+item.cursed_wood: "pooM pǝsɹnƆ"
+item.leaf: "ɟɐǝ⅂"
+item.uncommon_core: "ǝɹoƆ uoɯɯoɔu∩"
+item.void_dust: "ʇsnᗡ pᴉoΛ"
+item.singularity_fragment: "ʇuǝɯƃɐɹℲ ʎʇᴉɹɐlnƃuᴉS"
+item.blood_crystal: "lɐʇsʎɹƆ poolᗺ"
+item.eternal_firestone: "ǝuoʇsǝɹᴉℲ lɐuɹǝʇƎ"
+item.glowing_obsidian: "uɐᴉpᴉsqO ƃuᴉʍolפ"
+item.portal_core: "ǝɹoƆ lɐʇɹoԀ"
+item.rare_core: "ǝɹoƆ ǝɹɐᴚ"
+item.fall_protection: "uoᴉʇɔǝʇoɹԀ llɐℲ"
+item.void_core: "ǝɹoƆ pᴉoΛ"
+item.invisible_core: "ǝɹoƆ ǝlqᴉsᴉʌuI"
+
+# F2 Update
+
+item.ancient_ice_relic: "ɔᴉlǝᴚ ǝɔI ʇuǝᴉɔu∀"
+item.glacial_fragment: "ʇuǝɯƃɐɹℲ lɐᴉɔɐlפ"
+item.frozen_core: "ǝɹoƆ uǝzoɹℲ"
+item.ice_crystal: "lɐʇsʎɹƆ ǝɔI"
+item.packed_snow: "ʍouS pǝʞɔɐԀ"
+item.knockback_core: "ǝɹoƆ ʞɔɐqʞɔouʞ"
+item.frost_shard: "pɹɐɥS ʇsoɹℲ"
+
+# ── auras ──────────────────────────────────────────────────────────────────────
+item.darkstar_aura: "ɐɹn∀ ɹɐʇsʞɹɐᗡ"
+item.crystal_bubble_aura: "ɐɹn∀ ǝlqqnᗺ lɐʇsʎɹƆ"
+item.lightning_aura: "ɐɹn∀ ƃuᴉuʇɥƃᴉ⅂"
+item.scarlet_pixel_aura: "ɐɹn∀ lǝxᴉԀ ʇǝlɹɐɔS"
+item.sky_pixel_aura: "ɐɹn∀ lǝxᴉԀ ʎʞS"
+item.grass_pixel_aura: "ɐɹn∀ lǝxᴉԀ ssɐɹפ"
+item.sakura_aura: "ɐɹn∀ ɐɹnʞɐS"
+
+# F2 Update
+
+item.blizzard_aura: "ɐɹn∀ pɹɐzzᴉlᗺ"
+
+# ── shards ─────────────────────────────────────────────────────────────────────
+item.common_shard: "pɹɐɥS uoɯɯoƆ"
+item.uncommon_shard: "pɹɐɥS uoɯɯoɔu∩"
+item.rare_shard: "pɹɐɥS ǝɹɐᴚ"
+item.epic_shard: "pɹɐɥS ɔᴉdƎ"
+item.legendary_shard: "pɹɐɥS ʎɹɐpuǝƃǝ⅂"
