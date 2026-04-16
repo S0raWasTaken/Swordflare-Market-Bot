@@ -191,8 +191,8 @@ pub async fn update_post(
     };
 
     let message_info = match locale {
-        SupportedLocale::en_US => trade.english_message_id,
         SupportedLocale::ko_KR => trade.korean_message_id,
+        _ => trade.english_message_id,
     };
 
     if message_info.deleted {
@@ -318,8 +318,8 @@ pub async fn update_auction_post(
     };
 
     let message_info = match locale {
-        SupportedLocale::en_US => auction.english_message_id,
         SupportedLocale::ko_KR => auction.korean_message_id,
+        _ => auction.english_message_id,
     };
 
     if message_info.deleted {

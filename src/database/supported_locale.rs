@@ -13,31 +13,46 @@ pub enum SupportedLocale {
     #[default]
     en_US,
     ko_KR,
+    en_BRAILLE,
+    en_LOL,
+    en_PIRATE,
+    en_REV,
 }
+
+#[allow(clippy::enum_glob_use)]
+use SupportedLocale::*;
 
 impl SupportedLocale {
     pub fn to_locale(self) -> &'static str {
         match self {
-            SupportedLocale::en_US => "en-US",
-            SupportedLocale::ko_KR => "ko-KR",
+            en_US => "en-US",
+            ko_KR => "ko-KR",
+            en_BRAILLE => "en-BRAILLE",
+            en_LOL => "en-LOL",
+            en_PIRATE => "en-PIRATE",
+            en_REV => "en-REV",
         }
     }
 
     pub fn from_locale(locale: &str) -> Res<Self> {
         match locale {
-            "en-US" | "en" => Ok(Self::en_US),
-            "ko-KR" | "ko" => Ok(Self::ko_KR),
+            "en-US" | "en" => Ok(en_US),
+            "ko-KR" | "ko" => Ok(ko_KR),
+            "en-BRAILLE" => Ok(en_BRAILLE),
+            "en-LOL" => Ok(en_LOL),
+            "en-PIRATE" => Ok(en_PIRATE),
+            "en-REV" => Ok(en_REV),
             _ => Err("Invalid or unsupported locale".into()),
         }
     }
 
     #[inline]
     pub fn from_locale_fallback(locale: &str) -> Self {
-        Self::from_locale(locale).unwrap_or(Self::en_US)
+        Self::from_locale(locale).unwrap_or(en_US)
     }
 
     pub fn korean_or_english(self) -> Self {
-        if matches!(self, Self::ko_KR) { self } else { Self::en_US }
+        if matches!(self, ko_KR) { self } else { en_US }
     }
 }
 
@@ -49,6 +64,11 @@ impl SlashArgument for SupportedLocale {
             .kind(serenity::CommandOptionType::String)
             .add_string_choice("English", "en-US")
             .add_string_choice("한국어", "ko-KR")
+            // Meme ones
+            .add_string_choice("Pirate", "en-PIRATE")
+            .add_string_choice("Lolcat", "en-LOL")
+            .add_string_choice("Braille", "en-BRAILLE")
+            .add_string_choice("Reversed", "en-REV")
     }
 
     fn extract<'life0, 'life1, 'life2, 'life3, 'async_trait>(
