@@ -68,7 +68,7 @@ impl SlashArgument for SupportedLocale {
             .add_string_choice("Pirate", "en-PIRATE")
             .add_string_choice("Lolcat", "en-LOL")
             .add_string_choice("Braille", "en-BRAILLE")
-            .add_string_choice("Reversed", "en-REV")
+            .add_string_choice("Australian English", "en-REV")
     }
 
     fn extract<'life0, 'life1, 'life2, 'life3, 'async_trait>(
