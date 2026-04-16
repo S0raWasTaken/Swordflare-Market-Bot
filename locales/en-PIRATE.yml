@@ -94,7 +94,7 @@ buy.await.waiting_for_seller: "✅ Aye aye! Waitin' fer th' cap'n t' swear on it
 buy.await.waiting_for_buyer: "✅ Aye aye! Waitin' fer th' plunderer t' swear on it..."
 
 # ── buy interaction: trade finalised ──────────────────────────────────────────
-buy.done.buyer: "✅ Plunder sworn! Ye handed over **x%{wants_total} %{wants}** t' **%{seller}** and plundered **x%{item_total} %{item}**. Ye hav me ye hav me thanks fer plunderin'!"
+buy.done.buyer: "✅ Plunder sworn! Ye handed over **x%{wants_total} %{wants}** t' **%{seller}** and plundered **x%{item_total} %{item}**. Ye have me thanks fer plunderin'!"
 buy.done.seller: "✅ Plunder sworn! Ye handed over **x%{item_total} %{item}** and plundered **x%{wants_total} %{wants}** from **%{buyer}**. Booty decremented."
 buy.done.seller_sold_out: "✅ Plunder sworn! Ye handed over **x%{item_total} %{item}** and plundered **x%{wants_total} %{wants}** from **%{buyer}** — all booty sold, scroll removed."
 
