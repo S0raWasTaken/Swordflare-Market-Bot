@@ -186,7 +186,8 @@ rarity.legendary: "레전더리"
 
 # ── categories ─────────────────────────────────────────────────────────────────
 category.armor: "Armor"
-category.aura: "Aura"
+category.aura: "Weapon Aura"
+category.body_aura: "Body Aura"
 category.active_skill: "Active Skill"
 category.passive_skill: "Passive Skill"
 category.weapon: "Weapon"
@@ -303,7 +304,28 @@ item.packed_snow: "Packed Snow"
 item.knockback_core: "Knockback Core"
 item.frost_shard: "Frost Shard"
 
-# ── auras ──────────────────────────────────────────────────────────────────────
+# ── body auras ─────────────────────────────────────────────────────────────────
+
+item.shadow_pool_aura: "Shadow Pool Aura"
+item.purple_fog_aura: "Purple Fog Aura"
+item.lavender_aura: "Lavender Aura"
+item.purple_haze_aura: "Purple Haze Aura"
+item.chaos_aura: "Chaos Aura"
+item.wraith_aura: "Wraith Aura"
+item.fallen_angel_aura: "Fallen Angel Aura"
+item.nature_aura: "Nature Aura"
+item.green_mist_aura: "Green Mist Aura"
+item.blossom_aura: "Blossom Aura"
+item.venom_aura: "Venom Aura"
+item.mother_nature_aura: "Mother Nature Aura"
+item.aqua_aura: "Aqua Aura"
+item.tsunami_aura: "Tsunami Aura"
+item.wind_gusts_aura: "Wind Gusts Aura"
+item.hellfire_aura: "Hellfire Aura"
+item.cosmic_aura: "Cosmic Aura"
+item.fiery_aura: "Fiery Aura"
+
+# ── weapon auras ───────────────────────────────────────────────────────────────
 item.darkstar_aura: "암흑성 오라"
 item.crystal_bubble_aura: "수정 거품 오라"
 item.lightning_aura: "번개 오라"
@@ -315,6 +337,22 @@ item.sakura_aura: "벚꽃 오라"
 # F2 Update
 
 item.blizzard_aura: "Blizzard Aura"
+
+# Cosmetic Update
+
+item.void_aura: "Void Aura"
+item.ash_aura: "Ash Aura"
+item.green_glow_aura: "Green Glow Aura"
+item.cherry_aura: "Cherry Aura"
+item.radiance_aura: "Radiance Aura"
+item.frost_aura: "Frost Aura"
+item.solar_aura: "Solar Aura"
+item.electric_aura: "Electric Aura"
+item.crimson_aura: "Crimson Aura"
+item.lightning_bolts_aura: "Lightning Bolts Aura"
+item.fire_aura: "Fire Aura"
+item.inferno_aura: "Inferno Aura"
+item.wind_aura: "Wind Aura"
 
 # ── shards ─────────────────────────────────────────────────────────────────────
 item.common_shard: "Common Shard"
