@@ -249,12 +249,14 @@ items! {
     // Common
     { "Green Glow Aura",      WeaponAura, Common     },
     { "Frost Aura",           WeaponAura, Common     },
+    { "Solar Aura",           WeaponAura, Common     },
 
     // Uncommon
     { "Darkstar Aura",        WeaponAura, Uncommon   },
     { "Crystal Bubble Aura",  WeaponAura, Uncommon   },
     { "Blizzard Aura",        WeaponAura, Uncommon   },
     { "Cherry Aura",          WeaponAura, Uncommon   },
+    { "Electric Aura",        WeaponAura, Uncommon   },
 
     // Rare
     { "Lightning Aura",       WeaponAura, Rare       },
@@ -264,9 +266,14 @@ items! {
     { "Void Aura",            WeaponAura, Rare       },
     { "Ash Aura",             WeaponAura, Rare       },
     { "Radiance Aura",        WeaponAura, Rare       },
+    { "Crimson Aura",         WeaponAura, Rare       },
+    { "Lightning Bolts Aura", WeaponAura, Rare       },
+    { "Fire Aura",            WeaponAura, Rare       },
 
     // Epic
     { "Sakura Aura",          WeaponAura, Epic       },
+    { "Inferno Aura",         WeaponAura, Epic       },
+    { "Wind Aura",            WeaponAura, Epic       },
 
     // ── Body Aura ─────────────────────────────────────────────────────────────
 
@@ -279,18 +286,22 @@ items! {
     { "Lavender Aura",        BodyAura, Rare         },
     { "Green Mist Aura",      BodyAura, Rare         }, // Stinky aura
     { "Nature Aura",          BodyAura, Rare         },
+    { "Wind Gusts Aura",      BodyAura, Rare         }, // Not horrible
 
     // Epic
     { "Purple Haze Aura",     BodyAura, Epic         },
     { "Wraith Aura",          BodyAura, Epic         },
     { "Blossom Aura",         BodyAura, Epic         },
+    { "Hellfire Aura",        BodyAura, Epic         },
 
-    // Legendary
+    // Legendary (All suck currently)
     { "Chaos Aura",           BodyAura, Legendary    },
     { "Fallen Angel Aura",    BodyAura, Legendary    },
     { "Venom Aura",           BodyAura, Legendary    },
     { "Mother Nature Aura",   BodyAura, Legendary    }, // Stinkier aura
     { "Tsunami Aura",         BodyAura, Legendary    },
+    { "Cosmic Aura",          BodyAura, Legendary    },
+    { "Fiery Aura",           BodyAura, Legendary    },
 
     // ── Shard ─────────────────────────────────────────────────────────────────
 
